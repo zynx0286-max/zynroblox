@@ -1,0 +1,66 @@
+import { Check } from "lucide-react";
+import { GlassFrame } from "@/components/GlassFrame";
+
+const points = [
+  "Rigorous QA with clear reproduction steps",
+  "Active Roblox player & community member",
+  "Discord mod, coordinator & manager experience",
+  "SFX artist for Roblox games",
+];
+
+export function About() {
+  return (
+    <section id="about" className="mx-auto max-w-6xl scroll-mt-28 px-4 py-20">
+      <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+        <div>
+          <p className="font-display text-[0.7rem] tracking-[0.3em] text-primary uppercase">
+            About Me
+          </p>
+          <h2 className="mt-4 font-display text-3xl font-bold sm:text-4xl">
+            Reliable support that helps Roblox games feel better to play.
+          </h2>
+          <p className="mt-5 text-muted-foreground">
+            I partner with Roblox developers to catch issues early, improve
+            gameplay clarity, and strengthen community systems. From structured QA
+            reports to player-focused feedback, the goal is simple: smoother
+            updates and better retention.
+          </p>
+
+          <ul className="mt-8 space-y-3">
+            {points.map((p) => (
+              <li key={p} className="flex items-start gap-3 text-sm">
+                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                  <Check className="size-3" />
+                </span>
+                <span className="text-muted-foreground">{p}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="space-y-4">
+          <GlassFrame ratio="aspect-[4/3]">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-surface/40 text-center">
+              <span className="font-display text-5xl font-bold text-primary">QA</span>
+              <p className="max-w-[16rem] text-xs text-muted-foreground">
+                Active Roblox player & tester — testing daily across live games and
+                private builds.
+              </p>
+            </div>
+          </GlassFrame>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="glass rounded-2xl px-5 py-5">
+              <p className="font-display text-2xl font-bold">48 hrs</p>
+              <p className="text-xs text-muted-foreground">Avg bug report turnaround</p>
+            </div>
+            <div className="glass rounded-2xl px-5 py-5">
+              <p className="font-display text-2xl font-bold">100%</p>
+              <p className="text-xs text-muted-foreground">Repeat clients</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
