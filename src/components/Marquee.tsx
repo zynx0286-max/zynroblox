@@ -10,15 +10,16 @@ import {
 } from "lucide-react";
 
 const items = [
+  { icon: AudioLines, label: "SFX Design", copy: "Ability, ambience and UI audio." },
   { icon: Bug, label: "QA Testing", copy: "Detailed bug reports with repro steps." },
   { icon: Users, label: "Community", copy: "Discord setup, events and growth." },
   { icon: MessageSquare, label: "Player Feedback", copy: "Insight that improves retention." },
   { icon: Search, label: "Game Research", copy: "Trend and competitor analysis." },
   { icon: ShieldCheck, label: "Moderation", copy: "Anti-raid and rule enforcement." },
-  { icon: AudioLines, label: "SFX Design", copy: "Ability, ambience and UI audio." },
   { icon: Gamepad2, label: "Roblox Native", copy: "Active player and tester." },
   { icon: FileText, label: "Documentation", copy: "Structured, readable test docs." },
 ];
+
 
 export function Marquee() {
   const row = [...items, ...items];
