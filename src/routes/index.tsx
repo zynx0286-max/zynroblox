@@ -14,17 +14,17 @@ import { SiteFooter } from "@/components/SiteFooter";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "ZYN — Roblox QA Tester & Community Specialist" },
+      { title: "ZYN — Roblox SFX Artist & Sound Designer" },
       {
         name: "description",
         content:
-          "Freelance Roblox QA testing, community management, game analysis and SFX design. Cleaner updates, stronger communities, happier players.",
+          "Professional Roblox SFX artist creating original ability, impact, ambience and UI sound. Also offering QA testing, community management and game research.",
       },
-      { property: "og:title", content: "ZYN — Roblox QA Tester & Community Specialist" },
+      { property: "og:title", content: "ZYN — Roblox SFX Artist & Sound Designer" },
       {
         property: "og:description",
         content:
-          "Freelance Roblox QA testing, community management, game analysis and SFX design.",
+          "Original sound effects for Roblox games, plus QA testing, community management and game research.",
       },
     ],
   }),
@@ -38,11 +38,11 @@ function Index() {
       <main>
         <Hero />
         <Marquee />
-        <Stats />
-        <About />
         <Services />
         <FeaturedGame />
+        <About />
         <WorkPreview />
+        <Stats />
         <Skills />
         <ContactCta />
       </main>
@@ -50,3 +50,4 @@ function Index() {
     </div>
   );
 }
+
