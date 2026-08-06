@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Menu, X, Zap } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import robloxMark from "@/assets/roblox-mark.png";
 
 type NavLink = { label: string; to: "/" | "/work"; hash?: string };
 
