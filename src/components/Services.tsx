@@ -2,6 +2,11 @@ import { Bug, Users, MessageSquare, Search, ShieldCheck, AudioLines } from "luci
 
 const services = [
   {
+    icon: AudioLines,
+    title: "SFX Design",
+    copy: "Original sound effects for Roblox games — abilities, impacts, ambience, UI and combat audio, delivered game-ready.",
+  },
+  {
     icon: Bug,
     title: "Roblox QA Testing",
     copy: "Finding bugs, testing features, and delivering detailed reports with clear reproduction steps.",
@@ -26,12 +31,8 @@ const services = [
     title: "Discord Moderation",
     copy: "Consistent rule enforcement, anti-raid setups, and a healthier server culture.",
   },
-  {
-    icon: AudioLines,
-    title: "SFX Design",
-    copy: "Sound effects for Roblox games — abilities, ambience, UI audio, and more.",
-  },
 ];
+
 
 export function Services() {
   return (
@@ -41,8 +42,9 @@ export function Services() {
           Services
         </p>
         <h2 className="mt-4 font-display text-3xl font-bold sm:text-4xl">
-          Ways I can help your Roblox project.
+          Sound first — plus everything around it.
         </h2>
+
       </div>
 
       <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

@@ -1,4 +1,7 @@
 const skills = [
+  "SFX Design",
+  "Sound Implementation",
+  "Ambience & UI Audio",
   "Game Testing",
   "Bug Reporting",
   "Test Documentation",
@@ -8,8 +11,8 @@ const skills = [
   "Game Analysis",
   "Roblox Platform",
   "Discord Moderation",
-  "SFX Design",
 ];
+
 
 export function Skills() {
   return (
