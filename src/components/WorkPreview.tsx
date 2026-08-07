@@ -1,14 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, LayoutGrid } from "lucide-react";
 import { WorkCard } from "@/components/WorkCard";
 import { works } from "@/data/works";
+import { Reveal } from "@/components/Reveal";
 
 export function WorkPreview() {
   const preview = works.filter((w) => !w.featured).slice(0, 6);
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-20">
-      <div className="flex flex-wrap items-end justify-between gap-6">
+      <Reveal className="flex flex-wrap items-end justify-between gap-6">
         <div className="max-w-2xl">
           <p className="font-display text-[0.7rem] tracking-[0.3em] text-primary uppercase">
             My Work
@@ -23,18 +24,31 @@ export function WorkPreview() {
 
         <Link
           to="/work"
-          className="group glass inline-flex items-center gap-2 rounded-full px-5 py-2.5 font-display text-sm font-semibold"
+          className="group inline-flex items-center gap-3 rounded-full bg-primary px-8 py-4 font-display text-base font-bold text-primary-foreground shadow-[var(--shadow-glow)] transition-transform duration-300 hover:scale-[1.03]"
         >
-          View all work
-          <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+          <LayoutGrid className="size-5" />
+          View all {works.length} projects
+          <ArrowRight className="size-5 transition-transform group-hover:translate-x-1" />
         </Link>
-      </div>
+      </Reveal>
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {preview.map((w) => (
-          <WorkCard key={w.slug} work={w} />
+        {preview.map((w, i) => (
+          <Reveal key={w.slug} delay={(i % 3) * 90}>
+            <WorkCard work={w} />
+          </Reveal>
         ))}
       </div>
+
+      <Reveal className="mt-12 flex justify-center">
+        <Link
+          to="/work"
+          className="group glass-card inline-flex w-full max-w-xl items-center justify-center gap-3 rounded-full px-10 py-6 font-display text-lg font-bold tracking-wide transition-transform duration-300 hover:scale-[1.02] sm:text-xl"
+        >
+          Browse the full work archive
+          <ArrowRight className="size-6 transition-transform group-hover:translate-x-1" />
+        </Link>
+      </Reveal>
     </section>
   );
 }
