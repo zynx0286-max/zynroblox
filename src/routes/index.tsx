@@ -10,6 +10,8 @@ import { WorkPreview } from "@/components/WorkPreview";
 import { Skills } from "@/components/Skills";
 import { ContactCta } from "@/components/ContactCta";
 import { SiteFooter } from "@/components/SiteFooter";
+import { Reveal } from "@/components/Reveal";
+import { ScrollProgress } from "@/components/ScrollProgress";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -34,16 +36,27 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <div className="min-h-screen bg-background">
+      <ScrollProgress />
       <SiteNav />
       <main>
         <Hero />
         <Marquee />
-        <Services />
-        <FeaturedGame />
-        <About />
+        <Reveal as="section">
+          <Services />
+        </Reveal>
+        <Reveal as="section">
+          <FeaturedGame />
+        </Reveal>
+        <Reveal as="section">
+          <About />
+        </Reveal>
         <WorkPreview />
-        <Stats />
-        <Skills />
+        <Reveal as="section">
+          <Stats />
+        </Reveal>
+        <Reveal as="section">
+          <Skills />
+        </Reveal>
         <ContactCta />
       </main>
       <SiteFooter />

@@ -1,5 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import { GlassImage } from "@/components/GlassFrame";
+import { Tilt3D } from "@/components/Reveal";
 import type { Work } from "@/data/works";
 
 export function WorkCard({ work }: { work: Work }) {
@@ -39,15 +40,17 @@ export function WorkCard({ work }: { work: Work }) {
   );
 
   const className =
-    "group flex h-full flex-col rounded-2xl border border-border bg-surface/50 p-4 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[var(--shadow-glow)]";
+    "group glass-card relative flex h-full flex-col rounded-2xl p-4 transition-all duration-300 hover:border-primary/40 hover:shadow-[var(--shadow-glow)]";
 
-  if (work.href) {
-    return (
-      <a href={work.href} target="_blank" rel="noreferrer" className={className}>
-        {inner}
-      </a>
-    );
-  }
-
-  return <article className={className}>{inner}</article>;
+  return (
+    <Tilt3D className="h-full" strength={6}>
+      {work.href ? (
+        <a href={work.href} target="_blank" rel="noreferrer" className={className}>
+          {inner}
+        </a>
+      ) : (
+        <article className={className}>{inner}</article>
+      )}
+    </Tilt3D>
+  );
 }
