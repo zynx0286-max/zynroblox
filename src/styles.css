@@ -160,6 +160,35 @@
   background-image: var(--gradient-hero);
 }
 
+/* Frosted card with an inner highlight + soft sheen */
+@utility glass-card {
+  position: relative;
+  background: linear-gradient(
+    145deg,
+    color-mix(in oklab, var(--foreground) 9%, transparent),
+    color-mix(in oklab, var(--foreground) 3%, transparent)
+  );
+  backdrop-filter: blur(22px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    var(--shadow-glass),
+    inset 0 1px 0 color-mix(in oklab, var(--foreground) 16%, transparent);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(
+      120% 80% at 12% -10%,
+      color-mix(in oklab, var(--foreground) 12%, transparent),
+      transparent 55%
+    );
+    opacity: 0.7;
+  }
+}
+
 @utility text-gradient {
   background-image: var(--gradient-accent);
   background-clip: text;
@@ -172,6 +201,23 @@
 
 @utility rise-in {
   animation: rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@utility reveal {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0) scale(0.985);
+  transition:
+    opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@utility reveal-in {
+  opacity: 1;
+  transform: none;
+}
+
+@utility float-slow {
+  animation: float-slow 9s ease-in-out infinite;
 }
 
 @keyframes marquee {
@@ -194,9 +240,25 @@
   }
 }
 
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -14px, 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .marquee-track {
+  .marquee-track,
+  .float-slow {
     animation: none;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
   }
 }
 
