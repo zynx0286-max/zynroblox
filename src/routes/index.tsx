@@ -10,6 +10,8 @@ import { WorkPreview } from "@/components/WorkPreview";
 import { Skills } from "@/components/Skills";
 import { ContactCta } from "@/components/ContactCta";
 import { SiteFooter } from "@/components/SiteFooter";
+import { Reveal } from "@/components/Reveal";
+import { ScrollProgress } from "@/components/ScrollProgress";
 
 export const Route = createFileRoute("/")({
   head: () => ({
