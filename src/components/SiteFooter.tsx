@@ -1,13 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { Zap } from "lucide-react";
+import robloxLogo from "@/assets/roblox-logo.png.asset.json";
 
 export function SiteFooter() {
   return (
     <footer className="border-t border-border">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 py-10 sm:flex-row sm:justify-between">
         <Link to="/" className="flex items-center gap-2 font-display tracking-[0.2em]">
-          <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Zap className="size-3.5" />
+          <span className="glass-card flex size-7 items-center justify-center overflow-hidden rounded-md">
+            <img src={robloxLogo.url} alt="Roblox logo mark" width={28} height={28} className="size-4" />
           </span>
           ZYN
         </Link>
