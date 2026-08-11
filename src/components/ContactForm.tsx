@@ -149,13 +149,32 @@ export function ContactForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="glass-card rounded-2xl p-6 text-left sm:p-8">
+    <form
+      onSubmit={onSubmit}
+      noValidate
+      className="glass-card rounded-2xl p-5 text-left sm:p-8"
+    >
+      {/* Honeypot — hidden from humans, irresistible to bots */}
+      <div aria-hidden className="pointer-events-none absolute -left-[9999px] opacity-0">
+        <label htmlFor="website">Website</label>
+        <input
+          id="website"
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+        />
+      </div>
+
       <div className="relative">
         <h3 className="font-display text-lg font-semibold">Start a project</h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          Takes about a minute — all fields are required.
+          Takes about a minute — all fields are required. Protected against spam.
         </p>
       </div>
+
 
       <div className="relative mt-6 grid gap-4 sm:grid-cols-2">
         <div>
