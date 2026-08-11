@@ -76,18 +76,29 @@ export function ContactForm() {
     }
     setErrors({});
     setStatus("sending");
+    track("contact_submit", { projectType: values.projectType });
     try {
-      await send({ data: contactSchema.parse(values) });
+      await send({
+        data: {
+          ...contactSchema.parse(values),
+          website: honeypot,
+          elapsedMs: Date.now() - startedAt.current,
+        },
+      });
       setStatus("sent");
+      track("contact_success", { projectType: values.projectType });
       setValues({ name: "", email: "", projectType: "SFX Design", message: "" });
       setTouched({});
+      startedAt.current = Date.now();
     } catch (err) {
       setStatus("error");
+      track("contact_error", {});
       setServerError(
         err instanceof Error ? err.message : "Something went wrong. Try Discord instead.",
       );
     }
   };
+
 
   const Label = ({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) => (
     <label
