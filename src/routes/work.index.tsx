@@ -53,7 +53,7 @@ function WorkPage() {
   const navigate = useNavigate({ from: "/work" });
 
   const setSearch = (next: { q?: string; cat?: string }) => {
-    void navigate({ search: (prev) => ({ ...prev, ...next }), replace: true });
+    void navigate({ search: (prev: { q: string; cat: string }) => ({ ...prev, ...next }), replace: true });
   };
 
   const counts = useMemo(() => {
