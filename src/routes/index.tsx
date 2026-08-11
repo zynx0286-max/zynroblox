@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/data/works";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteNav } from "@/components/SiteNav";
 import { Hero } from "@/components/Hero";
@@ -13,25 +14,48 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Reveal } from "@/components/Reveal";
 import { ScrollProgress } from "@/components/ScrollProgress";
 
+const TITLE = "ZYN — Roblox SFX Artist, Sound Designer & QA Tester";
+const DESC =
+  "Professional Roblox SFX artist creating original ability, impact, ambience and UI sound. Also offering QA testing, community management and game research.";
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "ZYN — Roblox SFX Artist & Sound Designer" },
+      { title: TITLE },
+      { name: "description", content: DESC },
+      { property: "og:title", content: TITLE },
+      { property: "og:description", content: DESC },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: SITE_URL },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: TITLE },
+      { name: "twitter:description", content: DESC },
+    ],
+    links: [{ rel: "canonical", href: SITE_URL }],
+    scripts: [
       {
-        name: "description",
-        content:
-          "Professional Roblox SFX artist creating original ability, impact, ambience and UI sound. Also offering QA testing, community management and game research.",
-      },
-      { property: "og:title", content: "ZYN — Roblox SFX Artist & Sound Designer" },
-      {
-        property: "og:description",
-        content:
-          "Original sound effects for Roblox games, plus QA testing, community management and game research.",
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Person",
+          name: "ZYN",
+          url: SITE_URL,
+          jobTitle: "Roblox SFX Artist & Sound Designer",
+          description: DESC,
+          knowsAbout: [
+            "Roblox sound design",
+            "Game SFX",
+            "QA testing",
+            "Community management",
+          ],
+          sameAs: ["https://discord.com/users/acczyn"],
+        }),
       },
     ],
   }),
   component: Index,
 });
+
 
 function Index() {
   return (

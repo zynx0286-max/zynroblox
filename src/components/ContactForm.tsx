@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Send, CheckCircle2, MessageCircle, AlertCircle } from "lucide-react";
 import { contactSchema, sendContactMessage } from "@/lib/contact.functions";
+import { track } from "@/lib/analytics";
+
 
 const projectTypes = [
   "SFX Design",
@@ -28,6 +30,9 @@ export function ContactForm() {
   const [touched, setTouched] = useState<Partial<Record<FieldKey, boolean>>>({});
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [serverError, setServerError] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState("");
+  const startedAt = useRef(Date.now());
+
 
   const validate = (next = values): Errors => {
     const parsed = contactSchema.safeParse(next);
@@ -71,18 +76,29 @@ export function ContactForm() {
     }
     setErrors({});
     setStatus("sending");
+    track("contact_submit", { projectType: values.projectType });
     try {
-      await send({ data: contactSchema.parse(values) });
+      await send({
+        data: {
+          ...contactSchema.parse(values),
+          website: honeypot,
+          elapsedMs: Date.now() - startedAt.current,
+        },
+      });
       setStatus("sent");
+      track("contact_success", { projectType: values.projectType });
       setValues({ name: "", email: "", projectType: "SFX Design", message: "" });
       setTouched({});
+      startedAt.current = Date.now();
     } catch (err) {
       setStatus("error");
+      track("contact_error", {});
       setServerError(
         err instanceof Error ? err.message : "Something went wrong. Try Discord instead.",
       );
     }
   };
+
 
   const Label = ({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) => (
     <label
@@ -133,13 +149,32 @@ export function ContactForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="glass-card rounded-2xl p-6 text-left sm:p-8">
+    <form
+      onSubmit={onSubmit}
+      noValidate
+      className="glass-card rounded-2xl p-5 text-left sm:p-8"
+    >
+      {/* Honeypot — hidden from humans, irresistible to bots */}
+      <div aria-hidden className="pointer-events-none absolute -left-[9999px] opacity-0">
+        <label htmlFor="website">Website</label>
+        <input
+          id="website"
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+        />
+      </div>
+
       <div className="relative">
         <h3 className="font-display text-lg font-semibold">Start a project</h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          Takes about a minute — all fields are required.
+          Takes about a minute — all fields are required. Protected against spam.
         </p>
       </div>
+
 
       <div className="relative mt-6 grid gap-4 sm:grid-cols-2">
         <div>
