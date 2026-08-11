@@ -6,7 +6,7 @@ import { GlassImage } from "@/components/GlassFrame";
 import { WorkCard } from "@/components/WorkCard";
 import { Reveal } from "@/components/Reveal";
 import { track } from "@/lib/analytics";
-import { getWork, works, SITE_URL } from "@/data/works";
+import { getWork, works, SITE_URL, type Work } from "@/data/works";
 
 export const Route = createFileRoute("/work/$slug")({
   loader: ({ params }) => {
@@ -88,7 +88,7 @@ function WorkNotFound() {
 }
 
 function WorkDetail() {
-  const { work } = Route.useLoaderData();
+  const { work } = Route.useLoaderData() as { work: Work };
   const related = works
     .filter((w) => w.slug !== work.slug && w.category === work.category)
     .slice(0, 3);
