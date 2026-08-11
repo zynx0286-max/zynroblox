@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/data/works";
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteNav } from "@/components/SiteNav";
 import { Hero } from "@/components/Hero";
