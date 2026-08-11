@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, stripSearchParams } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { Search, X } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
@@ -16,6 +16,7 @@ export const Route = createFileRoute("/work/")({
     q: typeof search["q"] === "string" ? search["q"] : "",
     cat: typeof search["cat"] === "string" ? search["cat"] : "All Work",
   }),
+  search: { middlewares: [stripSearchParams({ q: "", cat: "All Work" })] },
   head: () => ({
     meta: [
       { title: PAGE_TITLE },
