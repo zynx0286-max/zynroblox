@@ -6,7 +6,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { WorkCard } from "@/components/WorkCard";
 import { CATEGORIES, works, type WorkCategory } from "@/data/works";
 
-export const Route = createFileRoute("/work")({
+export const Route = createFileRoute("/work/")({
   head: () => ({
     meta: [
       { title: "Game Archive — ZYN Roblox QA & Community Work" },
