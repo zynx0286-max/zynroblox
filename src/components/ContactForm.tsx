@@ -30,6 +30,9 @@ export function ContactForm() {
   const [touched, setTouched] = useState<Partial<Record<FieldKey, boolean>>>({});
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [serverError, setServerError] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState("");
+  const startedAt = useRef(Date.now());
+
 
   const validate = (next = values): Errors => {
     const parsed = contactSchema.safeParse(next);
