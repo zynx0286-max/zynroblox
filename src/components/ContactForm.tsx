@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Send, CheckCircle2, MessageCircle, AlertCircle } from "lucide-react";
 import { contactSchema, sendContactMessage } from "@/lib/contact.functions";
+import { track } from "@/lib/analytics";
+
 
 const projectTypes = [
   "SFX Design",
