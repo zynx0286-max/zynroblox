@@ -54,11 +54,17 @@ export const Route = createFileRoute("/work/")({
 });
 
 function WorkPage() {
-  const { q, cat } = Route.useSearch();
-  const navigate = useNavigate({ from: "/work" });
+  const search = Route.useSearch();
+  const q = search.q ?? "";
+  const cat = search.cat ?? "All Work";
+  const navigate = useNavigate({ from: "/work/" });
 
-  const setSearch = (next: { q?: string; cat?: string }) => {
-    void navigate({ search: (prev: { q: string; cat: string }) => ({ ...prev, ...next }), replace: true });
+  const setSearch = (next: WorkSearch) => {
+    const merged: WorkSearch = { q, cat, ...next };
+    const clean: WorkSearch = {};
+    if (merged.q) clean.q = merged.q;
+    if (merged.cat && merged.cat !== "All Work") clean.cat = merged.cat;
+    void navigate({ search: clean, replace: true });
   };
 
   const counts = useMemo(() => {
