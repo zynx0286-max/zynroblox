@@ -11,12 +11,16 @@ const PAGE_TITLE = "Roblox Work Archive — QA Testing, SFX & Community | ZYN";
 const PAGE_DESC =
   "Browse every Roblox project ZYN has worked on: SFX design, QA testing, game scouting and community management. Search by title, role or tag.";
 
+export type WorkSearch = { q?: string; cat?: string };
+
 export const Route = createFileRoute("/work/")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    q: typeof search["q"] === "string" ? search["q"] : "",
-    cat: typeof search["cat"] === "string" ? search["cat"] : "All Work",
-  }),
-  search: { middlewares: [stripSearchParams({ q: "", cat: "All Work" })] },
+  validateSearch: (search: Record<string, unknown>): WorkSearch => {
+    const out: WorkSearch = {};
+    if (typeof search["q"] === "string" && search["q"]) out.q = search["q"];
+    if (typeof search["cat"] === "string" && search["cat"] && search["cat"] !== "All Work")
+      out.cat = search["cat"];
+    return out;
+  },
   head: () => ({
     meta: [
       { title: PAGE_TITLE },
