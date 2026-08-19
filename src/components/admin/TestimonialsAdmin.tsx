@@ -105,7 +105,7 @@ export function TestimonialsAdmin() {
   const pickImage = async () => {
     if (!editing) return;
     try {
-      const url = await pickAndUpload("testimonials", "image/*");
+      const url = await pickAndUpload("image/*");
       setEditing({ ...editing, values: { ...editing.values, imageUrl: url } });
     } catch (err) {
       onError(err);

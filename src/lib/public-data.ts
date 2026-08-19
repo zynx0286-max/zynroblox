@@ -17,9 +17,9 @@ async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   }
 }
 
-/** Public works: the Supabase table is seeded with the full catalog, so DB wins.
- *  Image URLs from the DB still point at the old Lovable CDN, so we override
- *  them with the self-hosted assets bundled by Vite. */
+/** Public works. The store is seeded from the static catalog, so it always has
+ *  content; custom images set by the owner win, otherwise we fall back to the
+ *  bundled static thumbnail for each slug. */
 export async function getPublicWorks(): Promise<DbWork[]> {
   const db = await safe(() => listWorks(), null);
   if (db && db.length) {
@@ -28,7 +28,7 @@ export async function getPublicWorks(): Promise<DbWork[]> {
     );
     return db.map((w) => {
       const img = staticImageBySlug.get(w.slug);
-      return img ? { ...w, image: img } : w;
+      return img && !w.image ? { ...w, image: img } : w;
     });
   }
   return staticWorks.map((w, i) => ({ ...w, id: `static-${i}`, sortOrder: i }));

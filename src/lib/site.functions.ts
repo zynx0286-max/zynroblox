@@ -1,32 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { Work } from "@/data/works";
-
-// NOTE: the generated `Database` type in integrations/supabase/types.ts doesn't
-// include the tables added in migrations/20260819… (site_settings, testimonials,
-// work_media) until types are regenerated, so these go through an untyped client.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type UntypedDb = any;
-
-function publicClient() {
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
-  const url = process.env["SUPABASE_URL"]!;
-  return createClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: {
-      fetch: (input, init) => {
-        const headers = new Headers(init?.headers);
-        if (key.startsWith("sb_") && headers.get("Authorization") === `Bearer ${key}`) {
-          headers.delete("Authorization");
-        }
-        headers.set("apikey", key);
-        return fetch(input, { ...init, headers });
-      },
-    },
-  });
-}
+import { requireOwner } from "@/lib/require-owner";
+import { loadStore, mutate } from "@/lib/store";
 
 // ---------------------------------------------------------------------------
 // Testimonials
@@ -43,39 +18,9 @@ export type Testimonial = {
   sortOrder: number;
 };
 
-type TestimonialRow = {
-  id: string;
-  author: string;
-  role: string;
-  text: string;
-  rating: number;
-  image_url: string | null;
-  featured: boolean;
-  sort_order: number;
-};
-
-function toTestimonial(row: TestimonialRow): Testimonial {
-  return {
-    id: row.id,
-    author: row.author,
-    role: row.role,
-    text: row.text,
-    rating: Number(row.rating ?? 5),
-    ...(row.image_url ? { imageUrl: row.image_url } : {}),
-    featured: Boolean(row.featured),
-    sortOrder: Number(row.sort_order ?? 0),
-  };
-}
-
 export const listTestimonials = createServerFn({ method: "GET" }).handler(
   async (): Promise<Testimonial[]> => {
-    const { data, error } = await (publicClient() as UntypedDb)
-      .from("testimonials")
-      .select("*")
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true });
-    if (error) throw new Error(error.message);
-    return ((data ?? []) as TestimonialRow[]).map(toTestimonial);
+    return [...(await loadStore()).testimonials].sort((a, b) => a.sortOrder - b.sortOrder);
   },
 );
 
@@ -84,73 +29,65 @@ const testimonialInput = z.object({
   role: z.string().max(120).default(""),
   text: z.string().trim().min(1).max(2000),
   rating: z.number().int().min(1).max(5).default(5),
-  imageUrl: z.string().max(500).default(""),
+  imageUrl: z.string().max(2000000).default(""),
   featured: z.boolean().default(false),
   sortOrder: z.number().int().min(0).max(9999).default(0),
 });
 
 export type TestimonialInput = z.infer<typeof testimonialInput>;
 
+function toTestimonial(data: TestimonialInput, id: string): Testimonial {
+  return {
+    id,
+    author: data.author,
+    role: data.role,
+    text: data.text,
+    rating: data.rating,
+    ...(data.imageUrl ? { imageUrl: data.imageUrl } : {}),
+    featured: data.featured,
+    sortOrder: data.sortOrder,
+  };
+}
+
 export const adminListTestimonials = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<Testimonial[]> => {
-    const { data, error } = await (context.supabase as UntypedDb)
-      .from("testimonials")
-      .select("*")
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true });
-    if (error) throw new Error(error.message);
-    return ((data ?? []) as TestimonialRow[]).map(toTestimonial);
+  .middleware([requireOwner])
+  .handler(async (): Promise<Testimonial[]> => {
+    return [...(await loadStore()).testimonials].sort((a, b) => a.sortOrder - b.sortOrder);
   });
 
 export const createTestimonial = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireOwner])
   .validator((data: unknown) => testimonialInput.parse(data))
-  .handler(async ({ data, context }) => {
-    const { error } = await (context.supabase as UntypedDb).from("testimonials").insert({
-      author: data.author,
-      role: data.role,
-      text: data.text,
-      rating: data.rating,
-      image_url: data.imageUrl || null,
-      featured: data.featured,
-      sort_order: data.sortOrder,
+  .handler(async ({ data }) => {
+    await mutate((store) => {
+      store.testimonials.push(toTestimonial(data, crypto.randomUUID()));
     });
-    if (error) throw new Error(error.message);
-    return { ok: true };
+    return { ok: true as const };
   });
 
 export const updateTestimonial = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .validator((data: unknown) => testimonialInput.extend({ id: z.string().uuid() }).parse(data))
-  .handler(async ({ data, context }) => {
+  .middleware([requireOwner])
+  .validator((data: unknown) =>
+    testimonialInput.extend({ id: z.string().min(1).max(120) }).parse(data),
+  )
+  .handler(async ({ data }) => {
     const { id, ...rest } = data;
-    const { error } = await (context.supabase as UntypedDb)
-      .from("testimonials")
-      .update({
-        author: rest.author,
-        role: rest.role,
-        text: rest.text,
-        rating: rest.rating,
-        image_url: rest.imageUrl || null,
-        featured: rest.featured,
-        sort_order: rest.sortOrder,
-      })
-      .eq("id", id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+    await mutate((store) => {
+      const idx = store.testimonials.findIndex((t) => t.id === id);
+      if (idx === -1) throw new Error("Testimonial not found");
+      store.testimonials[idx] = toTestimonial(rest, id);
+    });
+    return { ok: true as const };
   });
 
 export const deleteTestimonial = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .validator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
-  .handler(async ({ data, context }) => {
-    const { error } = await (context.supabase as UntypedDb)
-      .from("testimonials")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+  .middleware([requireOwner])
+  .validator((data: unknown) => z.object({ id: z.string().min(1).max(120) }).parse(data))
+  .handler(async ({ data }) => {
+    await mutate((store) => {
+      store.testimonials = store.testimonials.filter((t) => t.id !== data.id);
+    });
+    return { ok: true as const };
   });
 
 // ---------------------------------------------------------------------------
@@ -162,29 +99,22 @@ export type SettingsValue =
 
 export const listSiteSettings = createServerFn({ method: "GET" }).handler(
   async (): Promise<Record<string, SettingsValue>> => {
-    const { data, error } = await (publicClient() as UntypedDb).from("site_settings").select("*");
-    if (error) throw new Error(error.message);
-    const out: Record<string, SettingsValue> = {};
-    for (const row of (data ?? []) as { key: string; value: SettingsValue }[]) {
-      out[row.key] = row.value;
-    }
-    return out;
+    return (await loadStore()).settings;
   },
 );
 
 export const saveSiteSettings = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireOwner])
   .validator((data: unknown) =>
     z
       .object({ key: z.string().min(1).max(60), value: z.record(z.string(), z.unknown()) })
       .parse(data),
   )
-  .handler(async ({ data, context }) => {
-    const { error } = await (context.supabase as UntypedDb)
-      .from("site_settings")
-      .upsert({ key: data.key, value: data.value }, { onConflict: "key" });
-    if (error) throw new Error(error.message);
-    return { ok: true };
+  .handler(async ({ data }) => {
+    await mutate((store) => {
+      store.settings[data.key] = data.value as SettingsValue;
+    });
+    return { ok: true as const };
   });
 
 // ---------------------------------------------------------------------------
@@ -200,102 +130,64 @@ export type WorkMedia = {
   sortOrder: number;
 };
 
-type WorkMediaRow = {
-  id: string;
-  work_id: string;
-  media_type: "image" | "audio" | "video";
-  url: string;
-  caption: string;
-  sort_order: number;
-};
-
-function toWorkMedia(row: WorkMediaRow): WorkMedia {
-  return {
-    id: row.id,
-    workId: row.work_id,
-    mediaType: row.media_type ?? "image",
-    url: row.url,
-    caption: row.caption ?? "",
-    sortOrder: Number(row.sort_order ?? 0),
-  };
-}
-
 export const listWorkMedia = createServerFn({ method: "GET" }).handler(
   async (): Promise<WorkMedia[]> => {
-    const { data, error } = await (publicClient() as UntypedDb)
-      .from("work_media")
-      .select("*")
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true });
-    if (error) throw new Error(error.message);
-    return ((data ?? []) as WorkMediaRow[]).map(toWorkMedia);
+    return [...(await loadStore()).media].sort((a, b) => a.sortOrder - b.sortOrder);
   },
 );
 
 const workMediaInput = z.object({
-  workId: z.string().uuid(),
+  workId: z.string().min(1).max(120),
   mediaType: z.enum(["image", "audio", "video"]),
-  url: z.string().url().or(z.string().max(10)),
+  url: z.string().min(1).max(2000000),
   caption: z.string().max(200).default(""),
   sortOrder: z.number().int().min(0).max(9999).default(0),
 });
 
 export type WorkMediaInput = z.infer<typeof workMediaInput>;
 
+function toWorkMedia(data: WorkMediaInput, id: string): WorkMedia {
+  return {
+    id,
+    workId: data.workId,
+    mediaType: data.mediaType,
+    url: data.url,
+    caption: data.caption,
+    sortOrder: data.sortOrder,
+  };
+}
+
 export const addWorkMedia = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireOwner])
   .validator((data: unknown) => workMediaInput.parse(data))
-  .handler(async ({ data, context }) => {
-    const { error } = await (context.supabase as UntypedDb).from("work_media").insert({
-      work_id: data.workId,
-      media_type: data.mediaType,
-      url: data.url,
-      caption: data.caption,
-      sort_order: data.sortOrder,
+  .handler(async ({ data }) => {
+    await mutate((store) => {
+      store.media.push(toWorkMedia(data, crypto.randomUUID()));
     });
-    if (error) throw new Error(error.message);
-    return { ok: true };
+    return { ok: true as const };
   });
 
 export const updateWorkMedia = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .validator((data: unknown) => workMediaInput.extend({ id: z.string().uuid() }).parse(data))
-  .handler(async ({ data, context }) => {
+  .middleware([requireOwner])
+  .validator((data: unknown) =>
+    workMediaInput.extend({ id: z.string().min(1).max(120) }).parse(data),
+  )
+  .handler(async ({ data }) => {
     const { id, ...rest } = data;
-    const { error } = await (context.supabase as UntypedDb)
-      .from("work_media")
-      .update({
-        media_type: rest.mediaType,
-        url: rest.url,
-        caption: rest.caption,
-        sort_order: rest.sortOrder,
-      })
-      .eq("id", id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+    await mutate((store) => {
+      const idx = store.media.findIndex((m) => m.id === id);
+      if (idx === -1) throw new Error("Media not found");
+      store.media[idx] = toWorkMedia(rest, id);
+    });
+    return { ok: true as const };
   });
 
 export const deleteWorkMedia = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .validator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
-  .handler(async ({ data, context }) => {
-    const { error } = await (context.supabase as UntypedDb)
-      .from("work_media")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+  .middleware([requireOwner])
+  .validator((data: unknown) => z.object({ id: z.string().min(1).max(120) }).parse(data))
+  .handler(async ({ data }) => {
+    await mutate((store) => {
+      store.media = store.media.filter((m) => m.id !== data.id);
+    });
+    return { ok: true as const };
   });
-
-// ---------------------------------------------------------------------------
-// First-run admin bootstrap
-// ---------------------------------------------------------------------------
-
-export const adminCount = createServerFn({ method: "GET" }).handler(async (): Promise<number> => {
-  const { data, error } = await (publicClient() as UntypedDb).rpc("admin_count");
-  if (error) throw new Error(error.message);
-  return Number(data ?? 0);
-});
-
-// Re-exported helpers used by the public site.
-export type { Work };

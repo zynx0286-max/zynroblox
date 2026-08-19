@@ -5,6 +5,8 @@ import heroBg from "@/assets/hero-bg.jpg";
 import { track } from "@/lib/analytics";
 import type { HeroSettings } from "@/lib/site-settings";
 import { cn } from "@/lib/utils";
+import { AmbientField } from "./AmbientField";
+import { MagneticButton } from "./MagneticButton";
 
 type LayerRef = HTMLDivElement | null;
 
@@ -95,6 +97,9 @@ export function Hero({ settings, workCount }: { settings: HeroSettings; workCoun
           ref={bloom2Ref}
           className="float-slow absolute -right-24 top-24 size-[16rem] rounded-full bg-accent/20 blur-[45px] will-change-transform [animation-delay:-4s] sm:size-[24rem] sm:blur-[130px]"
         />
+        {/* Ambient particle field (GPU-cheap canvas, skips itself on
+            reduced-motion / low-power screens). */}
+        <AmbientField className="opacity-70 mix-blend-screen" />
         <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent to-background sm:h-64" />
       </div>
 
@@ -141,15 +146,17 @@ export function Hero({ settings, workCount }: { settings: HeroSettings; workCoun
         </p>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:mt-10 sm:flex-row sm:gap-4">
-          <Link
-            to="/work"
-            onClick={() => track("cta_click", { cta: "hear_my_work" })}
-            className="group inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-primary px-6 py-4 font-display text-base font-bold tracking-wide text-primary-foreground shadow-[var(--shadow-glow)] transition-transform duration-300 hover:scale-[1.03] active:scale-[0.98] sm:w-auto sm:gap-3 sm:px-10 sm:py-5 sm:text-xl"
-          >
-            <Headphones className="size-5 sm:size-6" />
-            {settings.ctaLabel}
-            <ArrowRight className="size-5 transition-transform group-hover:translate-x-1 sm:size-6" />
-          </Link>
+          <MagneticButton>
+            <Link
+              to="/work"
+              onClick={() => track("cta_click", { cta: "hear_my_work" })}
+              className="group inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-primary px-6 py-4 font-display text-base font-bold tracking-wide text-primary-foreground shadow-[var(--shadow-glow)] transition-transform duration-300 hover:scale-[1.03] active:scale-[0.98] sm:w-auto sm:gap-3 sm:px-10 sm:py-5 sm:text-xl"
+            >
+              <Headphones className="size-5 sm:size-6" />
+              {settings.ctaLabel}
+              <ArrowRight className="size-5 transition-transform group-hover:translate-x-1 sm:size-6" />
+            </Link>
+          </MagneticButton>
           <a
             href={settings.discordUrl}
             target="_blank"

@@ -1,27 +1,30 @@
-import { supabase } from "@/integrations/supabase/client";
+import { deleteStoredUpload, saveUpload } from "@/lib/uploads-functions";
 
-const BUCKET = "uploads";
+// Client-side helpers that talk to the self-hosted upload store over RPC.
 
-function safeName(name: string): string {
-  const cleaned = name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80);
-  return cleaned || "file";
+export const MAX_UPLOAD_BYTES = 1_500_000;
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Could not read the file"));
+    reader.readAsDataURL(file);
+  });
 }
 
-/** Uploads a file to the public `uploads` bucket and returns its public URL. */
-export async function uploadFile(file: File, folder: string): Promise<string> {
-  const path = `${folder.replace(/^\/+|\/+$/g, "")}/${Date.now()}-${safeName(file.name)}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
-    upsert: false,
-    cacheControl: "3600",
-    contentType: file.type || "application/octet-stream",
+/** Uploads a file into the self-hosted store and returns its data URL. */
+export async function uploadFile(file: File): Promise<string> {
+  if (file.size > MAX_UPLOAD_BYTES) throw new Error("File is too large (max 1.5 MB)");
+  const dataUrl = await readAsDataUrl(file);
+  const res = await saveUpload({
+    data: { name: file.name, mime: file.type || "application/octet-stream", dataUrl },
   });
-  if (error) throw error;
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  return res.dataUrl;
 }
 
 /** Opens a file picker and uploads the selected file. */
-export async function pickAndUpload(folder: string, accept: string): Promise<string> {
+export async function pickAndUpload(accept: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const input = document.createElement("input");
     input.type = "file";
@@ -30,7 +33,7 @@ export async function pickAndUpload(folder: string, accept: string): Promise<str
       const file = input.files?.[0];
       if (!file) return;
       try {
-        resolve(await uploadFile(file, folder));
+        resolve(await uploadFile(file));
       } catch (err) {
         reject(err);
       }
@@ -40,11 +43,8 @@ export async function pickAndUpload(folder: string, accept: string): Promise<str
   });
 }
 
+/** Removes an uploaded file from the store. No-ops for external URLs. */
 export async function deleteUpload(url: string): Promise<void> {
-  const prefix = `/storage/v1/object/public/${BUCKET}/`;
-  const idx = url.indexOf(prefix);
-  if (idx === -1) return;
-  const path = url.slice(idx + prefix.length);
-  const { error } = await supabase.storage.from(BUCKET).remove([path]);
-  if (error) throw error;
+  if (!url.startsWith("data:")) return;
+  await deleteStoredUpload({ data: { url } });
 }

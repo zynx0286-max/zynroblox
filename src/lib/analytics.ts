@@ -39,4 +39,7 @@ export function track(name: EventName, props: Props = {}) {
 }
 
 /** Convenience props for outbound conversion links. */
-export const trackClick = (name: EventName, props: Props = {}) => () => track(name, props);
+export const trackClick =
+  (name: EventName, props: Props = {}) =>
+  () =>
+    track(name, props);

@@ -263,6 +263,131 @@
 }
 
 /*
+ * Interactive effects (custom cursor, film grain, preloader).
+ * Each effect is intentionally fail-safe: it only applies when the
+ * supporting component has mounted (e.g. the native cursor is hidden
+ * via `.zyn-cursor-active` on <html>, never unconditionally).
+ */
+
+/* Native cursor hidden only once the custom cursor has mounted. */
+html.zyn-cursor-active,
+html.zyn-cursor-active * {
+  cursor: none !important;
+}
+
+/* Custom cursor layers */
+.zyn-cursor-dot,
+.zyn-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  border-radius: 9999px;
+  will-change: transform;
+  z-index: 9999;
+}
+
+.zyn-cursor-dot {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  background: var(--color-primary);
+  box-shadow: 0 0 12px color-mix(in oklab, var(--color-primary) 70%, transparent);
+}
+
+.zyn-cursor-ring {
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 1px solid color-mix(in oklab, var(--color-primary) 60%, transparent);
+  background: color-mix(in oklab, var(--color-primary) 6%, transparent);
+  transition:
+    width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    height 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    margin 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.25s ease,
+    background-color 0.25s ease;
+}
+
+.zyn-cursor-ring.is-active {
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  border-color: color-mix(in oklab, var(--color-accent) 70%, transparent);
+  background: color-mix(in oklab, var(--color-accent) 10%, transparent);
+}
+
+/* Film grain overlay */
+.zyn-grain {
+  position: fixed;
+  inset: -50%;
+  pointer-events: none;
+  z-index: 70;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain-shift 0.7s steps(4) infinite;
+}
+
+@keyframes grain-shift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  25% {
+    transform: translate3d(-6%, 4%, 0);
+  }
+  50% {
+    transform: translate3d(5%, -6%, 0);
+  }
+  75% {
+    transform: translate3d(-4%, -3%, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Preloader */
+.zyn-preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background-color: var(--color-background);
+}
+
+.zyn-preloader-mark {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: 0.45em;
+  color: var(--color-primary);
+  animation: preloader-pulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes preloader-pulse {
+  from {
+    opacity: 0.35;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zyn-grain {
+    animation: none;
+  }
+
+  .zyn-preloader-mark {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/*
  * Performance budget for small / low-power screens.
  *
  * backdrop-filter is one of the most expensive effects on mobile GPUs —
@@ -278,6 +403,10 @@
   }
 
   .float-slow {
+    animation: none;
+  }
+
+  .zyn-grain {
     animation: none;
   }
 

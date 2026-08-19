@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FolderOpen, LogOut, MessageSquareQuote, Settings2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
 import { isAdmin } from "@/lib/works.functions";
+import { logoutOwner } from "@/lib/auth.functions";
 import { WorksAdmin } from "@/components/admin/WorksAdmin";
 import { TestimonialsAdmin } from "@/components/admin/TestimonialsAdmin";
 import { ContentAdmin } from "@/components/admin/ContentAdmin";
@@ -36,23 +36,34 @@ function AdminPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const admin = useServerFn(isAdmin);
+  const logout = useServerFn(logoutOwner);
   const [tab, setTab] = useState<Tab>("works");
 
   const adminQuery = useQuery({ queryKey: ["is-admin"], queryFn: () => admin() });
 
+  // Not signed in (or the session expired) — send back to the sign-in page.
+  useEffect(() => {
+    if (adminQuery.isError) {
+      navigate({ to: "/auth" });
+    }
+  }, [adminQuery.isError, navigate]);
+
   const signOut = async () => {
-    await supabase.auth.signOut();
-    qc.clear();
-    await navigate({ to: "/auth" });
+    try {
+      await logout();
+    } finally {
+      qc.clear();
+      await navigate({ to: "/auth" });
+    }
   };
 
-  if (adminQuery.isSuccess && adminQuery.data === false) {
+  if (adminQuery.isSuccess && adminQuery.data !== true) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4 text-center">
         <div className="glass-card max-w-sm rounded-2xl p-8">
           <h1 className="font-display text-xl font-bold">No admin access</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            This account isn&apos;t an admin, so it can&apos;t edit the site.
+            This session doesn&apos;t have admin access.
           </p>
           <button
             onClick={signOut}

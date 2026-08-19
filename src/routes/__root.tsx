@@ -11,6 +11,9 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { Cursor } from "../components/Cursor";
+import { Grain } from "../components/Grain";
+import { Preloader } from "../components/Preloader";
 
 function NotFoundComponent() {
   return (
@@ -80,8 +83,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "ZYN — Roblox QA Tester & Community Specialist" },
       {
         name: "description",
-        content:
-          "Freelance Roblox QA testing, community management, game analysis and SFX design.",
+        content: "Freelance Roblox QA testing, community management, game analysis and SFX design.",
       },
       { name: "author", content: "ZYN" },
       { property: "og:type", content: "website" },
@@ -136,6 +138,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      {/* Global interactive effects (each is fail-safe and skips itself on
+          touch / reduced-motion). */}
+      <Preloader />
+      <Cursor />
+      <Grain />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
     </QueryClientProvider>

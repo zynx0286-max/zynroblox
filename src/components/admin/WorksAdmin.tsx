@@ -427,7 +427,7 @@ function WorkMediaPanel({ work, onError }: { work: DbWork; onError: (err: unknow
     const accept = type === "image" ? "image/*" : type === "audio" ? "audio/*" : "video/*";
     setUploading(type);
     try {
-      const url = await pickAndUpload(`work-media/${work.slug}`, accept);
+      const url = await pickAndUpload(accept);
       await add({
         data: { workId: work.id, mediaType: type, url, caption: "", sortOrder: media.length },
       });

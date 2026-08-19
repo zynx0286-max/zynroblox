@@ -1,9 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
+import { deleteCookie, setCookie } from "@tanstack/react-start/server";
 import { z } from "zod";
+import { COOKIE_NAME, COOKIE_OPTIONS, createSessionToken } from "@/lib/owner-session";
 
 // Owner-only admin gate. The password never ships to the browser — it is
-// checked here on the server. Override via the `ADMIN_PASSWORD` env var in
-// the Lovable dashboard; the fallback matches the requested login.
+// checked here on the server. Override via the `ADMIN_PASSWORD` env var; the
+// fallback is the default password.
 const OWNER_USERNAME = "zynx0286";
 const OWNER_EMAIL = "zynx0286@gmail.com";
 const ADMIN_PASSWORD = process.env["ADMIN_PASSWORD"] ?? "Saibaba@1";
@@ -13,7 +15,7 @@ const credentialsSchema = z.object({
   password: z.string().min(1).max(200),
 });
 
-export const verifyOwner = createServerFn({ method: "POST" })
+export const loginOwner = createServerFn({ method: "POST" })
   .validator((data: unknown) => credentialsSchema.parse(data))
   .handler(async ({ data }) => {
     const username = data.username.trim().toLowerCase();
@@ -26,5 +28,11 @@ export const verifyOwner = createServerFn({ method: "POST" })
       return { ok: false as const };
     }
 
-    return { ok: true as const, email: OWNER_EMAIL };
+    setCookie(COOKIE_NAME, await createSessionToken(), COOKIE_OPTIONS);
+    return { ok: true as const };
   });
+
+export const logoutOwner = createServerFn({ method: "POST" }).handler(async () => {
+  deleteCookie(COOKIE_NAME, { path: "/" });
+  return { ok: true as const };
+});

@@ -2,9 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Loader2, LogIn, ArrowLeft, Lock, User } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
-import { captureError } from "@/lib/sentry";
-import { verifyOwner } from "@/lib/auth.functions";
+import { loginOwner } from "@/lib/auth.functions";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -24,72 +22,26 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const check = useServerFn(verifyOwner);
+  const login = useServerFn(loginOwner);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setNotice(null);
     setBusy(true);
     try {
-      // 1. Server-side owner gate (username + ADMIN_PASSWORD, fallback "Saibaba@1").
-      const gate = await check({ data: { username, password } });
-      if (!gate.ok) {
+      const res = await login({ data: { username, password } });
+      if (!res.ok) {
         setError("Invalid username or password.");
         return;
       }
-
-      // 2. Sign in to Supabase. The admin panel's server functions require a
-      //    real Supabase session token, so we need an owner account. If it
-      //    doesn't exist yet, create it on the fly with the password just typed
-      //    (the "first admin" trigger in Supabase grants it the admin role).
-      let { error: signInErr } = await supabase.auth.signInWithPassword({
-        email: gate.email,
-        password,
-      });
-
-      if (signInErr && /invalid login credentials/i.test(signInErr.message)) {
-        const { error: upErr } = await supabase.auth.signUp({ email: gate.email, password });
-        if (upErr) {
-          if (/already registered/i.test(upErr.message)) {
-            setError(
-              "This owner account already exists but the password didn't match. " +
-                "Reset it in the Supabase dashboard (Authentication → Users → Reset password), " +
-                "then sign in again.",
-            );
-          } else {
-            throw upErr;
-          }
-          return;
-        }
-        // Re-sign-in after creating the account.
-        ({ error: signInErr } = await supabase.auth.signInWithPassword({
-          email: gate.email,
-          password,
-        }));
-        if (!signInErr) {
-          const { data: sessionData } = await supabase.auth.getSession();
-          if (!sessionData.session) {
-            setNotice(
-              "Owner account created. Check zynx0286@gmail.com, click the confirmation link, " +
-                "then sign in again with the same password.",
-            );
-            return;
-          }
-        }
-      }
-      if (signInErr) throw signInErr;
-
       await navigate({ to: "/admin" });
     } catch (err) {
-      captureError(err, { area: "admin", action: "signin" });
-      setError(err instanceof Error ? `Sign in failed: ${err.message}` : "Sign in failed");
+      setError(err instanceof Error ? err.message : "Sign in failed");
     } finally {
       setBusy(false);
     }
@@ -154,11 +106,6 @@ function AuthPage() {
           </div>
 
           {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
-          {notice ? (
-            <p className="mt-4 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-xs">
-              {notice}
-            </p>
-          ) : null}
 
           <button
             type="submit"
@@ -171,7 +118,7 @@ function AuthPage() {
         </form>
 
         <p className="mt-5 text-center text-xs text-muted-foreground">
-          Owner only. Your first sign-in creates the admin account automatically.
+          Owner only. Signed in with the site admin password.
         </p>
       </div>
     </div>
