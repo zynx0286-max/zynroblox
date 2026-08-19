@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, LayoutGrid } from "lucide-react";
 import { WorkCard } from "@/components/WorkCard";
-import { works } from "@/data/works";
+import type { Work } from "@/data/works";
 import { Reveal } from "@/components/Reveal";
+import type { WorkPreviewSettings } from "@/lib/site-settings";
 
-export function WorkPreview() {
+export function WorkPreview({ works, settings }: { works: Work[]; settings: WorkPreviewSettings }) {
   const preview = works.filter((w) => !w.featured).slice(0, 6);
 
   return (
@@ -14,12 +15,8 @@ export function WorkPreview() {
           <p className="font-display text-[0.7rem] tracking-[0.3em] text-primary uppercase">
             My Work
           </p>
-          <h2 className="mt-4 font-display text-3xl font-bold sm:text-4xl">
-            Projects & Case Studies
-          </h2>
-          <p className="mt-3 text-muted-foreground">
-            Click any card to view the project on Roblox or visit the community page.
-          </p>
+          <h2 className="mt-4 font-display text-3xl font-bold sm:text-4xl">{settings.heading}</h2>
+          <p className="mt-3 text-muted-foreground">{settings.copy}</p>
         </div>
 
         <Link
@@ -27,7 +24,7 @@ export function WorkPreview() {
           className="group inline-flex w-full items-center justify-center gap-3 rounded-full bg-primary px-6 py-4 font-display text-base font-bold sm:w-auto sm:px-8 text-primary-foreground shadow-[var(--shadow-glow)] transition-transform duration-300 hover:scale-[1.03]"
         >
           <LayoutGrid className="size-5" />
-          View all {works.length} projects
+          {settings.ctaLabel} {works.length} projects
           <ArrowRight className="size-5 transition-transform group-hover:translate-x-1" />
         </Link>
       </Reveal>

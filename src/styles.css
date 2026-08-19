@@ -262,3 +262,27 @@
   }
 }
 
+/*
+ * Performance budget for small / low-power screens.
+ *
+ * backdrop-filter is one of the most expensive effects on mobile GPUs —
+ * especially when many `glass-card` surfaces are on screen at once. Drop the
+ * blur radius and disable the always-on float animation below `lg` so low-end
+ * phones stay smooth. On bigger screens the heavier glass look is preserved.
+ */
+@media (max-width: 1023px) {
+  .glass,
+  .glass-strong,
+  .glass-card {
+    backdrop-filter: blur(6px) saturate(120%);
+  }
+
+  .float-slow {
+    animation: none;
+  }
+
+  .hero-glow {
+    background-image: none;
+  }
+}
+

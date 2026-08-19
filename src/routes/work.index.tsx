@@ -5,7 +5,8 @@ import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { WorkCard } from "@/components/WorkCard";
 import { Reveal } from "@/components/Reveal";
-import { CATEGORIES, works, SITE_URL } from "@/data/works";
+import { CATEGORIES, SITE_URL } from "@/data/works";
+import { getPublicWorks } from "@/lib/public-data";
 
 const PAGE_TITLE = "Roblox Work Archive — QA Testing, SFX & Community | ZYN";
 const PAGE_DESC =
@@ -14,6 +15,7 @@ const PAGE_DESC =
 export type WorkSearch = { q?: string; cat?: string };
 
 export const Route = createFileRoute("/work/")({
+  loader: async () => ({ works: await getPublicWorks() }),
   validateSearch: (search: Record<string, unknown>): WorkSearch => {
     const out: WorkSearch = {};
     if (typeof search["q"] === "string" && search["q"]) out.q = search["q"];
@@ -21,39 +23,43 @@ export const Route = createFileRoute("/work/")({
       out.cat = search["cat"];
     return out;
   },
-  head: () => ({
-    meta: [
-      { title: PAGE_TITLE },
-      { name: "description", content: PAGE_DESC },
-      { property: "og:title", content: PAGE_TITLE },
-      { property: "og:description", content: PAGE_DESC },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: `${SITE_URL}/work` },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [{ rel: "canonical", href: `${SITE_URL}/work` }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "CollectionPage",
-          name: PAGE_TITLE,
-          description: PAGE_DESC,
-          url: `${SITE_URL}/work`,
-          hasPart: works.map((w) => ({
-            "@type": "CreativeWork",
-            name: w.title,
-            url: `${SITE_URL}/work/${w.slug}`,
-          })),
-        }),
-      },
-    ],
-  }),
+  head: ({ loaderData }) => {
+    const works = loaderData?.works ?? [];
+    return {
+      meta: [
+        { title: PAGE_TITLE },
+        { name: "description", content: PAGE_DESC },
+        { property: "og:title", content: PAGE_TITLE },
+        { property: "og:description", content: PAGE_DESC },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: `${SITE_URL}/work` },
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
+      links: [{ rel: "canonical", href: `${SITE_URL}/work` }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: PAGE_TITLE,
+            description: PAGE_DESC,
+            url: `${SITE_URL}/work`,
+            hasPart: works.map((w) => ({
+              "@type": "CreativeWork",
+              name: w.title,
+              url: `${SITE_URL}/work/${w.slug}`,
+            })),
+          }),
+        },
+      ],
+    };
+  },
   component: WorkPage,
 });
 
 function WorkPage() {
+  const { works } = Route.useLoaderData();
   const search = Route.useSearch();
   const q = search.q ?? "";
   const cat = search.cat ?? "All Work";
@@ -71,7 +77,7 @@ function WorkPage() {
     const map = new Map<string, number>([["All Work", works.length]]);
     for (const w of works) map.set(w.category, (map.get(w.category) ?? 0) + 1);
     return map;
-  }, []);
+  }, [works]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -86,7 +92,7 @@ function WorkPage() {
         w.tags.some((t) => t.toLowerCase().includes(needle));
       return matchesCategory && matchesQuery;
     });
-  }, [q, cat]);
+  }, [q, cat, works]);
 
   const filters: string[] = ["All Work", ...CATEGORIES];
 

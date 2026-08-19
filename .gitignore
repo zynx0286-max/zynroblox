@@ -16,6 +16,13 @@ dist-ssr
 .nitro
 *.local
 
+# Environment — only non-secret, public values are stored in .env
+# (Supabase publishable key + project URL). Keep any real secrets (service
+# role key, admin password) out of git and in platform env vars instead.
+.env.local
+.env.*.local
+!.env.example
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

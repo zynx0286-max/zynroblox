@@ -44,6 +44,7 @@ export function GlassImage({
           src={src}
           alt={alt}
           loading="lazy"
+          decoding="async"
           className="h-full w-full object-cover opacity-90 transition-all duration-500 group-hover:scale-[1.04] group-hover:opacity-100"
         />
       ) : (

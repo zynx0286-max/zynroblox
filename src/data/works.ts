@@ -1,39 +1,35 @@
-import batALuckyBlock from "@/assets/bat-a-lucky-block.png.asset.json";
-import bonfireSimulator from "@/assets/bonfire-simulator.png.asset.json";
-import carpetCleaning from "@/assets/carpet-cleaning-simulator.png.asset.json";
-import chefs from "@/assets/chefs.png.asset.json";
-import cleanThePlushieStore from "@/assets/clean-the-plushie-store.png.asset.json";
-import cleanTheStores from "@/assets/clean-the-stores.png.asset.json";
-import darkVsLight from "@/assets/dark-vs-light.png.asset.json";
-import engineria from "@/assets/engineria-project-x.png.asset.json";
-import fireToBurn from "@/assets/fire-to-burn.png.asset.json";
-import fluxwerk from "@/assets/fluxwerk.png.asset.json";
-import fortify from "@/assets/fortify-tower-defense.png.asset.json";
-import fuseBeasts from "@/assets/fuse-beasts.png.asset.json";
-import hammerFishing from "@/assets/hammer-fishing.png.asset.json";
-import headTap from "@/assets/head-tap.png.asset.json";
-import higherElites from "@/assets/higher-elites.png.asset.json";
-import horizonQa from "@/assets/horizon-qa.png.asset.json";
-import killer from "@/assets/killer.png.asset.json";
-import lostAtSea from "@/assets/lost-at-sea.png.asset.json";
-import mineAndCraft from "@/assets/mine-and-craft.png.asset.json";
-import powProductions from "@/assets/pow-productions.png.asset.json";
-import realOrFake from "@/assets/real-or-fake.png.asset.json";
-import rollAndCook from "@/assets/roll-and-cook.png.asset.json";
-import saberPerClick from "@/assets/saber-per-click.png.asset.json";
-import squishyCardFarm from "@/assets/squishy-card-farm.png.asset.json";
-import starRealm from "@/assets/star-realm.png.asset.json";
-import surviveSlimes from "@/assets/survive-and-save-slimes.png.asset.json";
-import zaeStudios from "@/assets/zae-studios.png.asset.json";
+import batALuckyBlock from "@/assets/bat-a-lucky-block.png";
+import bonfireSimulator from "@/assets/bonfire-simulator.png";
+import carpetCleaning from "@/assets/carpet-cleaning-simulator.png";
+import chefs from "@/assets/chefs.png";
+import cleanThePlushieStore from "@/assets/clean-the-plushie-store.png";
+import cleanTheStores from "@/assets/clean-the-stores.png";
+import darkVsLight from "@/assets/dark-vs-light.png";
+import engineria from "@/assets/engineria-project-x.png";
+import fireToBurn from "@/assets/fire-to-burn.png";
+import fluxwerk from "@/assets/fluxwerk.png";
+import fortify from "@/assets/fortify-tower-defense.png";
+import fuseBeasts from "@/assets/fuse-beasts.png";
+import hammerFishing from "@/assets/hammer-fishing.png";
+import headTap from "@/assets/head-tap.png";
+import higherElites from "@/assets/higher-elites.png";
+import horizonQa from "@/assets/horizon-qa.png";
+import killer from "@/assets/killer.png";
+import lostAtSea from "@/assets/lost-at-sea.png";
+import mineAndCraft from "@/assets/mine-and-craft.png";
+import powProductions from "@/assets/pow-productions.png";
+import realOrFake from "@/assets/real-or-fake.png";
+import rollAndCook from "@/assets/roll-and-cook.png";
+import saberPerClick from "@/assets/saber-per-click.png";
+import squishyCardFarm from "@/assets/squishy-card-farm.png";
+import starRealm from "@/assets/star-realm.png";
+import surviveSlimes from "@/assets/survive-and-save-slimes.png";
+import zaeStudios from "@/assets/zae-studios.png";
 
 export const SITE_URL = "https://zynroblox.lovable.app";
 
 export type WorkCategory =
-  | "QA Testing"
-  | "Game Scout"
-  | "Community Manager"
-  | "Community Coordinator"
-  | "SFX / Audio";
+  "QA Testing" | "Game Scout" | "Community Manager" | "Community Coordinator" | "SFX / Audio";
 
 export type Work = {
   slug: string;
@@ -100,7 +96,7 @@ export const works: Work[] = [
     tags: ["Physics Testing", "Hitbox QA"],
     href: "https://www.roblox.com/games/76627283311558/Hammer-Fishing",
     linkLabel: "View on Roblox",
-    image: hammerFishing.url,
+    image: hammerFishing,
   },
   {
     slug: "saber-per-click",
@@ -112,7 +108,7 @@ export const works: Work[] = [
     tags: ["Progression QA", "Idle Loop"],
     href: "https://www.roblox.com/games/135464400227494/1-Saber-Per-Click",
     linkLabel: "View on Roblox",
-    image: saberPerClick.url,
+    image: saberPerClick,
   },
   {
     slug: "fuse-beasts",
@@ -124,7 +120,7 @@ export const works: Work[] = [
     tags: ["Stat Testing", "Fusion Bugs"],
     href: "https://www.roblox.com/games/108393667410597/Fuse-Beasts",
     linkLabel: "View on Roblox",
-    image: fuseBeasts.url,
+    image: fuseBeasts,
   },
   {
     slug: "clean-the-stores",
@@ -136,7 +132,7 @@ export const works: Work[] = [
     tags: ["Task Logic", "Prompt QA"],
     href: "https://www.roblox.com/games/139422634028895/Clean-The-Stores",
     linkLabel: "View on Roblox",
-    image: cleanTheStores.url,
+    image: cleanTheStores,
   },
   {
     slug: "clean-the-plushie-store",
@@ -148,7 +144,7 @@ export const works: Work[] = [
     tags: ["Loop Testing", "Reward QA"],
     href: "https://www.roblox.com/games/140213417266552/Clean-the-Plushie-Store",
     linkLabel: "View on Roblox",
-    image: cleanThePlushieStore.url,
+    image: cleanThePlushieStore,
   },
   {
     slug: "mine-and-craft",
@@ -160,7 +156,7 @@ export const works: Work[] = [
     tags: ["Crafting QA", "Inventory Testing"],
     href: "https://www.roblox.com/games/82792613389716/Mine-Craft",
     linkLabel: "View on Roblox",
-    image: mineAndCraft.url,
+    image: mineAndCraft,
   },
   {
     slug: "killer",
@@ -172,7 +168,7 @@ export const works: Work[] = [
     tags: ["Round Flow", "Hit Registration"],
     href: "https://www.roblox.com/games/127829441663442/KILLER",
     linkLabel: "View on Roblox",
-    image: killer.url,
+    image: killer,
   },
   {
     slug: "carpet-cleaning-simulator",
@@ -184,7 +180,7 @@ export const works: Work[] = [
     tags: ["Simulator QA", "Economy Testing"],
     href: "https://www.roblox.com/games/124374448373637/Carpet-Cleaning-Simulator",
     linkLabel: "View on Roblox",
-    image: carpetCleaning.url,
+    image: carpetCleaning,
   },
   {
     slug: "fire-to-burn",
@@ -196,43 +192,40 @@ export const works: Work[] = [
     tags: ["Pre-release QA", "Performance"],
     href: "https://www.roblox.com/games/128817055149531/Fire-To-Burn-Testing-Place",
     linkLabel: "View on Roblox",
-    image: fireToBurn.url,
+    image: fireToBurn,
   },
   {
     slug: "bonfire-simulator",
     title: "Bonfire Simulator",
     category: "QA Testing",
     role: "QA Tester",
-    description:
-      "QA testing on fuel mechanics, upgrade pacing and offline progress handling.",
+    description: "QA testing on fuel mechanics, upgrade pacing and offline progress handling.",
     tags: ["Simulator QA", "Save System"],
     href: "https://www.roblox.com/games/118453620477435/Bonfire-Simulator",
     linkLabel: "View on Roblox",
-    image: bonfireSimulator.url,
+    image: bonfireSimulator,
   },
   {
     slug: "roll-and-cook",
     title: "Roll and Cook",
     category: "QA Testing",
     role: "QA Tester",
-    description:
-      "QA testing on cooking timers, recipe validation and order fulfilment edge cases.",
+    description: "QA testing on cooking timers, recipe validation and order fulfilment edge cases.",
     tags: ["Timing QA", "Recipe Logic"],
     href: "https://www.roblox.com/games/76324403646826/Roll-and-Cook",
     linkLabel: "View on Roblox",
-    image: rollAndCook.url,
+    image: rollAndCook,
   },
   {
     slug: "chefs",
     title: "Chefs!",
     category: "QA Testing",
     role: "QA Tester",
-    description:
-      "QA testing on multiplayer kitchen sync, order queues and customer AI behaviour.",
+    description: "QA testing on multiplayer kitchen sync, order queues and customer AI behaviour.",
     tags: ["Multiplayer Sync", "AI Testing"],
     href: "https://www.roblox.com/games/95619050204839/Chefs",
     linkLabel: "View on Roblox",
-    image: chefs.url,
+    image: chefs,
   },
   {
     slug: "squishy-card-farm",
@@ -244,7 +237,7 @@ export const works: Work[] = [
     tags: ["Drop Rate QA", "Inventory Testing"],
     href: "https://www.roblox.com/games/74595134564362/Squishy-Card-Farm",
     linkLabel: "View on Roblox",
-    image: squishyCardFarm.url,
+    image: squishyCardFarm,
   },
   {
     slug: "dark-vs-light",
@@ -256,7 +249,7 @@ export const works: Work[] = [
     tags: ["PvP Testing", "Balance QA"],
     href: "https://www.roblox.com/games/132840462842306/Dark-vs-Light",
     linkLabel: "View on Roblox",
-    image: darkVsLight.url,
+    image: darkVsLight,
   },
   {
     slug: "head-tap",
@@ -268,7 +261,7 @@ export const works: Work[] = [
     tags: ["Input Testing", "Gameplay Testing"],
     href: "https://www.roblox.com/games/124673719670870/HEAD-TAP",
     linkLabel: "View on Roblox",
-    image: headTap.url,
+    image: headTap,
   },
   {
     slug: "engineria-project-x",
@@ -280,7 +273,7 @@ export const works: Work[] = [
     tags: ["Bug Reports", "Gameplay Testing"],
     href: "https://www.roblox.com/games/131306380730931/Engineria-Project-X",
     linkLabel: "View on Roblox",
-    image: engineria.url,
+    image: engineria,
   },
   {
     slug: "real-or-fake",
@@ -292,7 +285,7 @@ export const works: Work[] = [
     tags: ["UI Testing", "Logic Bugs"],
     href: "https://www.roblox.com/games/76003622011064/Real-Or-Fake",
     linkLabel: "View on Roblox",
-    image: realOrFake.url,
+    image: realOrFake,
   },
   {
     slug: "lost-at-sea",
@@ -304,7 +297,7 @@ export const works: Work[] = [
     tags: ["Multiplayer Testing", "Spawn Bugs"],
     href: "https://www.roblox.com/games/77718866164617/Lost-At-Sea",
     linkLabel: "View on Roblox",
-    image: lostAtSea.url,
+    image: lostAtSea,
   },
   {
     slug: "bat-a-lucky-block",
@@ -316,7 +309,7 @@ export const works: Work[] = [
     tags: ["Loot System QA", "Regression Testing"],
     href: "https://www.roblox.com/games/121566235598425/Bat-A-Lucky-Block",
     linkLabel: "View on Roblox",
-    image: batALuckyBlock.url,
+    image: batALuckyBlock,
   },
   {
     slug: "survive-and-save-slimes",
@@ -328,7 +321,7 @@ export const works: Work[] = [
     tags: ["AI Testing", "Save System"],
     href: "https://www.roblox.com/games/128747993322083/Survive-and-Save-Slimes",
     linkLabel: "View on Roblox",
-    image: surviveSlimes.url,
+    image: surviveSlimes,
   },
   {
     slug: "fortify-tower-defense",
@@ -340,7 +333,7 @@ export const works: Work[] = [
     tags: ["Wave Testing", "Balance QA"],
     href: "https://www.roblox.com/users/1752054483/profile",
     linkLabel: "View on Roblox",
-    image: fortify.url,
+    image: fortify,
   },
 
   // ---------- QA communities / studios ----------
@@ -354,7 +347,7 @@ export const works: Work[] = [
     tags: ["Studio QA", "Bug Reports"],
     href: "https://www.roblox.com/communities/1112217926/Fluxwerk#!/about",
     linkLabel: "View Community",
-    image: fluxwerk.url,
+    image: fluxwerk,
   },
   {
     slug: "star-realm",
@@ -366,7 +359,7 @@ export const works: Work[] = [
     tags: ["Release QA", "Regression Testing"],
     href: "https://www.roblox.com/communities/986454152/Star-Realm#!/about",
     linkLabel: "View Community",
-    image: starRealm.url,
+    image: starRealm,
   },
   {
     slug: "pow-productions",
@@ -378,7 +371,7 @@ export const works: Work[] = [
     tags: ["Studio QA", "UI Testing"],
     href: "https://www.roblox.com/communities/33152116",
     linkLabel: "View Community",
-    image: powProductions.url,
+    image: powProductions,
   },
   {
     slug: "horizon-qa",
@@ -390,7 +383,7 @@ export const works: Work[] = [
     tags: ["QA Community", "Group Testing"],
     href: "https://www.roblox.com/communities/691606265/Horizon-QA#!/about",
     linkLabel: "View Community",
-    image: horizonQa.url,
+    image: horizonQa,
   },
 
   // ---------- Community work ----------
@@ -415,7 +408,7 @@ export const works: Work[] = [
     tags: ["Community Manager", "Discord"],
     href: "https://zae-build-core.base44.app/",
     linkLabel: "View Studio",
-    image: zaeStudios.url,
+    image: zaeStudios,
   },
   {
     slug: "higher-elites",
@@ -427,7 +420,7 @@ export const works: Work[] = [
     tags: ["Coordinator", "Event Planning"],
     href: "https://www.roblox.com/communities/1095211077/Higher-Elites#!/about",
     linkLabel: "View Community",
-    image: higherElites.url,
+    image: higherElites,
   },
   {
     slug: "unnamed-community",

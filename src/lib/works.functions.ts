@@ -134,7 +134,7 @@ export const isAdmin = createServerFn({ method: "GET" })
 
 export const createWork = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => workInput.parse(data))
+  .validator((data: unknown) => workInput.parse(data))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("works").insert(toRow(data));
     if (error) throw new Error(error.message);
@@ -143,7 +143,7 @@ export const createWork = createServerFn({ method: "POST" })
 
 export const updateWork = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => workInput.extend({ id: z.string().uuid() }).parse(data))
+  .validator((data: unknown) => workInput.extend({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
     const { id, ...rest } = data;
     const { error } = await context.supabase.from("works").update(toRow(rest)).eq("id", id);
@@ -153,7 +153,7 @@ export const updateWork = createServerFn({ method: "POST" })
 
 export const deleteWork = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .validator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("works").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -162,7 +162,7 @@ export const deleteWork = createServerFn({ method: "POST" })
 
 export const reorderWork = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) =>
+  .validator((data: unknown) =>
     z.object({ id: z.string().uuid(), sortOrder: z.number().int().min(0).max(9999) }).parse(data),
   )
   .handler(async ({ data, context }) => {

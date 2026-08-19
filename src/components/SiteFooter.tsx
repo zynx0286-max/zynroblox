@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import robloxLogo from "@/assets/roblox-logo.png.asset.json";
+import robloxLogo from "@/assets/roblox-logo.png";
 
 export function SiteFooter() {
   return (
@@ -7,7 +7,14 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 py-10 sm:flex-row sm:justify-between">
         <Link to="/" className="flex items-center gap-2 font-display tracking-[0.2em]">
           <span className="glass-card flex size-7 items-center justify-center overflow-hidden rounded-md">
-            <img src={robloxLogo.url} alt="Roblox logo mark" width={28} height={28} className="size-4" />
+            <img
+              src={robloxLogo}
+              alt="Roblox logo mark"
+              width={28}
+              height={28}
+              decoding="async"
+              className="size-4"
+            />
           </span>
           ZYN
         </Link>
@@ -25,11 +32,12 @@ export function SiteFooter() {
           <Link to="/" hash="contact" className="hover:text-foreground">
             Contact
           </Link>
+          <Link to="/auth" className="text-muted-foreground/60 hover:text-foreground">
+            Admin
+          </Link>
         </nav>
 
-        <p className="text-xs text-muted-foreground">
-          Discord: @acczyn
-        </p>
+        <p className="text-xs text-muted-foreground">Discord: @acczyn</p>
       </div>
     </footer>
   );

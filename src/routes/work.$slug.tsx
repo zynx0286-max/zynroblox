@@ -4,15 +4,18 @@ import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { GlassImage } from "@/components/GlassFrame";
 import { WorkCard } from "@/components/WorkCard";
+import { WorkMedia } from "@/components/WorkMedia";
 import { Reveal } from "@/components/Reveal";
 import { track } from "@/lib/analytics";
-import { getWork, works, SITE_URL, type Work } from "@/data/works";
+import { getPublicWorks, getPublicMedia } from "@/lib/public-data";
+import { SITE_URL, type Work } from "@/data/works";
 
 export const Route = createFileRoute("/work/$slug")({
-  loader: ({ params }) => {
-    const work = getWork(params.slug);
+  loader: async ({ params }) => {
+    const [works, media] = await Promise.all([getPublicWorks(), getPublicMedia()]);
+    const work = works.find((w) => w.slug === params.slug);
     if (!work) throw notFound();
-    return { work };
+    return { work, works, media: media.filter((m) => m.workId === work.id) };
   },
   head: ({ params, loaderData }) => {
     const url = `${SITE_URL}/work/${params.slug}`;
@@ -88,7 +91,7 @@ function WorkNotFound() {
 }
 
 function WorkDetail() {
-  const { work } = Route.useLoaderData() as { work: Work };
+  const { work, works, media } = Route.useLoaderData();
   const related = works
     .filter((w) => w.slug !== work.slug && w.category === work.category)
     .slice(0, 3);
@@ -169,6 +172,8 @@ function WorkDetail() {
           </div>
         </section>
 
+        <WorkMedia media={media} />
+
         {related.length ? (
           <section className="mx-auto max-w-6xl px-4 py-16">
             <Reveal>
@@ -191,3 +196,5 @@ function WorkDetail() {
     </div>
   );
 }
+
+export type { Work };

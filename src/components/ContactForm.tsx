@@ -152,7 +152,7 @@ export function ContactForm() {
     <form
       onSubmit={onSubmit}
       noValidate
-      className="glass-card rounded-2xl p-5 text-left sm:p-8"
+      className="glass-card relative rounded-2xl p-5 text-left sm:p-8"
     >
       {/* Honeypot — hidden from humans, irresistible to bots */}
       <div aria-hidden className="pointer-events-none absolute -left-[9999px] opacity-0">

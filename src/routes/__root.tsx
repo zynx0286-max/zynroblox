@@ -117,6 +117,11 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <meta name="theme-color" content="#14151c" />
+        {/* No-JS safety net: scroll-reveal content must never stay invisible. */}
+        <noscript>
+          <style>{".reveal{opacity:1!important;transform:none!important}"}</style>
+        </noscript>
       </head>
       <body>
         {children}

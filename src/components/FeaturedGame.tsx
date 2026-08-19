@@ -1,13 +1,9 @@
 import { Youtube, Star } from "lucide-react";
 import { GlassImage } from "@/components/GlassFrame";
-import { works } from "@/data/works";
+import type { Work } from "@/data/works";
+import type { FeaturedSettings } from "@/lib/site-settings";
 
-const creators = [
-  { name: "KreekCraft", subs: "6.5M subs" },
-  { name: "Caylus", subs: "9.8M subs" },
-];
-
-export function FeaturedGame() {
+export function FeaturedGame({ works, settings }: { works: Work[]; settings: FeaturedSettings }) {
   const featured = works.find((w) => w.featured);
   if (!featured) return null;
 
@@ -23,13 +19,13 @@ export function FeaturedGame() {
         <div>
           <p className="inline-flex items-center gap-2 rounded-full bg-primary/15 px-3 py-1 font-display text-[0.65rem] tracking-[0.25em] text-primary uppercase">
             <Star className="size-3" />
-            Featured Game
+            {settings.badge}
           </p>
           <h2 className="mt-4 font-display text-3xl font-bold">{featured.title}</h2>
           <p className="mt-3 text-muted-foreground">{featured.description}</p>
 
           <ul className="mt-6 space-y-3">
-            {creators.map((c) => (
+            {settings.creators.map((c) => (
               <li
                 key={c.name}
                 className="flex items-center gap-3 rounded-xl border border-border bg-secondary/30 px-4 py-3 text-sm"
@@ -38,7 +34,7 @@ export function FeaturedGame() {
                 <span className="font-semibold">{c.name}</span>
                 <span className="text-muted-foreground">({c.subs})</span>
                 <span className="hidden text-muted-foreground sm:inline">
-                  — made content in this game
+                  {settings.creatorNote}
                 </span>
               </li>
             ))}

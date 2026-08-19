@@ -9,16 +9,19 @@ import { Services } from "@/components/Services";
 import { FeaturedGame } from "@/components/FeaturedGame";
 import { WorkPreview } from "@/components/WorkPreview";
 import { Skills } from "@/components/Skills";
+import { Testimonials } from "@/components/Testimonials";
 import { ContactCta } from "@/components/ContactCta";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Reveal } from "@/components/Reveal";
 import { ScrollProgress } from "@/components/ScrollProgress";
+import { getPublicSiteData } from "@/lib/public-data";
 
 const TITLE = "ZYN — Roblox SFX Artist, Sound Designer & QA Tester";
 const DESC =
   "Professional Roblox SFX artist creating original ability, impact, ambience and UI sound. Also offering QA testing, community management and game research.";
 
 export const Route = createFileRoute("/")({
+  loader: async () => getPublicSiteData(),
   head: () => ({
     meta: [
       { title: TITLE },
@@ -42,12 +45,7 @@ export const Route = createFileRoute("/")({
           url: SITE_URL,
           jobTitle: "Roblox SFX Artist & Sound Designer",
           description: DESC,
-          knowsAbout: [
-            "Roblox sound design",
-            "Game SFX",
-            "QA testing",
-            "Community management",
-          ],
+          knowsAbout: ["Roblox sound design", "Game SFX", "QA testing", "Community management"],
           sameAs: ["https://discord.com/users/acczyn"],
         }),
       },
@@ -56,35 +54,38 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-
 function Index() {
+  const { works, testimonials, settings } = Route.useLoaderData();
+
   return (
     <div className="min-h-screen bg-background">
       <ScrollProgress />
       <SiteNav />
       <main>
-        <Hero />
-        <Marquee />
+        <Hero settings={settings.hero} workCount={works.length} />
+        <Marquee items={settings.marquee} />
         <Reveal as="section">
-          <Services />
+          <Services items={settings.services} />
         </Reveal>
         <Reveal as="section">
-          <FeaturedGame />
+          <FeaturedGame works={works} settings={settings.featured} />
         </Reveal>
         <Reveal as="section">
-          <About />
+          <About settings={settings.about} />
         </Reveal>
-        <WorkPreview />
+        <WorkPreview works={works} settings={settings.workPreview} />
         <Reveal as="section">
-          <Stats />
+          <Stats settings={settings.stats} />
         </Reveal>
         <Reveal as="section">
-          <Skills />
+          <Skills settings={settings.skills} />
         </Reveal>
-        <ContactCta />
+        <Reveal as="section">
+          <Testimonials testimonials={testimonials} />
+        </Reveal>
+        <ContactCta settings={settings.contact} />
       </main>
       <SiteFooter />
     </div>
   );
 }
-

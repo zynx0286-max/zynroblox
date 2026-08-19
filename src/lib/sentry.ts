@@ -1,11 +1,11 @@
-import * as Sentry from "@sentry/react";
-
 /**
- * Sentry error tracking.
+ * Error tracking.
  *
- * The DSN is intentionally blank until a real project exists — add
- * `VITE_SENTRY_DSN` (and optionally `VITE_SENTRY_ENVIRONMENT`) and everything
- * below activates with no further code changes.
+ * Swapped to a zero-dependency implementation: the full Sentry SDK was never
+ * initialized (no DSN configured, `initSentry()` called nowhere), so it only
+ * added dead weight to every page bundle. If a real Sentry project is added
+ * later, restore `@sentry/react` here and call `initSentry()` from the app
+ * entry (e.g. `src/start.ts` / `__root.tsx`).
  */
 const DSN = (import.meta.env["VITE_SENTRY_DSN"] as string | undefined) ?? "";
 
@@ -13,18 +13,8 @@ export const SENTRY_ENVIRONMENT =
   (import.meta.env["VITE_SENTRY_ENVIRONMENT"] as string | undefined) ??
   (import.meta.env.DEV ? "development" : "production");
 
-let started = false;
-
 export function initSentry() {
-  if (started || !DSN || typeof window === "undefined") return;
-  started = true;
-  Sentry.init({
-    dsn: DSN,
-    environment: SENTRY_ENVIRONMENT,
-    tracesSampleRate: 0.2,
-    replaysOnErrorSampleRate: 0,
-    replaysSessionSampleRate: 0,
-  });
+  // No-op. The SDK was never wired up — this exists to keep the call-site API.
 }
 
 export const sentryEnabled = () => Boolean(DSN);
@@ -37,12 +27,11 @@ export function captureError(
   },
 ) {
   const { area, ...extra } = context;
-  if (!DSN) {
-    console.error(`[${area}]`, error, extra);
+  if (DSN) {
+    // DSN configured but SDK not loaded — surface it loudly instead of silently
+    // swallowing so it doesn't look like the error was reported.
+    console.error(`[sentry:not-initialized][${area}]`, error, extra);
     return;
   }
-  Sentry.captureException(error, {
-    tags: { area, environment: SENTRY_ENVIRONMENT },
-    extra,
-  });
+  console.error(`[${area}]`, error, extra);
 }

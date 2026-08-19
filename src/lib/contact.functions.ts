@@ -14,17 +14,18 @@ export const contactPayloadSchema = contactSchema.extend({
   /** Honeypot: must stay empty. */
   website: z.string().max(200).optional(),
   /** Milliseconds the visitor spent on the form before submitting. */
-  elapsedMs: z.number().int().nonnegative().max(1000 * 60 * 60 * 12).optional(),
+  elapsedMs: z
+    .number()
+    .int()
+    .nonnegative()
+    .max(1000 * 60 * 60 * 12)
+    .optional(),
 });
 
 export type ContactInput = z.infer<typeof contactSchema>;
 
 const escapeHtml = (value: string) =>
-  value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 const OWNER_EMAIL = "zynx0286@gmail.com";
 const MIN_FILL_MS = 2500;
@@ -74,7 +75,7 @@ async function sendViaResend(body: Record<string, unknown>) {
 }
 
 export const sendContactMessage = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => contactPayloadSchema.parse(data))
+  .validator((data: unknown) => contactPayloadSchema.parse(data))
   .handler(async ({ data }) => {
     // 1. Honeypot — bots fill hidden fields.
     if (data.website && data.website.trim().length > 0) {

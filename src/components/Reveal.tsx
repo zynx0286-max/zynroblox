@@ -22,7 +22,10 @@ export function Reveal({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (
+      typeof IntersectionObserver === "undefined" ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
       setShown(true);
       return;
     }
@@ -66,13 +69,21 @@ export function Tilt3D({
   strength?: number | undefined;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const [scrollTilt, setScrollTilt] = useState(0);
   const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
+  const [scrollTilt, setScrollTilt] = useState(0);
+  const [canTilt, setCanTilt] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setCanTilt(
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches &&
+        !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    );
+  }, []);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!el || !canTilt) return;
 
     let frame = 0;
     const update = () => {
@@ -93,7 +104,7 @@ export function Tilt3D({
       window.removeEventListener("resize", onScroll);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [strength]);
+  }, [strength, canTilt]);
 
   const rotateX = hover ? hover.y : scrollTilt;
   const rotateY = hover ? hover.x : 0;
@@ -110,7 +121,7 @@ export function Tilt3D({
           setHover({ x: px * 12, y: -py * 12 });
         }}
         onPointerLeave={() => setHover(null)}
-        className="h-full transition-transform duration-300 ease-out will-change-transform [transform-style:preserve-3d]"
+        className="h-full transition-transform duration-300 ease-out"
         style={{
           transform: `rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg)`,
         }}
