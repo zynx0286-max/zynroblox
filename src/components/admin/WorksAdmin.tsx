@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { captureError } from "@/lib/sentry";
+import { resolveAsset } from "@/lib/assets";
 import { CATEGORIES } from "@/data/works";
 import {
   adminListWorks,
@@ -274,7 +275,7 @@ export function WorksAdmin() {
               />
               {editing.values.imageUrl ? (
                 <img
-                  src={editing.values.imageUrl}
+                  src={resolveAsset(editing.values.imageUrl)}
                   alt="Thumbnail preview"
                   loading="lazy"
                   className="mt-3 size-24 rounded-xl object-cover"
@@ -338,7 +339,7 @@ export function WorksAdmin() {
             <div className="glass-card flex flex-wrap items-center gap-3 rounded-2xl p-3 sm:p-4">
               {w.image ? (
                 <img
-                  src={w.image}
+                  src={resolveAsset(w.image)}
                   alt=""
                   width={56}
                   height={56}

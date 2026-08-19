@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { resolveAsset } from "@/lib/assets";
 
 export function GlassFrame({
   children,
@@ -10,15 +11,8 @@ export function GlassFrame({
   className?: string | undefined;
   ratio?: string | undefined;
 }) {
-
   return (
-    <div
-      className={cn(
-        "glass relative overflow-hidden rounded-xl",
-        ratio,
-        className,
-      )}
-    >
+    <div className={cn("glass relative overflow-hidden rounded-xl", ratio, className)}>
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-foreground/20" />
       {children}
     </div>
@@ -36,12 +30,11 @@ export function GlassImage({
   className?: string | undefined;
   ratio?: string | undefined;
 }) {
-
   return (
     <GlassFrame ratio={ratio} className={className}>
       {src ? (
         <img
-          src={src}
+          src={resolveAsset(src)}
           alt={alt}
           loading="lazy"
           decoding="async"

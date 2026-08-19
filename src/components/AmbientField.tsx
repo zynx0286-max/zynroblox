@@ -128,17 +128,16 @@ export function AmbientField({ className }: { className?: string | undefined }) 
     };
 
     const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
       if (!running) return;
       if (now - last >= targetFrameMs) {
         draw();
         last = now;
       }
-      raf = requestAnimationFrame(tick);
     };
 
     const onVisibility = () => {
       running = !document.hidden;
-      if (running && !raf) raf = requestAnimationFrame(tick);
     };
 
     readColor();

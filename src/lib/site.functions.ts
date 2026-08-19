@@ -106,9 +106,7 @@ export const listSiteSettings = createServerFn({ method: "GET" }).handler(
 export const saveSiteSettings = createServerFn({ method: "POST" })
   .middleware([requireOwner])
   .validator((data: unknown) =>
-    z
-      .object({ key: z.string().min(1).max(60), value: z.record(z.string(), z.unknown()) })
-      .parse(data),
+    z.object({ key: z.string().min(1).max(60), value: z.unknown() }).parse(data),
   )
   .handler(async ({ data }) => {
     await mutate((store) => {

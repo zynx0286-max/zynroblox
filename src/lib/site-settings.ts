@@ -311,45 +311,123 @@ export const DEFAULT_SETTINGS: SiteSettings = {
 
 export function mergeSettings(stored: Record<string, unknown> | undefined): SiteSettings {
   const s = stored ?? {};
-  const pick = <T>(key: string, fallback: T): T => (s[key] as T | undefined) ?? fallback;
+
+  const pickObj = (key: string): Record<string, unknown> | undefined => {
+    const v = s[key];
+    return v && typeof v === "object" && !Array.isArray(v)
+      ? (v as Record<string, unknown>)
+      : undefined;
+  };
+  const pickArr = <T>(key: string, fallback: T[]): T[] => {
+    const v = s[key];
+    return Array.isArray(v) ? (v as T[]) : fallback;
+  };
+  const pickStr = (
+    obj: Record<string, unknown> | undefined,
+    key: string,
+    fallback: string,
+  ): string => (typeof obj?.[key] === "string" ? (obj[key] as string) : fallback);
+
+  const heroRaw = pickObj("hero");
+  const heroStats = Array.isArray(heroRaw?.stats)
+    ? (heroRaw.stats as StatItem[])
+    : DEFAULT_SETTINGS.hero.stats;
+  const availabilityRaw = pickObj("hero")?.availability;
+  const availability = {
+    open:
+      availabilityRaw && typeof availabilityRaw === "object" && "open" in availabilityRaw
+        ? Boolean((availabilityRaw as Record<string, unknown>).open)
+        : DEFAULT_SETTINGS.hero.availability.open,
+    label:
+      availabilityRaw && typeof availabilityRaw === "object" && "label" in availabilityRaw
+        ? String((availabilityRaw as Record<string, unknown>).label)
+        : DEFAULT_SETTINGS.hero.availability.label,
+  };
+
+  const aboutRaw = pickObj("about");
+  const aboutPoints = Array.isArray(aboutRaw?.points)
+    ? (aboutRaw.points as string[])
+    : DEFAULT_SETTINGS.about.points;
+  const pickStat = (raw: unknown, fallback: StatItem): StatItem => {
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+      const r = raw as Record<string, unknown>;
+      return {
+        value: pickStr(r, "value", fallback.value),
+        label: pickStr(r, "label", fallback.label),
+      };
+    }
+    return fallback;
+  };
+
+  const skillsRaw = pickObj("skills");
+  const skillsItems = Array.isArray(skillsRaw?.items)
+    ? (skillsRaw.items as string[])
+    : DEFAULT_SETTINGS.skills.items;
+
+  const statsRaw = pickObj("stats");
+  const statsItems = Array.isArray(statsRaw?.items)
+    ? (statsRaw.items as StatsSettings["items"])
+    : DEFAULT_SETTINGS.stats.items;
+
+  const featuredRaw = pickObj("featured");
+  const featuredCreators = Array.isArray(featuredRaw?.creators)
+    ? (featuredRaw.creators as FeaturedSettings["creators"])
+    : DEFAULT_SETTINGS.featured.creators;
+
+  const processRaw = pickObj("process");
+  const processSteps = Array.isArray(processRaw?.steps)
+    ? (processRaw.steps as ProcessStep[])
+    : DEFAULT_SETTINGS.process.steps;
+
+  const faqRaw = pickObj("faq");
+  const faqItems = Array.isArray(faqRaw?.items)
+    ? (faqRaw.items as FaqItem[])
+    : DEFAULT_SETTINGS.faq.items;
 
   return {
     hero: {
       ...DEFAULT_SETTINGS.hero,
-      ...(pick<Partial<HeroSettings> | undefined>("hero", undefined) ?? {}),
+      ...heroRaw,
+      stats: heroStats,
+      availability,
     },
-    marquee: pick<MarqueeItem[]>("marquee", DEFAULT_SETTINGS.marquee),
-    services: pick<ServiceItem[]>("services", DEFAULT_SETTINGS.services),
+    marquee: pickArr<MarqueeItem>("marquee", DEFAULT_SETTINGS.marquee),
+    services: pickArr<ServiceItem>("services", DEFAULT_SETTINGS.services),
     about: {
       ...DEFAULT_SETTINGS.about,
-      ...(pick<Partial<AboutSettings> | undefined>("about", undefined) ?? {}),
+      ...aboutRaw,
+      points: aboutPoints,
+      stat1: pickStat(aboutRaw?.stat1, DEFAULT_SETTINGS.about.stat1),
+      stat2: pickStat(aboutRaw?.stat2, DEFAULT_SETTINGS.about.stat2),
     },
     skills: {
       ...DEFAULT_SETTINGS.skills,
-      ...(pick<Partial<SkillsSettings> | undefined>("skills", undefined) ?? {}),
+      ...skillsRaw,
+      items: skillsItems,
     },
-    stats: {
-      items: pick<StatsSettings["items"]>("stats", DEFAULT_SETTINGS.stats.items),
-    },
+    stats: { items: statsItems },
     contact: {
       ...DEFAULT_SETTINGS.contact,
-      ...(pick<Partial<ContactSettings> | undefined>("contact", undefined) ?? {}),
+      ...pickObj("contact"),
     },
     featured: {
       ...DEFAULT_SETTINGS.featured,
-      ...(pick<Partial<FeaturedSettings> | undefined>("featured", undefined) ?? {}),
+      ...featuredRaw,
+      creators: featuredCreators,
     },
     workPreview: {
       ...DEFAULT_SETTINGS.workPreview,
-      ...(pick<Partial<WorkPreviewSettings> | undefined>("workPreview", undefined) ?? {}),
+      ...pickObj("workPreview"),
     },
     process: {
       ...DEFAULT_SETTINGS.process,
-      ...(pick<Partial<ProcessSettings> | undefined>("process", undefined) ?? {}),
+      ...processRaw,
+      steps: processSteps,
     },
     faq: {
       ...DEFAULT_SETTINGS.faq,
-      ...(pick<Partial<FaqSettings> | undefined>("faq", undefined) ?? {}),
+      ...faqRaw,
+      items: faqItems,
     },
   };
 }

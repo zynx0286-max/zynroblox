@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { captureError } from "@/lib/sentry";
+import { resolveAsset } from "@/lib/assets";
 import {
   adminListTestimonials,
   createTestimonial,
@@ -223,7 +224,7 @@ export function TestimonialsAdmin() {
               <div className="mt-1.5 flex items-center gap-3">
                 {editing.values.imageUrl ? (
                   <img
-                    src={editing.values.imageUrl}
+                    src={resolveAsset(editing.values.imageUrl)}
                     alt=""
                     width={48}
                     height={48}
@@ -300,7 +301,7 @@ export function TestimonialsAdmin() {
           >
             {t.imageUrl ? (
               <img
-                src={t.imageUrl}
+                src={resolveAsset(t.imageUrl)}
                 alt=""
                 width={48}
                 height={48}

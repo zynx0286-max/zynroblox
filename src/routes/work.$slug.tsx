@@ -8,6 +8,7 @@ import { WorkMedia } from "@/components/WorkMedia";
 import { Reveal } from "@/components/Reveal";
 import { track } from "@/lib/analytics";
 import { getPublicWorks, getPublicMedia } from "@/lib/public-data";
+import { resolveAsset } from "@/lib/assets";
 import { SITE_URL, type Work } from "@/data/works";
 
 export const Route = createFileRoute("/work/$slug")({
@@ -27,7 +28,12 @@ export const Route = createFileRoute("/work/$slug")({
     const { work } = loaderData;
     const title = `${work.title} — ${work.role} | ZYN Roblox Portfolio`;
     const description = `${work.role} on ${work.title}. ${work.description}`.slice(0, 155);
-    const image = work.image ? `${SITE_URL}${work.image}` : undefined;
+    const resolved = resolveAsset(work.image);
+    const image = resolved
+      ? resolved.startsWith("http") || resolved.startsWith("data:")
+        ? resolved
+        : `${SITE_URL}${resolved}`
+      : undefined;
 
     return {
       meta: [
