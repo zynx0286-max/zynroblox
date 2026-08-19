@@ -46,6 +46,8 @@ export type Work = {
   linkLabel?: string;
   image?: string;
   featured?: boolean;
+  ccu?: number;
+  visits?: number;
 };
 
 export const CATEGORIES: WorkCategory[] = [

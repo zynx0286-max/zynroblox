@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useMotion } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 /**
@@ -18,11 +19,12 @@ export function Reveal({
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [shown, setShown] = useState(false);
+  const { reduced } = useMotion();
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (reduced) {
       setShown(true);
       return;
     }
@@ -39,7 +41,7 @@ export function Reveal({
     );
     io.observe(el);
     return () => io.disconnect();
-  }, []);
+  }, [reduced]);
 
   return (
     <Tag
@@ -68,11 +70,11 @@ export function Tilt3D({
   const ref = useRef<HTMLDivElement | null>(null);
   const [scrollTilt, setScrollTilt] = useState(0);
   const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
+  const { reduced } = useMotion();
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!el || reduced) return;
 
     let frame = 0;
     const update = () => {
@@ -93,7 +95,11 @@ export function Tilt3D({
       window.removeEventListener("resize", onScroll);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [strength]);
+  }, [reduced, strength]);
+
+  if (reduced) {
+    return <div className={cn("[perspective:1200px]", className)}>{children}</div>;
+  }
 
   const rotateX = hover ? hover.y : scrollTilt;
   const rotateY = hover ? hover.x : 0;

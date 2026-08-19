@@ -1,14 +1,17 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, Sparkles, X } from "lucide-react";
 import robloxLogo from "@/assets/roblox-logo.png.asset.json";
+import { useMotion } from "@/lib/motion";
 
-type NavLink = { label: string; to: "/" | "/work"; hash?: string };
+type NavLink = { label: string; to: "/" | "/work" | "/pricing" | "/reviews"; hash?: string };
 
 const links: NavLink[] = [
   { label: "Home", to: "/" },
   { label: "About", to: "/", hash: "about" },
   { label: "Work", to: "/work" },
+  { label: "Reviews", to: "/reviews" },
+  { label: "Pricing", to: "/pricing" },
   { label: "Contact", to: "/", hash: "contact" },
 ];
 
@@ -16,6 +19,7 @@ const links: NavLink[] = [
 export function SiteNav() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { reduced, toggle } = useMotion();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -57,6 +61,16 @@ export function SiteNav() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label={reduced ? "Enable motion" : "Reduce motion"}
+            aria-pressed={reduced}
+            onClick={toggle}
+            className="hidden items-center gap-2 rounded-full border border-border bg-background/50 px-3 py-2 font-display text-[0.65rem] tracking-[0.18em] text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+          >
+            <Sparkles className="size-3.5" />
+            {reduced ? "Motion on" : "Reduce"}
+          </button>
           <a
             href="https://discord.com/users/acczyn"
             target="_blank"
@@ -89,6 +103,17 @@ export function SiteNav() {
               {l.label}
             </Link>
           ))}
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              toggle();
+            }}
+            className="mt-1 flex items-center justify-between rounded-xl px-4 py-3 text-left font-display text-sm text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+          >
+            <span>{reduced ? "Enable motion" : "Reduce motion"}</span>
+            <Sparkles className="size-4" />
+          </button>
         </div>
       ) : null}
     </header>

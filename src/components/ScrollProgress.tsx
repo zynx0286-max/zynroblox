@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
+import { useMotion } from "@/lib/motion";
 
 export function ScrollProgress() {
   const [pct, setPct] = useState(0);
+  const { reduced } = useMotion();
 
   useEffect(() => {
+    if (reduced) return;
     let frame = 0;
     const update = () => {
       frame = 0;
@@ -21,7 +24,9 @@ export function ScrollProgress() {
       window.removeEventListener("resize", onScroll);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, []);
+  }, [reduced]);
+
+  if (reduced) return null;
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] h-0.5 bg-transparent">

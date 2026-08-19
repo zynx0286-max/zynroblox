@@ -44,6 +44,10 @@ export function GlassImage({
           src={src}
           alt={alt}
           loading="lazy"
+          decoding="async"
+          width={1200}
+          height={900}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className="h-full w-full object-cover opacity-90 transition-all duration-500 group-hover:scale-[1.04] group-hover:opacity-100"
         />
       ) : (

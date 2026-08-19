@@ -1,4 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft, ArrowUpRight, MessageCircle } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -6,13 +8,15 @@ import { GlassImage } from "@/components/GlassFrame";
 import { WorkCard } from "@/components/WorkCard";
 import { Reveal } from "@/components/Reveal";
 import { track } from "@/lib/analytics";
-import { getWork, works, SITE_URL, type Work } from "@/data/works";
+import { listWorks } from "@/lib/works.functions";
+import { SITE_URL, type Work } from "@/data/works";
 
 export const Route = createFileRoute("/work/$slug")({
-  loader: ({ params }) => {
-    const work = getWork(params.slug);
+  loader: async ({ params }) => {
+    const works = await listWorks();
+    const work = works.find((entry) => entry.slug === params.slug);
     if (!work) throw notFound();
-    return { work };
+    return { work, works };
   },
   head: ({ params, loaderData }) => {
     const url = `${SITE_URL}/work/${params.slug}`;
@@ -88,7 +92,13 @@ function WorkNotFound() {
 }
 
 function WorkDetail() {
-  const { work } = Route.useLoaderData() as { work: Work };
+  const { work, works: loaderWorks } = Route.useLoaderData() as {
+    work: Work;
+    works: Awaited<ReturnType<typeof listWorks>>;
+  };
+  const list = useServerFn(listWorks);
+  const { data: dbWorks = [] } = useQuery({ queryKey: ["works"], queryFn: () => list() });
+  const works = dbWorks.length ? dbWorks : loaderWorks;
   const related = works
     .filter((w) => w.slug !== work.slug && w.category === work.category)
     .slice(0, 3);

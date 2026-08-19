@@ -2,6 +2,45 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 
+const SHAPE_TYPES = ["circle", "square", "triangle", "diamond", "hex", "ring", "pill", "star"] as const;
+
+type ShapeType = (typeof SHAPE_TYPES)[number];
+
+type CaptchaRecord = {
+  answerIndex: number;
+  expiresAt: number;
+};
+
+const captchaStore = new Map<string, CaptchaRecord>();
+
+function makeCaptcha() {
+  const sameShape = SHAPE_TYPES[Math.floor(Math.random() * SHAPE_TYPES.length)] as ShapeType;
+  const pool = SHAPE_TYPES.filter((shape) => shape !== sameShape) as ShapeType[];
+  const oddShape = pool[Math.floor(Math.random() * pool.length)] as ShapeType;
+  const answerIndex = Math.floor(Math.random() * 9);
+  const challengeId = `shape-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+  const tiles = Array.from({ length: 9 }, (_, idx) => ({
+    id: idx,
+    shape: (idx === answerIndex ? oddShape : sameShape) as ShapeType,
+  }));
+
+  captchaStore.set(challengeId, {
+    answerIndex,
+    expiresAt: Date.now() + 1000 * 60 * 5,
+  });
+
+  return { id: challengeId, tiles };
+}
+
+export const generateContactCaptcha = createServerFn({ method: "GET" }).handler(async () => {
+  const captcha = makeCaptcha();
+  for (const [id, record] of captchaStore.entries()) {
+    if (record.expiresAt < Date.now()) captchaStore.delete(id);
+  }
+  return captcha;
+});
+
 export const contactSchema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(80),
   email: z.string().trim().email("Enter a valid email address").max(160),
@@ -15,6 +54,13 @@ export const contactPayloadSchema = contactSchema.extend({
   website: z.string().max(200).optional(),
   /** Milliseconds the visitor spent on the form before submitting. */
   elapsedMs: z.number().int().nonnegative().max(1000 * 60 * 60 * 12).optional(),
+  /** Human challenge: selected tile must match the server-issued odd-one-out answer. */
+  captcha: z
+    .object({
+      challengeId: z.string().min(1).max(120),
+      selectedIndex: z.number().int().min(0).max(8),
+    })
+    .optional(),
 });
 
 export type ContactInput = z.infer<typeof contactSchema>;
@@ -81,12 +127,31 @@ export const sendContactMessage = createServerFn({ method: "POST" })
       return { ok: true as const };
     }
 
-    // 2. Time trap — humans take longer than a couple of seconds.
+    // 2. Human challenge — must be completed before submission.
+    if (!data.captcha || !data.captcha.challengeId || !Number.isInteger(data.captcha.selectedIndex)) {
+      throw new Error("Please complete the security check before sending your message.");
+    }
+
+    const challenge = captchaStore.get(data.captcha.challengeId);
+    if (!challenge) {
+      throw new Error("That security check expired. Please refresh the page and try again.");
+    }
+    if (challenge.expiresAt < Date.now()) {
+      captchaStore.delete(data.captcha.challengeId);
+      throw new Error("That security check expired. Please refresh the page and try again.");
+    }
+    if (data.captcha.selectedIndex !== challenge.answerIndex) {
+      captchaStore.delete(data.captcha.challengeId);
+      throw new Error("Security check failed. Please select the odd shape and try again.");
+    }
+    captchaStore.delete(data.captcha.challengeId);
+
+    // 3. Time trap — humans take longer than a couple of seconds.
     if (typeof data.elapsedMs === "number" && data.elapsedMs < MIN_FILL_MS) {
       throw new Error("That was a little too fast — please try again.");
     }
 
-    // 3. Per-IP rate limiting.
+    // 4. Per-IP rate limiting.
     const ip =
       getRequestHeader("cf-connecting-ip") ??
       getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() ??
@@ -95,7 +160,7 @@ export const sendContactMessage = createServerFn({ method: "POST" })
       throw new Error("Too many messages from this connection. Try again later or use Discord.");
     }
 
-    // 4. Content heuristics.
+    // 5. Content heuristics.
     if (looksLikeSpam(data.message, data.name)) {
       throw new Error("This message was flagged as spam. Please reach me on Discord instead.");
     }

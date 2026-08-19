@@ -7,10 +7,13 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { ShieldCheck } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { MotionProvider } from "@/lib/motion";
+import { captureError, initSentry } from "@/lib/sentry";
 
 function NotFoundComponent() {
   return (
@@ -39,6 +42,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    captureError(error, { area: "route", boundary: "tanstack_root_error_component" });
   }, [error]);
 
   return (
@@ -129,10 +133,24 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    initSentry();
+  }, []);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
-    </QueryClientProvider>
+    <MotionProvider>
+      <QueryClientProvider client={queryClient}>
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Outlet />
+        <Link
+          to="/auth"
+          aria-label="Admin login"
+          className="fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 rounded-full border border-white/10 bg-background/30 px-3 py-1.5 text-[10px] font-medium tracking-[0.18em] text-muted-foreground/80 backdrop-blur-md shadow-[0_0_0_1px_rgba(255,255,255,0.04)] transition-all duration-200 hover:opacity-100 hover:text-foreground opacity-55"
+        >
+          <ShieldCheck className="size-3.5" />
+          LOGIN
+        </Link>
+      </QueryClientProvider>
+    </MotionProvider>
   );
 }

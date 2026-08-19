@@ -1,8 +1,13 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Send, CheckCircle2, MessageCircle, AlertCircle } from "lucide-react";
-import { contactSchema, sendContactMessage } from "@/lib/contact.functions";
+import {
+  contactSchema,
+  generateContactCaptcha,
+  sendContactMessage,
+} from "@/lib/contact.functions";
 import { track } from "@/lib/analytics";
+import { captureError } from "@/lib/sentry";
 
 
 const projectTypes = [
@@ -16,7 +21,50 @@ const projectTypes = [
 type FieldKey = "name" | "email" | "projectType" | "message";
 type Errors = Partial<Record<FieldKey, string>>;
 
+type ShapeType = "circle" | "square" | "triangle" | "diamond" | "hex" | "ring" | "pill" | "star";
+
+type ChallengeTile = {
+  id: number;
+  shape: ShapeType;
+};
+
+type CaptchaState = {
+  id: string;
+  tiles: ChallengeTile[];
+};
+
 const MESSAGE_MAX = 1200;
+
+function ShapeSvg({ shape, active }: { shape: ShapeType; active?: boolean }) {
+  const fill = active ? "#f59e0b" : "#7c3aed";
+  const stroke = active ? "#fbbf24" : "#a78bfa";
+
+  switch (shape) {
+    case "circle":
+      return <circle cx="50" cy="50" r="24" fill={fill} />;
+    case "square":
+      return <rect x="26" y="26" width="48" height="48" rx="10" fill={fill} />;
+    case "triangle":
+      return <polygon points="50,16 84,84 16,84" fill={fill} />;
+    case "diamond":
+      return <polygon points="50,14 86,50 50,86 14,50" fill={fill} />;
+    case "hex":
+      return <polygon points="50,12 82,30 82,70 50,88 18,70 18,30" fill={fill} />;
+    case "ring":
+      return <circle cx="50" cy="50" r="24" fill="transparent" stroke={stroke} strokeWidth="10" />;
+    case "pill":
+      return <rect x="20" y="28" width="60" height="44" rx="22" fill={fill} />;
+    case "star":
+      return (
+        <polygon
+          points="50,12 60,38 88,38 65,56 74,84 50,65 26,84 35,56 12,38 40,38"
+          fill={fill}
+        />
+      );
+    default:
+      return <circle cx="50" cy="50" r="24" fill={fill} />;
+  }
+}
 
 export function ContactForm() {
   const send = useServerFn(sendContactMessage);
@@ -31,7 +79,31 @@ export function ContactForm() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [serverError, setServerError] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState("");
+  const [captcha, setCaptcha] = useState<CaptchaState | null>(null);
+  const [captchaOpen, setCaptchaOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
   const startedAt = useRef(Date.now());
+  const generateCaptcha = useServerFn(generateContactCaptcha);
+
+  const refreshCaptcha = async () => {
+    setSelectedIndex(null);
+    setCaptchaError(null);
+    const next = await generateCaptcha();
+    setCaptcha(next);
+  };
+
+  const openCaptcha = async () => {
+    setCaptchaError(null);
+    if (!captcha) {
+      await refreshCaptcha();
+    }
+    setCaptchaOpen(true);
+  };
+
+  useEffect(() => {
+    void generateCaptcha().then((next) => setCaptcha(next));
+  }, [generateCaptcha]);
 
 
   const validate = (next = values): Errors => {
@@ -74,6 +146,11 @@ export function ContactForm() {
       setErrors(found);
       return;
     }
+    if (!captcha || selectedIndex === null) {
+      setCaptchaError("Please complete the security check.");
+      setCaptchaOpen(true);
+      return;
+    }
     setErrors({});
     setStatus("sending");
     track("contact_submit", { projectType: values.projectType });
@@ -83,6 +160,10 @@ export function ContactForm() {
           ...contactSchema.parse(values),
           website: honeypot,
           elapsedMs: Date.now() - startedAt.current,
+          captcha: {
+            challengeId: captcha.id,
+            selectedIndex,
+          },
         },
       });
       setStatus("sent");
@@ -91,6 +172,7 @@ export function ContactForm() {
       setTouched({});
       startedAt.current = Date.now();
     } catch (err) {
+      captureError(err, { area: "contact", projectType: values.projectType });
       setStatus("error");
       track("contact_error", {});
       setServerError(
@@ -149,11 +231,79 @@ export function ContactForm() {
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      noValidate
-      className="glass-card rounded-2xl p-5 text-left sm:p-8"
-    >
+    <>
+      {captchaOpen && captcha ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-[28px] border border-white/15 bg-[#0b1020]/95 p-5 shadow-[0_30px_90px_rgba(0,0,0,0.55)] ring-1 ring-primary/25 sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="font-display text-[0.7rem] tracking-[0.28em] text-primary uppercase">
+                  Human verification required
+                </p>
+                <h3 className="mt-2 font-display text-2xl font-bold text-foreground">
+                  Pick the odd shape out
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCaptchaOpen(false)}
+                className="rounded-full border border-border bg-secondary/40 px-2.5 py-1.5 text-[0.7rem] text-muted-foreground hover:text-foreground"
+              >
+                Close
+              </button>
+            </div>
+
+            <p className="mt-3 text-sm text-muted-foreground">
+              This is a bot-resistance check. The correct tile is the only one that does not match the rest.
+            </p>
+
+            <div className="mt-5 grid grid-cols-3 gap-3 sm:gap-3.5">
+              {captcha.tiles.map((tile) => (
+                <button
+                  key={tile.id}
+                  type="button"
+                  aria-label={`Select tile ${tile.id + 1}`}
+                  onClick={() => {
+                    setCaptchaError(null);
+                    setSelectedIndex(tile.id);
+                    setCaptchaOpen(false);
+                  }}
+                  className={`flex aspect-square items-center justify-center rounded-2xl border bg-secondary/30 transition-all duration-150 hover:scale-[1.02] hover:border-primary/60 ${
+                    selectedIndex === tile.id
+                      ? "border-primary/80 ring-2 ring-primary/50 shadow-[0_0_0_4px_rgba(96,165,250,0.12)]"
+                      : "border-border"
+                  }`}
+                >
+                  <svg viewBox="0 0 100 100" className="size-14 sm:size-16" aria-hidden="true">
+                    <ShapeSvg shape={tile.shape} active={selectedIndex === tile.id} />
+                  </svg>
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-5 flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">
+                Pick one tile and continue.
+              </p>
+              <button
+                type="button"
+                onClick={() => void refreshCaptcha()}
+                className="rounded-full border border-border bg-secondary/40 px-3 py-1.5 text-[0.7rem] font-display text-muted-foreground hover:text-foreground"
+              >
+                Refresh challenge
+              </button>
+            </div>
+
+            {captchaError ? <p className="mt-4 text-xs text-destructive">{captchaError}</p> : null}
+          </div>
+        </div>
+      ) : null}
+
+      <form
+        onSubmit={onSubmit}
+        noValidate
+        className="glass-card rounded-2xl p-5 text-left sm:p-8"
+      >
       {/* Honeypot — hidden from humans, irresistible to bots */}
       <div aria-hidden className="pointer-events-none absolute -left-[9999px] opacity-0">
         <label htmlFor="website">Website</label>
@@ -176,6 +326,17 @@ export function ContactForm() {
       </div>
 
 
+      {!captchaOpen && captcha ? (
+        <button
+          type="button"
+          onClick={() => void openCaptcha()}
+          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm font-display text-primary shadow-[0_0_0_1px_rgba(96,165,250,0.12)] transition-all hover:bg-primary/10"
+        >
+          <span className="inline-flex size-2 rounded-full bg-primary shadow-[0_0_18px_rgba(59,130,246,0.8)]" />
+          Complete security check before sending
+        </button>
+      ) : null}
+
       <div className="relative mt-6 grid gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="name">Name</Label>
@@ -187,6 +348,9 @@ export function ContactForm() {
             className={`mt-2 ${fieldCls("name")}`}
             placeholder="Your name"
             value={values.name}
+            onFocus={() => {
+              if (!captcha) void openCaptcha();
+            }}
             onChange={(e) => setField("name", e.target.value)}
             onBlur={() => blur("name")}
           />
@@ -263,6 +427,11 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={status === "sending"}
+        onClick={() => {
+          if (!captcha) {
+            void openCaptcha();
+          }
+        }}
         className="relative mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-4 font-display text-base font-bold text-primary-foreground transition-all hover:shadow-[var(--shadow-glow)] disabled:opacity-60"
       >
         {status === "sending" ? <Loader2 className="size-5 animate-spin" /> : <Send className="size-5" />}
@@ -278,6 +447,7 @@ export function ContactForm() {
         <MessageCircle className="size-4 text-primary" />
         Or message me on Discord — @acczyn
       </a>
-    </form>
+      </form>
+    </>
   );
 }

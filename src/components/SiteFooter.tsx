@@ -22,8 +22,17 @@ export function SiteFooter() {
           <Link to="/work" className="hover:text-foreground">
             Work
           </Link>
+          <Link to="/reviews" className="hover:text-foreground">
+            Reviews
+          </Link>
+          <Link to="/pricing" className="hover:text-foreground">
+            Pricing
+          </Link>
           <Link to="/" hash="contact" className="hover:text-foreground">
             Contact
+          </Link>
+          <Link to="/auth" className="hover:text-foreground">
+            Login
           </Link>
         </nav>
 

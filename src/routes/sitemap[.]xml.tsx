@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { works, SITE_URL } from "@/data/works";
+import { SITE_URL } from "@/data/works";
+import { listWorks } from "@/lib/works.functions";
 
 const staticPaths = ["/", "/work"];
 
@@ -7,6 +8,7 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
+        const works = await listWorks();
         const urls = [
           ...staticPaths.map((p) => ({ loc: `${SITE_URL}${p}`, priority: p === "/" ? "1.0" : "0.9" })),
           ...works.map((w) => ({ loc: `${SITE_URL}/work/${w.slug}`, priority: "0.7" })),

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, TrendingUp, Eye } from "lucide-react";
 import { GlassImage } from "@/components/GlassFrame";
 import { Tilt3D } from "@/components/Reveal";
 import { track } from "@/lib/analytics";
@@ -37,6 +37,28 @@ export function WorkCard({ work }: { work: Work }) {
             </span>
           ))}
         </div>
+
+        {/* CCU and Visits Stats */}
+        {(work.ccu || work.visits) && (
+          <div className="mt-4 flex gap-4 text-xs">
+            {work.ccu ? (
+              <div className="flex items-center gap-1">
+                <TrendingUp className="size-3.5 text-primary" />
+                <span className="text-muted-foreground">
+                  <span className="font-semibold text-primary">{work.ccu.toLocaleString()}</span> CCU
+                </span>
+              </div>
+            ) : null}
+            {work.visits ? (
+              <div className="flex items-center gap-1">
+                <Eye className="size-3.5 text-accent" />
+                <span className="text-muted-foreground">
+                  <span className="font-semibold text-accent">{work.visits.toLocaleString()}</span> visits
+                </span>
+              </div>
+            ) : null}
+          </div>
+        )}
 
         <span className="mt-4 inline-flex items-center gap-1 font-display text-xs text-primary">
           View details

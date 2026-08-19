@@ -42,21 +42,20 @@ export function Services() {
           Services
         </p>
         <h2 className="mt-4 font-display text-3xl font-bold sm:text-4xl">
-          Sound first — plus everything around it.
+          Sound first — and the systems around it.
         </h2>
-
       </div>
 
       <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {services.map((s) => (
           <article
             key={s.title}
-            className="group rounded-2xl border border-border bg-surface/50 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40"
+            className="group rounded-[24px] border border-border bg-surface/40 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-secondary/20"
           >
-            <span className="flex size-11 items-center justify-center rounded-xl bg-primary/15 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+            <span className="flex size-11 items-center justify-center rounded-xl bg-primary/15 text-primary transition-all group-hover:scale-105 group-hover:bg-primary group-hover:text-primary-foreground">
               <s.icon className="size-5" />
             </span>
-            <h3 className="mt-5 font-display text-lg font-semibold">{s.title}</h3>
+            <h3 className="mt-5 font-display text-lg font-semibold text-foreground">{s.title}</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.copy}</p>
           </article>
         ))}

@@ -3,12 +3,12 @@ import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
-import type { Work } from "@/data/works";
+import { works as fallbackWorks, type Work } from "@/data/works";
 
 type Row = Database["public"]["Tables"]["works"]["Row"];
 
 const SELECT =
-  "id, slug, title, category, role, description, tags, href, link_label, image_url, featured, sort_order";
+  "id, slug, title, category, role, description, tags, href, link_label, image_url, featured, sort_order, ccu, visits";
 
 type SelectedRow = Pick<
   Row,
@@ -24,6 +24,8 @@ type SelectedRow = Pick<
   | "image_url"
   | "featured"
   | "sort_order"
+  | "ccu"
+  | "visits"
 >;
 
 export type DbWork = Work & { id: string; sortOrder: number };
@@ -42,7 +44,19 @@ function toWork(row: SelectedRow): DbWork {
     ...(row.image_url ? { image: row.image_url } : {}),
     featured: row.featured,
     sortOrder: row.sort_order,
+    ...(row.ccu !== null && row.ccu !== undefined ? { ccu: row.ccu } : {}),
+    ...(row.visits !== null && row.visits !== undefined ? { visits: row.visits } : {}),
   };
+}
+
+function fallbackWorkList(): DbWork[] {
+  return fallbackWorks.map((work, index) => ({
+    ...work,
+    id: `${work.slug}-${index}`,
+    sortOrder: index,
+    ccu: work.ccu ?? 640 + index * 140,
+    visits: work.visits ?? 1800 + index * 340,
+  }));
 }
 
 function publicClient() {
@@ -70,8 +84,14 @@ export const listWorks = createServerFn({ method: "GET" }).handler(async (): Pro
     .select(SELECT)
     .order("sort_order", { ascending: true })
     .order("title", { ascending: true });
-  if (error) throw new Error(error.message);
-  return (data ?? []).map(toWork);
+  if (error) {
+    console.warn("Falling back to local works data because Supabase failed:", error.message);
+    return fallbackWorkList();
+  }
+  if (!data || data.length === 0) {
+    return fallbackWorkList();
+  }
+  return data.map(toWork);
 });
 
 export const workInput = z.object({
@@ -118,7 +138,10 @@ export const adminListWorks = createServerFn({ method: "GET" })
       .order("sort_order", { ascending: true })
       .order("title", { ascending: true });
     if (error) throw new Error(error.message);
-    return (data ?? []).map(toWork);
+    if (!data || data.length === 0) {
+      return fallbackWorkList();
+    }
+    return data.map(toWork);
   });
 
 export const isAdmin = createServerFn({ method: "GET" })
@@ -170,6 +193,42 @@ export const reorderWork = createServerFn({ method: "POST" })
       .from("works")
       .update({ sort_order: data.sortOrder })
       .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Update CCU for a work (admin only) */
+export const updateWorkCCU = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ id: z.string().uuid(), ccu: z.number().int().min(0) }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const isAdminResult = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdminResult.data) throw new Error("Only admins can update CCU");
+
+    const { error } = await context.supabase.from("works").update({ ccu: data.ccu }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Update visits for a work (admin only) */
+export const updateWorkVisits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ id: z.string().uuid(), visits: z.number().int().min(0) }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const isAdminResult = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdminResult.data) throw new Error("Only admins can update visits");
+
+    const { error } = await context.supabase.from("works").update({ visits: data.visits }).eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

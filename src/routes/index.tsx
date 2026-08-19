@@ -7,6 +7,7 @@ import { Stats } from "@/components/Stats";
 import { About } from "@/components/About";
 import { Services } from "@/components/Services";
 import { FeaturedGame } from "@/components/FeaturedGame";
+import { Testimonials } from "@/components/Testimonials";
 import { WorkPreview } from "@/components/WorkPreview";
 import { Skills } from "@/components/Skills";
 import { ContactCta } from "@/components/ContactCta";
@@ -25,9 +26,7 @@ export const Route = createFileRoute("/")({
       { name: "description", content: DESC },
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESC },
-      { property: "og:type", content: "website" },
       { property: "og:url", content: SITE_URL },
-      { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: TITLE },
       { name: "twitter:description", content: DESC },
     ],
@@ -74,6 +73,7 @@ function Index() {
         <Reveal as="section">
           <About />
         </Reveal>
+        <Testimonials />
         <WorkPreview />
         <Reveal as="section">
           <Stats />

@@ -131,6 +131,12 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior-y: none;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
   }
 
   h1,
@@ -168,7 +174,8 @@
     color-mix(in oklab, var(--foreground) 9%, transparent),
     color-mix(in oklab, var(--foreground) 3%, transparent)
   );
-  backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
   border: 1px solid var(--glass-border);
   box-shadow:
     var(--shadow-glass),
@@ -251,6 +258,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
   .marquee-track,
   .float-slow {
     animation: none;

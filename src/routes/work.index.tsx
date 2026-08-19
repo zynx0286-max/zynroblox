@@ -1,11 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
 import { Search, X } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { WorkCard } from "@/components/WorkCard";
 import { Reveal } from "@/components/Reveal";
-import { CATEGORIES, works, SITE_URL } from "@/data/works";
+import { listWorks } from "@/lib/works.functions";
+import { CATEGORIES, SITE_URL } from "@/data/works";
 
 const PAGE_TITLE = "Roblox Work Archive — QA Testing, SFX & Community | ZYN";
 const PAGE_DESC =
@@ -14,6 +17,7 @@ const PAGE_DESC =
 export type WorkSearch = { q?: string; cat?: string };
 
 export const Route = createFileRoute("/work/")({
+  loader: async () => ({ works: await listWorks() }),
   validateSearch: (search: Record<string, unknown>): WorkSearch => {
     const out: WorkSearch = {};
     if (typeof search["q"] === "string" && search["q"]) out.q = search["q"];
@@ -21,35 +25,36 @@ export const Route = createFileRoute("/work/")({
       out.cat = search["cat"];
     return out;
   },
-  head: () => ({
-    meta: [
-      { title: PAGE_TITLE },
-      { name: "description", content: PAGE_DESC },
-      { property: "og:title", content: PAGE_TITLE },
-      { property: "og:description", content: PAGE_DESC },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: `${SITE_URL}/work` },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [{ rel: "canonical", href: `${SITE_URL}/work` }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "CollectionPage",
-          name: PAGE_TITLE,
-          description: PAGE_DESC,
-          url: `${SITE_URL}/work`,
-          hasPart: works.map((w) => ({
-            "@type": "CreativeWork",
-            name: w.title,
-            url: `${SITE_URL}/work/${w.slug}`,
-          })),
-        }),
-      },
-    ],
-  }),
+  head: ({ loaderData }) => {
+    const works = loaderData?.works ?? [];
+    return {
+      meta: [
+        { title: PAGE_TITLE },
+        { name: "description", content: PAGE_DESC },
+        { property: "og:title", content: PAGE_TITLE },
+        { property: "og:description", content: PAGE_DESC },
+        { property: "og:url", content: `${SITE_URL}/work` },
+      ],
+      links: [{ rel: "canonical", href: `${SITE_URL}/work` }],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            name: PAGE_TITLE,
+            description: PAGE_DESC,
+            url: `${SITE_URL}/work`,
+            hasPart: works.map((w) => ({
+              "@type": "CreativeWork",
+              name: w.title,
+              url: `${SITE_URL}/work/${w.slug}`,
+            })),
+          }),
+        },
+      ],
+    };
+  },
   component: WorkPage,
 });
 
@@ -58,6 +63,10 @@ function WorkPage() {
   const q = search.q ?? "";
   const cat = search.cat ?? "All Work";
   const navigate = useNavigate({ from: "/work/" });
+  const { works = [] } = Route.useLoaderData() as { works: Awaited<ReturnType<typeof listWorks>> };
+  const list = useServerFn(listWorks);
+  const { data: dbWorks = [] } = useQuery({ queryKey: ["works"], queryFn: () => list() });
+  const allWorks = dbWorks.length ? dbWorks : works;
 
   const setSearch = (next: WorkSearch) => {
     const merged: WorkSearch = { q, cat, ...next };
@@ -68,14 +77,14 @@ function WorkPage() {
   };
 
   const counts = useMemo(() => {
-    const map = new Map<string, number>([["All Work", works.length]]);
-    for (const w of works) map.set(w.category, (map.get(w.category) ?? 0) + 1);
+    const map = new Map<string, number>([["All Work", allWorks.length]]);
+    for (const w of allWorks) map.set(w.category, (map.get(w.category) ?? 0) + 1);
     return map;
-  }, []);
+  }, [allWorks]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return works.filter((w) => {
+    return allWorks.filter((w) => {
       const matchesCategory = cat === "All Work" || w.category === cat;
       const matchesQuery =
         needle.length === 0 ||
@@ -105,7 +114,7 @@ function WorkPage() {
               Games I&apos;ve helped shape.
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-sm text-muted-foreground sm:text-base">
-              Search {works.length} projects by title, role, tag or category — sound design, QA
+              Search {allWorks.length} projects by title, role, tag or category — sound design, QA
               testing, game scouting and community work.
             </p>
 
@@ -149,7 +158,7 @@ function WorkPage() {
             </div>
 
             <p className="mt-4 text-xs text-muted-foreground">
-              Showing {filtered.length} of {works.length} projects
+              Showing {filtered.length} of {allWorks.length} projects
             </p>
           </div>
         </section>
