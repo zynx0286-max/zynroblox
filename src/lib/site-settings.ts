@@ -57,6 +57,7 @@ export type HeroSettings = {
   discordLabel: string;
   discordUrl: string;
   stats: StatItem[];
+  availability: { open: boolean; label: string };
 };
 
 export type MarqueeItem = { icon: IconKey; label: string; copy: string };
@@ -106,6 +107,11 @@ export type WorkPreviewSettings = {
   ctaLabel: string;
 };
 
+export type ProcessStep = { icon: IconKey; title: string; copy: string };
+export type ProcessSettings = { heading: string; sub: string; steps: ProcessStep[] };
+export type FaqItem = { q: string; a: string };
+export type FaqSettings = { heading: string; sub: string; items: FaqItem[] };
+
 export type SiteSettings = {
   hero: HeroSettings;
   marquee: MarqueeItem[];
@@ -116,6 +122,8 @@ export type SiteSettings = {
   contact: ContactSettings;
   featured: FeaturedSettings;
   workPreview: WorkPreviewSettings;
+  process: ProcessSettings;
+  faq: FaqSettings;
 };
 
 export const DEFAULT_SETTINGS: SiteSettings = {
@@ -137,6 +145,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
       { value: "7+", label: "Communities" },
       { value: "48h", label: "Reply Time" },
     ],
+    availability: { open: true, label: "Available for new commissions" },
   },
   marquee: [
     { icon: "audio", label: "SFX Design", copy: "Ability, ambience and UI audio." },
@@ -246,6 +255,58 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     copy: "Click any card to view the project on Roblox or visit the community page.",
     ctaLabel: "View all projects",
   },
+  process: {
+    heading: "How I work",
+    sub: "A clear, repeatable process so you always know what's happening next — no guesswork.",
+    steps: [
+      {
+        icon: "message",
+        title: "1 · Brief & scope",
+        copy: "You share the game, the problem and the goal. I ask the right questions and we lock in scope, timeline and price.",
+      },
+      {
+        icon: "search",
+        title: "2 · Research & prep",
+        copy: "I study the game, its genre and its players so the work fits the experience — not a generic template.",
+      },
+      {
+        icon: "audio",
+        title: "3 · Create & test",
+        copy: "Sounds are crafted, or QA passes and gameplay checks are run, with structured notes at every step.",
+      },
+      {
+        icon: "shield",
+        title: "4 · Deliver & iterate",
+        copy: "You get game-ready files or a written report, plus revisions until it's right.",
+      },
+    ],
+  },
+  faq: {
+    heading: "Questions, answered",
+    sub: "The things clients usually ask before we start.",
+    items: [
+      {
+        q: "How fast do you reply?",
+        a: "Discord is the fastest — usually minutes. Email can take a day or two.",
+      },
+      {
+        q: "Do you work in Robux or real money?",
+        a: "Both. Robux is the default for services listed on the pricing page; USD is also fine for larger or long-term projects.",
+      },
+      {
+        q: "Can you do a full game sound pack?",
+        a: "Yes — abilities, impacts, UI, ambience and music. Bundles get better rates than single sounds, and we scope it together first.",
+      },
+      {
+        q: "What does a QA report actually look like?",
+        a: "A structured document with each bug's severity, exact reproduction steps, device/edge-case notes and a suggested fix direction.",
+      },
+      {
+        q: "What if the first result isn't right?",
+        a: "Revisions are included until it fits your game. If it's still not working, we'll adjust scope before anything extra is charged.",
+      },
+    ],
+  },
 };
 
 export function mergeSettings(stored: Record<string, unknown> | undefined): SiteSettings {
@@ -281,6 +342,14 @@ export function mergeSettings(stored: Record<string, unknown> | undefined): Site
     workPreview: {
       ...DEFAULT_SETTINGS.workPreview,
       ...(pick<Partial<WorkPreviewSettings> | undefined>("workPreview", undefined) ?? {}),
+    },
+    process: {
+      ...DEFAULT_SETTINGS.process,
+      ...(pick<Partial<ProcessSettings> | undefined>("process", undefined) ?? {}),
+    },
+    faq: {
+      ...DEFAULT_SETTINGS.faq,
+      ...(pick<Partial<FaqSettings> | undefined>("faq", undefined) ?? {}),
     },
   };
 }

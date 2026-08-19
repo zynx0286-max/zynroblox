@@ -23,6 +23,8 @@ const SECTIONS: { key: SectionKey; label: string }[] = [
   { key: "workPreview", label: "Work preview" },
   { key: "stats", label: "Stats" },
   { key: "skills", label: "Skills" },
+  { key: "process", label: "How I work" },
+  { key: "faq", label: "FAQ" },
   { key: "contact", label: "Contact" },
 ];
 
@@ -142,6 +144,8 @@ export function ContentAdmin() {
           {active === "workPreview" ? <WorkPreviewEditor settings={settings} set={set} /> : null}
           {active === "stats" ? <StatsEditor settings={settings} set={set} /> : null}
           {active === "skills" ? <SkillsEditor settings={settings} set={set} /> : null}
+          {active === "process" ? <ProcessEditor settings={settings} set={set} /> : null}
+          {active === "faq" ? <FaqEditor settings={settings} set={set} /> : null}
           {active === "contact" ? <ContactEditor settings={settings} set={set} /> : null}
         </div>
       </div>
@@ -383,6 +387,36 @@ function HeroEditor({
           }
           placeholder="2+ · SFX Projects"
         />
+      </div>
+      <div className="sm:col-span-2">
+        <span className={label}>Availability badge</span>
+        <div className="mt-1.5 flex flex-col gap-2 rounded-xl border border-border bg-secondary/20 p-3 sm:flex-row sm:items-center">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={h.availability?.open ?? true}
+              onChange={(e) =>
+                set("hero", {
+                  ...h,
+                  availability: { open: e.target.checked, label: h.availability?.label ?? "" },
+                })
+              }
+              className="size-4 accent-[var(--color-primary)]"
+            />
+            Show badge
+          </label>
+          <input
+            className={`${field} mt-0`}
+            placeholder="Available for new commissions"
+            value={h.availability?.label ?? ""}
+            onChange={(e) =>
+              set("hero", {
+                ...h,
+                availability: { open: h.availability?.open ?? true, label: e.target.value },
+              })
+            }
+          />
+        </div>
       </div>
     </div>
   );
@@ -669,6 +703,108 @@ function ContactEditor({
       <div className="sm:col-span-2">
         <span className={label}>Reply note</span>
         <TextField value={c.replyNote} onChange={(v) => set("contact", { ...c, replyNote: v })} />
+      </div>
+    </div>
+  );
+}
+
+function ProcessEditor({
+  settings,
+  set,
+}: {
+  settings: SiteSettings;
+  set: <K extends SectionKey>(k: K, v: SiteSettings[K]) => void;
+}) {
+  const p = settings.process;
+  return (
+    <div className="grid gap-4">
+      <div>
+        <span className={label}>Heading</span>
+        <TextField value={p.heading} onChange={(v) => set("process", { ...p, heading: v })} />
+      </div>
+      <div>
+        <span className={label}>Subheading</span>
+        <TextField value={p.sub} onChange={(v) => set("process", { ...p, sub: v })} />
+      </div>
+      <ObjectListEditor<SiteSettings["process"]["steps"][number]>
+        key="process-steps"
+        title="Step"
+        values={p.steps}
+        onChange={(v) => set("process", { ...p, steps: v })}
+      />
+    </div>
+  );
+}
+
+function FaqEditor({
+  settings,
+  set,
+}: {
+  settings: SiteSettings;
+  set: <K extends SectionKey>(k: K, v: SiteSettings[K]) => void;
+}) {
+  const f = settings.faq;
+  return (
+    <div className="grid gap-4">
+      <div>
+        <span className={label}>Heading</span>
+        <TextField value={f.heading} onChange={(v) => set("faq", { ...f, heading: v })} />
+      </div>
+      <div>
+        <span className={label}>Subheading</span>
+        <TextField value={f.sub} onChange={(v) => set("faq", { ...f, sub: v })} />
+      </div>
+      <div className="space-y-4">
+        {f.items.map((item, i) => (
+          <div key={i} className="rounded-2xl border border-border bg-secondary/20 p-4">
+            <div className="flex items-center justify-between">
+              <p className="font-display text-sm font-semibold">Question {i + 1}</p>
+              <button
+                type="button"
+                onClick={() => set("faq", { ...f, items: f.items.filter((_, j) => j !== i) })}
+                className="rounded-full border border-destructive/50 p-2 text-destructive"
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            </div>
+            <div className="mt-3 grid gap-3">
+              <div>
+                <span className={label}>Question</span>
+                <input
+                  className={field}
+                  value={item.q}
+                  onChange={(e) =>
+                    set("faq", {
+                      ...f,
+                      items: f.items.map((x, j) => (j === i ? { ...x, q: e.target.value } : x)),
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <span className={label}>Answer</span>
+                <textarea
+                  rows={3}
+                  className={`${field} resize-none`}
+                  value={item.a}
+                  onChange={(e) =>
+                    set("faq", {
+                      ...f,
+                      items: f.items.map((x, j) => (j === i ? { ...x, a: e.target.value } : x)),
+                    })
+                  }
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => set("faq", { ...f, items: [...f.items, { q: "", a: "" }] })}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 font-display text-xs"
+        >
+          <Plus className="size-3.5" /> Add question
+        </button>
       </div>
     </div>
   );

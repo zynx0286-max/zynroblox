@@ -128,6 +128,16 @@ export function Hero({ settings, workCount }: { settings: HeroSettings; workCoun
           {settings.name}
         </p>
 
+        {settings.availability?.open ? (
+          <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-[0.62rem] tracking-[0.18em] text-primary uppercase sm:mt-5 sm:text-[0.7rem] sm:tracking-[0.22em]">
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-70" />
+              <span className="relative inline-flex size-2 rounded-full bg-primary" />
+            </span>
+            {settings.availability.label}
+          </p>
+        ) : null}
+
         <p className="glass-card mt-5 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 font-display text-[0.6rem] tracking-[0.18em] text-muted-foreground uppercase sm:mt-6 sm:px-4 sm:text-[0.7rem] sm:tracking-[0.25em]">
           <AudioLines className="size-3.5 text-primary" />
           {settings.badge}

@@ -14,6 +14,8 @@ import { ContactCta } from "@/components/ContactCta";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Reveal } from "@/components/Reveal";
 import { ScrollProgress } from "@/components/ScrollProgress";
+import { Process } from "@/components/Process";
+import { Faq } from "@/components/Faq";
 import { getPublicSiteData } from "@/lib/public-data";
 
 const TITLE = "ZYN — Roblox SFX Artist, Sound Designer & QA Tester";
@@ -73,6 +75,7 @@ function Index() {
         <Reveal as="section">
           <About settings={settings.about} />
         </Reveal>
+        <Process settings={settings.process} />
         <WorkPreview works={works} settings={settings.workPreview} />
         <Reveal as="section">
           <Stats settings={settings.stats} />
@@ -83,6 +86,7 @@ function Index() {
         <Reveal as="section">
           <Testimonials testimonials={testimonials} />
         </Reveal>
+        <Faq settings={settings.faq} />
         <ContactCta settings={settings.contact} />
       </main>
       <SiteFooter />

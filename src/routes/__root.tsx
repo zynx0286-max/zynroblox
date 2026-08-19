@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Cursor } from "../components/Cursor";
 import { Grain } from "../components/Grain";
 import { Preloader } from "../components/Preloader";
+import { BackToTop } from "../components/BackToTop";
 
 function NotFoundComponent() {
   return (
@@ -143,6 +144,7 @@ function RootComponent() {
       <Preloader />
       <Cursor />
       <Grain />
+      <BackToTop />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
     </QueryClientProvider>
