@@ -1,12 +1,10 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Loader2, LogIn, ArrowLeft, Lock, User, ShieldPlus } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Loader2, LogIn, ArrowLeft, Lock, User } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { captureError } from "@/lib/sentry";
 import { verifyOwner } from "@/lib/auth.functions";
-import { adminCount } from "@/lib/site.functions";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -24,78 +22,74 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-const OWNER_EMAIL = "zynx0286@gmail.com";
-
 function AuthPage() {
   const navigate = useNavigate();
   const check = useServerFn(verifyOwner);
-  const count = useServerFn(adminCount);
-  const adminsQuery = useQuery({
-    queryKey: ["admin-count"],
-    queryFn: async () => {
-      try {
-        return await count();
-      } catch {
-        return 0;
-      }
-    },
-    retry: 2,
-  });
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [setupPassword, setSetupPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [setupMessage, setSetupMessage] = useState<string | null>(null);
-
-  const needsSetup = adminsQuery.data === 0;
+  const [notice, setNotice] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setNotice(null);
     setBusy(true);
     try {
+      // 1. Server-side owner gate (username + ADMIN_PASSWORD, fallback "Saibaba@1").
       const gate = await check({ data: { username, password } });
       if (!gate.ok) {
         setError("Invalid username or password.");
         return;
       }
-      const { error: err } = await supabase.auth.signInWithPassword({
+
+      // 2. Sign in to Supabase. The admin panel's server functions require a
+      //    real Supabase session token, so we need an owner account. If it
+      //    doesn't exist yet, create it on the fly with the password just typed
+      //    (the "first admin" trigger in Supabase grants it the admin role).
+      let { error: signInErr } = await supabase.auth.signInWithPassword({
         email: gate.email,
         password,
       });
-      if (err) throw err;
+
+      if (signInErr && /invalid login credentials/i.test(signInErr.message)) {
+        const { error: upErr } = await supabase.auth.signUp({ email: gate.email, password });
+        if (upErr) {
+          if (/already registered/i.test(upErr.message)) {
+            setError(
+              "This owner account already exists but the password didn't match. " +
+                "Reset it in the Supabase dashboard (Authentication → Users → Reset password), " +
+                "then sign in again.",
+            );
+          } else {
+            throw upErr;
+          }
+          return;
+        }
+        // Re-sign-in after creating the account.
+        ({ error: signInErr } = await supabase.auth.signInWithPassword({
+          email: gate.email,
+          password,
+        }));
+        if (!signInErr) {
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (!sessionData.session) {
+            setNotice(
+              "Owner account created. Check zynx0286@gmail.com, click the confirmation link, " +
+                "then sign in again with the same password.",
+            );
+            return;
+          }
+        }
+      }
+      if (signInErr) throw signInErr;
+
       await navigate({ to: "/admin" });
     } catch (err) {
       captureError(err, { area: "admin", action: "signin" });
-      setError(
-        err instanceof Error
-          ? "Sign in failed. Make sure the account password matches this site's admin password."
-          : "Sign in failed",
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const createOwner = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSetupMessage(null);
-    setBusy(true);
-    try {
-      const { error: err } = await supabase.auth.signUp({
-        email: OWNER_EMAIL,
-        password: setupPassword,
-      });
-      if (err) throw err;
-      setSetupMessage(
-        "Owner account created. Check zynx0286@gmail.com for a confirmation link, then sign in above.",
-      );
-    } catch (err) {
-      captureError(err, { area: "admin", action: "setup" });
-      setError(err instanceof Error ? err.message : "Could not create the owner account");
+      setError(err instanceof Error ? `Sign in failed: ${err.message}` : "Sign in failed");
     } finally {
       setBusy(false);
     }
@@ -160,9 +154,9 @@ function AuthPage() {
           </div>
 
           {error ? <p className="mt-4 text-sm text-destructive">{error}</p> : null}
-          {setupMessage ? (
+          {notice ? (
             <p className="mt-4 rounded-xl border border-primary/40 bg-primary/10 px-3 py-2 text-xs">
-              {setupMessage}
+              {notice}
             </p>
           ) : null}
 
@@ -176,55 +170,8 @@ function AuthPage() {
           </button>
         </form>
 
-        {needsSetup ? (
-          <form onSubmit={createOwner} className="mt-6 border-t border-border pt-5">
-            <p className="flex items-center gap-2 font-display text-xs tracking-wider text-primary uppercase">
-              <ShieldPlus className="size-3.5" />
-              First-time setup
-            </p>
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              No owner account exists yet. Create one for {OWNER_EMAIL} to unlock the admin panel
-              (only shown while no admin exists).
-            </p>
-            <input
-              type="email"
-              value={OWNER_EMAIL}
-              readOnly
-              className={`${field} mt-3 opacity-70`}
-            />
-            <label
-              htmlFor="setup-password"
-              className="mt-3 block font-display text-xs tracking-wider text-muted-foreground uppercase"
-            >
-              Choose a password
-            </label>
-            <input
-              id="setup-password"
-              type="password"
-              required
-              minLength={8}
-              className={field}
-              placeholder="8+ characters"
-              value={setupPassword}
-              onChange={(e) => setSetupPassword(e.target.value)}
-            />
-            <button
-              type="submit"
-              disabled={busy}
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary/60 px-6 py-3 font-display font-bold text-primary hover:bg-primary/10 disabled:opacity-60"
-            >
-              {busy ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <ShieldPlus className="size-4" />
-              )}
-              Create owner account
-            </button>
-          </form>
-        ) : null}
-
         <p className="mt-5 text-center text-xs text-muted-foreground">
-          Account creation is disabled — this panel is for the owner only.
+          Owner only. Your first sign-in creates the admin account automatically.
         </p>
       </div>
     </div>

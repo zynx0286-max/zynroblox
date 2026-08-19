@@ -124,6 +124,10 @@ export const adminListWorks = createServerFn({ method: "GET" })
 export const isAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    // The owner (zynx0286@gmail.com) is always an admin, even before the
+    // first-signup trigger records the role.
+    const claims = context.claims as { email?: string } | undefined;
+    if (claims?.email?.toLowerCase() === "zynx0286@gmail.com") return true;
     const { data, error } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
