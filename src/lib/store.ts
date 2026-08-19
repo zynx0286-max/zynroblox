@@ -3,6 +3,7 @@ import { works as staticWorks } from "@/data/works";
 import type { Work } from "@/data/works";
 import type { DbWork } from "@/lib/works.functions";
 import type { SettingsValue, Testimonial, WorkMedia } from "@/lib/site.functions";
+import type { Review } from "@/lib/reviews.functions";
 
 // Server-only, self-hosted data store. Replaces the Supabase tables so the
 // site runs anywhere with zero external setup: content is kept in a small JSON
@@ -23,6 +24,7 @@ export type UploadedFile = {
 export type StoreShape = {
   works: DbWork[];
   testimonials: Testimonial[];
+  reviews: Review[];
   settings: Record<string, SettingsValue>;
   media: WorkMedia[];
   uploads: UploadedFile[];
@@ -39,6 +41,7 @@ function seed(): StoreShape {
         }) as DbWork,
     ),
     testimonials: [],
+    reviews: [],
     settings: {},
     media: [],
     uploads: [],
@@ -74,6 +77,7 @@ function normalize(raw: StoreShape): StoreShape {
   return {
     works: Array.isArray(raw.works) ? raw.works : fallback.works,
     testimonials: Array.isArray(raw.testimonials) ? raw.testimonials : [],
+    reviews: Array.isArray(raw.reviews) ? raw.reviews : [],
     settings: raw.settings && typeof raw.settings === "object" ? raw.settings : {},
     media: Array.isArray(raw.media) ? raw.media : [],
     uploads: Array.isArray(raw.uploads) ? raw.uploads : [],

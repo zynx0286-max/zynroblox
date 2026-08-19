@@ -57,7 +57,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { works, testimonials, settings } = Route.useLoaderData();
+  const { works, testimonials, reviews, settings } = Route.useLoaderData();
 
   return (
     <div className="min-h-screen bg-background">
@@ -84,7 +84,7 @@ function Index() {
           <Skills settings={settings.skills} />
         </Reveal>
         <Reveal as="section">
-          <Testimonials testimonials={testimonials} />
+          <Testimonials testimonials={testimonials} reviews={reviews} />
         </Reveal>
         <Faq settings={settings.faq} />
         <ContactCta settings={settings.contact} />

@@ -7,6 +7,7 @@ import type { HeroSettings } from "@/lib/site-settings";
 import { cn } from "@/lib/utils";
 import { AmbientField } from "./AmbientField";
 import { MagneticButton } from "./MagneticButton";
+import { AnimatedCounter } from "./AnimatedCounter";
 
 type LayerRef = HTMLDivElement | null;
 
@@ -184,14 +185,25 @@ export function Hero({ settings, workCount }: { settings: HeroSettings; workCoun
         </p>
 
         <dl className="mx-auto mt-10 grid max-w-3xl grid-cols-2 gap-2.5 sm:mt-14 sm:grid-cols-4 sm:gap-3">
-          {settings.stats.map((s) => (
-            <div key={s.label} className="glass-card rounded-2xl px-3 py-4 sm:px-4 sm:py-5">
-              <dt className="font-display text-xl font-bold text-primary sm:text-2xl">{s.value}</dt>
-              <dd className="mt-1 text-[0.62rem] tracking-[0.12em] text-muted-foreground uppercase sm:text-[0.7rem] sm:tracking-[0.15em]">
-                {s.label}
-              </dd>
-            </div>
-          ))}
+          {settings.stats.map((s) => {
+            const match = /^(\d+)(.*)$/.exec(s.value);
+            const num = match ? Number(match[1]) : null;
+            const suffix = match ? match[2] : "";
+            return (
+              <div key={s.label} className="glass-card rounded-2xl px-3 py-4 sm:px-4 sm:py-5">
+                <dt className="font-display text-xl font-bold text-primary sm:text-2xl">
+                  {num !== null ? (
+                    <AnimatedCounter value={num} duration={900} suffix={suffix ?? ""} />
+                  ) : (
+                    s.value
+                  )}
+                </dt>
+                <dd className="mt-1 text-[0.62rem] tracking-[0.12em] text-muted-foreground uppercase sm:text-[0.7rem] sm:tracking-[0.15em]">
+                  {s.label}
+                </dd>
+              </div>
+            );
+          })}
         </dl>
       </div>
     </section>

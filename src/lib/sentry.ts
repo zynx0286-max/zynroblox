@@ -22,7 +22,7 @@ export const sentryEnabled = () => Boolean(DSN);
 /** Report an error with a tag describing where it came from. */
 export function captureError(
   error: unknown,
-  context: { area: "contact" | "route" | "admin" | "works"; [key: string]: unknown } = {
+  context: { area: "contact" | "route" | "admin" | "works" | "reviews"; [key: string]: unknown } = {
     area: "route",
   },
 ) {

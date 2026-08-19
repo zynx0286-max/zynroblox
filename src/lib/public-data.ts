@@ -6,6 +6,7 @@ import {
   type Testimonial,
   type WorkMedia,
 } from "@/lib/site.functions";
+import { listReviews, type Review } from "@/lib/reviews.functions";
 import { mergeSettings, DEFAULT_SETTINGS, type SiteSettings } from "@/lib/site-settings";
 import { works as staticWorks } from "@/data/works";
 
@@ -38,6 +39,10 @@ export async function getPublicTestimonials(): Promise<Testimonial[]> {
   return safe(() => listTestimonials(), []);
 }
 
+export async function getPublicReviews(): Promise<Review[]> {
+  return safe(() => listReviews(), []);
+}
+
 export async function getPublicSettings(): Promise<SiteSettings> {
   const stored = await safe(() => listSiteSettings(), null);
   return mergeSettings(stored ?? {});
@@ -50,18 +55,20 @@ export async function getPublicMedia(): Promise<WorkMedia[]> {
 export type PublicSiteData = {
   works: DbWork[];
   testimonials: Testimonial[];
+  reviews: Review[];
   settings: SiteSettings;
   media: WorkMedia[];
 };
 
 export async function getPublicSiteData(): Promise<PublicSiteData> {
-  const [works, testimonials, settings, media] = await Promise.all([
+  const [works, testimonials, reviews, settings, media] = await Promise.all([
     getPublicWorks(),
     getPublicTestimonials(),
+    getPublicReviews(),
     getPublicSettings(),
     getPublicMedia(),
   ]);
-  return { works, testimonials, settings, media };
+  return { works, testimonials, reviews, settings, media };
 }
 
 export { DEFAULT_SETTINGS };

@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { FolderOpen, LogOut, MessageSquareQuote, Settings2 } from "lucide-react";
+import { FolderOpen, LogOut, MessageSquareQuote, Settings2, Star } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { isAdmin } from "@/lib/works.functions";
 import { logoutOwner } from "@/lib/auth.functions";
 import { WorksAdmin } from "@/components/admin/WorksAdmin";
 import { TestimonialsAdmin } from "@/components/admin/TestimonialsAdmin";
+import { ReviewsAdmin } from "@/components/admin/ReviewsAdmin";
 import { ContentAdmin } from "@/components/admin/ContentAdmin";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -24,11 +25,12 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Tab = "works" | "testimonials" | "content";
+type Tab = "works" | "testimonials" | "reviews" | "content";
 
 const TABS: { key: Tab; label: string; icon: typeof FolderOpen }[] = [
   { key: "works", label: "Works", icon: FolderOpen },
   { key: "testimonials", label: "Testimonials", icon: MessageSquareQuote },
+  { key: "reviews", label: "Reviews", icon: Star },
   { key: "content", label: "Site content", icon: Settings2 },
 ];
 
@@ -122,6 +124,7 @@ function AdminPage() {
 
         {tab === "works" ? <WorksAdmin /> : null}
         {tab === "testimonials" ? <TestimonialsAdmin /> : null}
+        {tab === "reviews" ? <ReviewsAdmin /> : null}
         {tab === "content" ? <ContentAdmin /> : null}
       </div>
     </div>

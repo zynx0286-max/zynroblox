@@ -1,19 +1,69 @@
-import { Star } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ArrowRight, Star } from "lucide-react";
 import type { Testimonial } from "@/lib/site.functions";
+import type { Review } from "@/lib/reviews.functions";
 
-export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
-  const items = testimonials.filter((t) => t.text).slice(0, 6);
+type ReviewItem = {
+  id: string;
+  rating: number;
+  title?: string;
+  text: string;
+  author: string;
+  label?: string;
+  imageUrl?: string;
+};
+
+export function Testimonials({
+  testimonials,
+  reviews,
+}: {
+  testimonials: Testimonial[];
+  reviews: Review[];
+}) {
+  const fromReviews: ReviewItem[] = reviews.map((r) => ({
+    id: r.id,
+    rating: r.rating,
+    title: r.title,
+    text: r.content,
+    author: r.authorName,
+    label: r.projectRef ? r.projectRef.replace(/-/g, " ") : "Client review",
+  }));
+  const fromAdmin: ReviewItem[] = testimonials
+    .filter((t) => t.text)
+    .map((t) => ({
+      id: t.id,
+      rating: t.rating,
+      text: t.text,
+      author: t.author,
+      ...(t.role ? { label: t.role } : {}),
+      ...(t.imageUrl ? { imageUrl: t.imageUrl } : {}),
+    }));
+
+  const items = [...fromReviews, ...fromAdmin].slice(0, 6);
   if (items.length === 0) return null;
+  const hasMore = fromReviews.length > 3 || fromReviews.length + fromAdmin.length > 6;
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-20">
-      <div className="max-w-2xl">
-        <p className="font-display text-[0.7rem] tracking-[0.3em] text-primary uppercase">
-          Testimonials
-        </p>
-        <h2 className="mt-4 font-display text-3xl font-bold sm:text-4xl">
-          What clients and communities say.
-        </h2>
+    <section id="testimonials" className="mx-auto max-w-6xl px-4 py-20">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="max-w-2xl">
+          <p className="font-display text-[0.7rem] tracking-[0.3em] text-primary uppercase">
+            Testimonials
+          </p>
+          <h2 className="mt-4 font-display text-3xl font-bold sm:text-4xl">
+            Players and teams keep coming back.
+          </h2>
+        </div>
+
+        {hasMore ? (
+          <Link
+            to="/reviews"
+            className="group inline-flex items-center gap-2 self-start rounded-full border border-border bg-background/35 px-4 py-2.5 font-display text-sm text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40"
+          >
+            View all testimonials
+            <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+          </Link>
+        ) : null}
       </div>
 
       <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -31,7 +81,13 @@ export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) 
               ))}
             </div>
 
-            <blockquote className="mt-4 flex-1 text-sm leading-relaxed text-muted-foreground">
+            {t.title ? (
+              <h3 className="mt-4 font-display text-base font-semibold text-foreground">
+                {t.title}
+              </h3>
+            ) : null}
+
+            <blockquote className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
               “{t.text}”
             </blockquote>
 
@@ -53,7 +109,7 @@ export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) 
               )}
               <div>
                 <p className="font-display text-sm font-semibold">{t.author}</p>
-                {t.role ? <p className="text-xs text-muted-foreground">{t.role}</p> : null}
+                {t.label ? <p className="text-xs text-muted-foreground">{t.label}</p> : null}
               </div>
             </figcaption>
           </figure>
