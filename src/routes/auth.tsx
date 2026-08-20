@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Loader2, LogIn, ArrowLeft, Lock, User } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { loginOwner } from "@/lib/auth.functions";
+import { isAdmin } from "@/lib/works.functions";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const login = useServerFn(loginOwner);
+  const checkAdmin = useServerFn(isAdmin);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -37,6 +39,19 @@ function AuthPage() {
       const res = await login({ data: { username, password } });
       if (!res.ok) {
         setError("Invalid username or password.");
+        return;
+      }
+      // Verify the session actually grants admin before navigating, so a
+      // failed/expired session stays on /auth with a clear message instead of
+      // bouncing to (or crashing on) /admin.
+      try {
+        const ok = await checkAdmin();
+        if (ok !== true) {
+          setError("Signed in, but this account doesn't have admin access.");
+          return;
+        }
+      } catch {
+        setError("Signed in, but the session couldn't be verified. Please retry.");
         return;
       }
       await navigate({ to: "/admin" });
@@ -80,7 +95,6 @@ function AuthPage() {
               required
               autoComplete="username"
               className={`${field} pl-10`}
-              placeholder="zynx0286"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />

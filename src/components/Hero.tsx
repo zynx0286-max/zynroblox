@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { AmbientField } from "./AmbientField";
 import { MagneticButton } from "./MagneticButton";
 import { AnimatedCounter } from "./AnimatedCounter";
+import { WebGLHero } from "./WebGLHero";
 
 type LayerRef = HTMLDivElement | null;
 
@@ -77,6 +78,8 @@ export function Hero({ settings, workCount }: { settings: HeroSettings; workCoun
     >
       {/* Full-bleed blurred background */}
       <div ref={bgRef} className="pointer-events-none absolute inset-0 -z-10 will-change-transform">
+        {/* WebGL immersive layer (boots after the click-to-activate intro) */}
+        <WebGLHero />
         <img
           src={heroBg}
           alt=""
@@ -125,7 +128,10 @@ export function Hero({ settings, workCount }: { settings: HeroSettings; workCoun
       />
 
       <div className="relative mx-auto max-w-4xl px-4 text-center">
-        <p className="rise-in font-display text-2xl font-bold tracking-[0.35em] text-primary sm:text-4xl sm:tracking-[0.45em]">
+        <p
+          data-scrub
+          className="rise-in font-display text-2xl font-bold tracking-[0.35em] text-primary sm:text-4xl sm:tracking-[0.45em]"
+        >
           {settings.name}
         </p>
 
@@ -144,7 +150,10 @@ export function Hero({ settings, workCount }: { settings: HeroSettings; workCoun
           {settings.badge}
         </p>
 
-        <h1 className="mt-5 font-display text-[2rem] leading-[1.08] font-bold sm:mt-6 sm:text-6xl sm:leading-[1.05]">
+        <h1
+          data-kinetic
+          className="mt-5 font-display text-[2rem] leading-[1.08] font-bold sm:mt-6 sm:text-6xl sm:leading-[1.05]"
+        >
           {settings.titlePrefix}{" "}
           <span className="inline-block bg-primary px-2 text-primary-foreground">
             {settings.titleHighlight}

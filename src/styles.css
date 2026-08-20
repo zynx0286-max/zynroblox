@@ -415,3 +415,132 @@ html.zyn-cursor-active * {
   }
 }
 
+/*
+ * Immersive experience layer.
+ *
+ * These styles back the click-to-activate intro gate, the WebGL hero
+ * backdrop, the kinetic typography, and the ambient-audio toggle. Every
+ * element is gated behind the experience activation (see
+ * src/lib/experience.ts) and degrades gracefully when WebGL / WebAudio or a
+ * user gesture is unavailable.
+ */
+
+/* WebGL hero canvas — sits behind the hero copy, full-bleed. */
+.zyn-webgl-hero {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Kinetic typography word wrappers (see ScrollFX). */
+.zyn-kword {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+
+.zyn-kword-inner {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* Experience gate (click to activate). */
+.zyn-gate {
+  color: var(--foreground);
+}
+
+.zyn-gate-mark {
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 12vw, 7rem);
+  font-weight: 700;
+  letter-spacing: 0.5em;
+  margin-right: -0.5em;
+  line-height: 1;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--primary) 85%, var(--foreground)),
+    color-mix(in oklab, var(--primary) 35%, transparent)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 24px color-mix(in oklab, var(--primary) 40%, transparent));
+  animation: gate-mark-float 3.2s ease-in-out infinite alternate;
+}
+
+@keyframes gate-mark-float {
+  from {
+    transform: translateY(6px);
+    opacity: 0.92;
+  }
+  to {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+/* Ambient audio toggle. */
+.zyn-audio-toggle {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 80;
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 22px;
+  width: 30px;
+  padding: 5px 8px;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklab, var(--primary) 40%, transparent);
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  backdrop-filter: blur(8px);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.zyn-audio-toggle:hover {
+  border-color: color-mix(in oklab, var(--primary) 80%, transparent);
+  background: color-mix(in oklab, var(--surface-elevated) 70%, transparent);
+}
+
+.zyn-audio-bar {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--primary);
+  height: 100%;
+  transform-origin: bottom;
+  animation: zyn-audio-bounce 1.2s ease-in-out infinite alternate;
+  transition: opacity 0.2s ease;
+}
+
+.zyn-audio-bar--off {
+  animation: none;
+  opacity: 0.35;
+  height: 30% !important;
+}
+
+@keyframes zyn-audio-bounce {
+  from {
+    transform: scaleY(0.35);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zyn-gate-mark {
+    animation: none;
+    transform: none;
+  }
+
+  .zyn-audio-bar {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+

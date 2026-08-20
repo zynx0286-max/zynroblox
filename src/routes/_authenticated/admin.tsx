@@ -11,6 +11,12 @@ import { ReviewsAdmin } from "@/components/admin/ReviewsAdmin";
 import { ContentAdmin } from "@/components/admin/ContentAdmin";
 
 export const Route = createFileRoute("/_authenticated/admin")({
+  // Admin is a private, client-only dashboard. Rendering it on the server
+  // would call the cookie-gated `isAdmin` server fn before the session is
+  // established in that request, throwing into the SSR error page ("This page
+  // didn't load"). Client-rendering lets the check run in the browser where the
+  // httpOnly cookie is present, redirecting to /auth if the session is invalid.
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Admin — ZYN portfolio editor" },
