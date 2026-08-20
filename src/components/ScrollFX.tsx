@@ -1,8 +1,7 @@
 import { useEffect } from "react";
-import { useExperienceActive } from "@/lib/experience";
 
-// GSAP-powered scroll layer. Runs only after the visitor activates the
-// experience, is a no-op under prefers-reduced-motion, and drives two things:
+// GSAP-powered scroll layer. Runs on mount (no gate required), is a no-op under
+// prefers-reduced-motion, and drives two things:
 //
 //  - [data-kinetic] — kinetic typography: each headline's words slide up from a
 //    masked overflow on a scrub timeline as you scroll.
@@ -13,10 +12,7 @@ import { useExperienceActive } from "@/lib/experience";
 // is untouched and the enhancement is purely progressive. GSAP is imported
 // lazily on the client only, so SSR never touches it.
 export function ScrollFX() {
-  const active = useExperienceActive();
-
   useEffect(() => {
-    if (!active) return;
     if (
       typeof window === "undefined" ||
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -119,7 +115,7 @@ export function ScrollFX() {
     return () => {
       cleanup?.();
     };
-  }, [active]);
+  }, []);
 
   return null;
 }

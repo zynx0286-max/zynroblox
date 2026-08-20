@@ -12,7 +12,15 @@ import { WebGLHero } from "./WebGLHero";
 
 type LayerRef = HTMLDivElement | null;
 
-export function Hero({ settings, workCount }: { settings: HeroSettings; workCount: number }) {
+export function Hero({
+  settings,
+  workCount,
+  liveStats,
+}: {
+  settings: HeroSettings;
+  workCount: number;
+  liveStats?: import("@/lib/live-stats.functions").LiveGameStats | null;
+}) {
   const sectionRef = useRef<HTMLElement | null>(null);
   const bgRef = useRef<LayerRef>(null);
   const glowRef = useRef<LayerRef>(null);
@@ -197,7 +205,7 @@ export function Hero({ settings, workCount }: { settings: HeroSettings; workCoun
 
         {/* Live Roblox counters (visits + CCU), refreshed every 30s. */}
         <div className="mx-auto mt-10 max-w-3xl sm:mt-14">
-          <LiveStats />
+          <LiveStats initial={liveStats ?? null} />
         </div>
       </div>
     </section>

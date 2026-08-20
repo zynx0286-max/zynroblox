@@ -15,7 +15,6 @@ import { Cursor } from "../components/Cursor";
 import { Grain } from "../components/Grain";
 import { Preloader } from "../components/Preloader";
 import { BackToTop } from "../components/BackToTop";
-import { ExperienceGate } from "../components/ExperienceGate";
 import { AmbientAudio } from "../components/AmbientAudio";
 import { ScrollFX } from "../components/ScrollFX";
 
@@ -160,10 +159,8 @@ function RootComponent() {
       <Cursor />
       <Grain />
       <BackToTop />
-      {/* Immersive experience layer: gates the heavier effects behind a
-          click-to-activate intro, boots the ambient pad, and drives the
-          GSAP scroll motion. Each is client-only and degrades gracefully. */}
-      <ExperienceGate />
+      {/* Immersive layer: ambient pad + GSAP scroll motion. Client-only,
+          degrades gracefully. */}
       <AmbientAudio />
       <ScrollFX />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}

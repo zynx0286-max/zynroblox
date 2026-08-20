@@ -416,13 +416,11 @@ html.zyn-cursor-active * {
 }
 
 /*
- * Immersive experience layer.
+ * Immersive layer.
  *
- * These styles back the click-to-activate intro gate, the WebGL hero
- * backdrop, the kinetic typography, and the ambient-audio toggle. Every
- * element is gated behind the experience activation (see
- * src/lib/experience.ts) and degrades gracefully when WebGL / WebAudio or a
- * user gesture is unavailable.
+ * These styles back the WebGL hero backdrop, the kinetic typography, and the
+ * ambient-audio toggle. Every element starts automatically and degrades
+ * gracefully when WebGL / WebAudio or a user gesture is unavailable.
  */
 
 /* WebGL hero canvas — sits behind the hero copy, full-bleed. */

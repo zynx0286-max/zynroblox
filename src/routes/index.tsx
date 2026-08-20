@@ -17,13 +17,20 @@ import { ScrollProgress } from "@/components/ScrollProgress";
 import { Process } from "@/components/Process";
 import { Faq } from "@/components/Faq";
 import { getPublicSiteData } from "@/lib/public-data";
+import { getLiveGameStats } from "@/lib/live-stats.functions";
 
 const TITLE = "ZYN — Roblox SFX Artist, Sound Designer & QA Tester";
 const DESC =
   "Professional Roblox SFX artist creating original ability, impact, ambience and UI sound. Also offering QA testing, community management and game research.";
 
 export const Route = createFileRoute("/")({
-  loader: async () => getPublicSiteData(),
+  loader: async () => {
+    const [site, liveStats] = await Promise.all([
+      getPublicSiteData(),
+      getLiveGameStats().catch(() => null),
+    ]);
+    return { ...site, liveStats };
+  },
   head: () => ({
     meta: [
       { title: TITLE },
@@ -57,14 +64,14 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { works, testimonials, reviews, settings } = Route.useLoaderData();
+  const { works, testimonials, reviews, settings, liveStats } = Route.useLoaderData();
 
   return (
     <div className="min-h-screen bg-background">
       <ScrollProgress />
       <SiteNav />
       <main>
-        <Hero settings={settings.hero} workCount={works.length} />
+        <Hero settings={settings.hero} workCount={works.length} liveStats={liveStats} />
         <Marquee items={settings.marquee} />
         <Reveal as="section">
           <Services items={settings.services} />

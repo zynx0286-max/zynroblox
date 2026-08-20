@@ -1,14 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Activity, Users } from "lucide-react";
-import { getLiveGameStats } from "@/lib/live-stats.functions";
+import { getLiveGameStats, type LiveGameStats } from "@/lib/live-stats.functions";
 import { AnimatedCounter } from "./AnimatedCounter";
 
-// Live Roblox game counters. Polls the server fn (which reads the Roblox API)
-// every 30s and renders total visits + concurrent players (CCU) as animated
-// live counts. Falls back gracefully: if the API is unavailable it shows the
-// last known values or hides the "live" styling — never crashes the page.
-export function LiveStats() {
+// Live Roblox game counters. The route loader fetches the numbers during SSR so
+// real values are already in the initial HTML (no flash, no client fetch
+// needed). This component then polls the server fn (which reads the Roblox API)
+// every 30s and re-renders as animated live counts. Falls back gracefully: if
+// the API is unavailable it shows the last known values — never crashes.
+export function LiveStats({ initial }: { initial?: LiveGameStats | null }) {
   const stats = useServerFn(getLiveGameStats);
   const query = useQuery({
     queryKey: ["live-game-stats"],
@@ -16,6 +17,7 @@ export function LiveStats() {
     refetchInterval: 30_000,
     staleTime: 15_000,
     retry: 2,
+    initialData: initial ?? undefined,
   });
 
   const data = query.data;
