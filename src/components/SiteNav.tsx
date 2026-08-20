@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
-import robloxLogo from "@/assets/roblox-logo.png";
+import { RobloxMark } from "./RobloxMark";
 
 type NavLink = { label: string; to: "/" | "/work"; hash?: string };
 
@@ -34,15 +34,8 @@ export function SiteNav() {
           to="/"
           className="flex items-center gap-2 pl-2 font-display text-lg font-bold tracking-[0.2em]"
         >
-          <span className="glass flex size-8 items-center justify-center overflow-hidden rounded-lg">
-            <img
-              src={robloxLogo}
-              alt="Roblox logo mark"
-              width={32}
-              height={32}
-              decoding="async"
-              className="size-5"
-            />
+          <span className="glass flex size-8 items-center justify-center overflow-hidden rounded-lg text-primary">
+            <RobloxMark className="size-5" />
           </span>
           ZYN
         </Link>

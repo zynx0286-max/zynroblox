@@ -7,7 +7,7 @@ import type { HeroSettings } from "@/lib/site-settings";
 import { cn } from "@/lib/utils";
 import { AmbientField } from "./AmbientField";
 import { MagneticButton } from "./MagneticButton";
-import { AnimatedCounter } from "./AnimatedCounter";
+import { LiveStats } from "./LiveStats";
 import { WebGLHero } from "./WebGLHero";
 
 type LayerRef = HTMLDivElement | null;
@@ -76,10 +76,10 @@ export function Hero({ settings, workCount }: { settings: HeroSettings; workCoun
       ref={sectionRef}
       className="relative isolate overflow-hidden pt-28 pb-16 sm:pt-44 sm:pb-32"
     >
-      {/* Full-bleed blurred background */}
+      {/* Full-bleed background stack. Order matters: the blurred image + dark
+          overlay come first, then the WebGL canvas paints ON TOP of them so it
+          is actually visible, and finally the ambient dust + fade. */}
       <div ref={bgRef} className="pointer-events-none absolute inset-0 -z-10 will-change-transform">
-        {/* WebGL immersive layer (boots after the click-to-activate intro) */}
-        <WebGLHero />
         <img
           src={heroBg}
           alt=""
@@ -88,10 +88,12 @@ export function Hero({ settings, workCount }: { settings: HeroSettings; workCoun
           height={1088}
           loading="eager"
           decoding="async"
-          className="h-full w-full scale-105 object-cover opacity-70 blur-0 sm:scale-125 sm:blur-[8px] lg:blur-[10px]"
+          className="h-full w-full scale-105 object-cover opacity-40 blur-0 sm:scale-125 sm:blur-[8px] lg:blur-[10px]"
         />
-        <div className="absolute inset-0 bg-background/60" />
+        <div className="absolute inset-0 bg-background/55" />
         <div ref={glowRef} className="hero-glow absolute inset-0 will-change-transform" />
+        {/* WebGL immersive layer (boots after the click-to-activate intro) */}
+        <WebGLHero />
         {/* Soft floating light blooms */}
         <div
           ref={bloom1Ref}
@@ -193,27 +195,10 @@ export function Hero({ settings, workCount }: { settings: HeroSettings; workCoun
           {workCount} {settings.ctaNote}
         </p>
 
-        <dl className="mx-auto mt-10 grid max-w-3xl grid-cols-2 gap-2.5 sm:mt-14 sm:grid-cols-4 sm:gap-3">
-          {settings.stats.map((s) => {
-            const match = /^(\d+)(.*)$/.exec(s.value);
-            const num = match ? Number(match[1]) : null;
-            const suffix = match ? match[2] : "";
-            return (
-              <div key={s.label} className="glass-card rounded-2xl px-3 py-4 sm:px-4 sm:py-5">
-                <dt className="font-display text-xl font-bold text-primary sm:text-2xl">
-                  {num !== null ? (
-                    <AnimatedCounter value={num} duration={900} suffix={suffix ?? ""} />
-                  ) : (
-                    s.value
-                  )}
-                </dt>
-                <dd className="mt-1 text-[0.62rem] tracking-[0.12em] text-muted-foreground uppercase sm:text-[0.7rem] sm:tracking-[0.15em]">
-                  {s.label}
-                </dd>
-              </div>
-            );
-          })}
-        </dl>
+        {/* Live Roblox counters (visits + CCU), refreshed every 30s. */}
+        <div className="mx-auto mt-10 max-w-3xl sm:mt-14">
+          <LiveStats />
+        </div>
       </div>
     </section>
   );

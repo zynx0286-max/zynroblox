@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ExternalLink, Gamepad2 } from "lucide-react";
 import { GlassImage } from "@/components/GlassFrame";
 import { Tilt3D } from "@/components/Reveal";
 import { track } from "@/lib/analytics";
@@ -38,10 +38,34 @@ export function WorkCard({ work }: { work: Work }) {
           ))}
         </div>
 
-        <span className="mt-4 inline-flex items-center gap-1 font-display text-xs text-primary">
-          View details
-          <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-        </span>
+        <div className="mt-4 flex items-center justify-between gap-2">
+          {work.href ? (
+            <a
+              href={work.href}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => {
+                e.stopPropagation();
+                track("work_external_click", { slug: work.slug });
+              }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 font-display text-xs text-primary transition-colors hover:bg-primary/20"
+            >
+              {work.href.includes("/games/") ? (
+                <Gamepad2 className="size-3.5" />
+              ) : (
+                <ExternalLink className="size-3.5" />
+              )}
+              {work.linkLabel ?? "Open"}
+              <ArrowUpRight className="size-3.5" />
+            </a>
+          ) : (
+            <span />
+          )}
+          <span className="inline-flex items-center gap-1 font-display text-xs text-muted-foreground">
+            Details
+            <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </span>
+        </div>
       </Link>
     </Tilt3D>
   );

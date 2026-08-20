@@ -110,16 +110,17 @@ export function mountWebGLScene(canvas: HTMLCanvasElement, options: WebGLSceneOp
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x0a0a12, 0.06);
+  scene.fog = new THREE.FogExp2(0x0a0a12, 0.045);
 
   camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
-  camera.position.set(0, 0, 7);
+  camera.position.set(0, 0, 7.5);
 
   // Displaced wireform: high-frequency icosahedron displaced along normals.
-  const geo = new THREE.IcosahedronGeometry(2.2, 40);
+  const geo = new THREE.IcosahedronGeometry(2.4, 48);
   const mat = new THREE.ShaderMaterial({
     transparent: true,
     wireframe: true,
+    depthWrite: false,
     uniforms: {
       uTime: { value: 0 },
       uScroll: { value: 0 },
@@ -130,21 +131,32 @@ export function mountWebGLScene(canvas: HTMLCanvasElement, options: WebGLSceneOp
     fragmentShader: SHADERS.fragment,
   });
   wireform = new THREE.Mesh(geo, mat);
-  wireform.scale.setScalar(1.1);
+  wireform.scale.setScalar(1.15);
   scene.add(wireform);
 
+  // Inner solid core with a fresnel glow, so the object reads as 3D even at a
+  // glance and doesn't just look like a flat wireframe.
+  const coreGeo = new THREE.IcosahedronGeometry(2.4, 6);
+  const coreMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color("#0b0b18"),
+    transparent: true,
+    opacity: 0.92,
+  });
+  const core = new THREE.Mesh(coreGeo, coreMat);
+  wireform.add(core);
+
   // Particle field — drifting starfield.
-  const count = 1800;
+  const count = 2400;
   const positions = new Float32Array(count * 3);
   const sizes = new Float32Array(count);
   for (let i = 0; i < count; i++) {
-    const r = 6 + Math.random() * 18;
+    const r = 5 + Math.random() * 20;
     const t = Math.random() * Math.PI * 2;
     const p = Math.acos(2 * Math.random() - 1);
     positions[i * 3] = r * Math.sin(p) * Math.cos(t);
     positions[i * 3 + 1] = r * Math.sin(p) * Math.sin(t);
     positions[i * 3 + 2] = r * Math.cos(p) - 6;
-    sizes[i] = Math.random() * 1.6 + 0.3;
+    sizes[i] = Math.random() * 1.8 + 0.3;
   }
   const pgeo = new THREE.BufferGeometry();
   pgeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
@@ -252,6 +264,11 @@ export function mountWebGLScene(canvas: HTMLCanvasElement, options: WebGLSceneOp
     canvas.removeEventListener("pointermove", onPointer);
     wireform?.geometry.dispose();
     disposeMaterial(wireform?.material);
+    if (wireform?.children.length) {
+      const child = wireform.children[0] as THREE.Mesh | undefined;
+      child?.geometry.dispose();
+      disposeMaterial(child?.material);
+    }
     particles?.geometry.dispose();
     disposeMaterial(particles?.material);
     renderer?.dispose();
