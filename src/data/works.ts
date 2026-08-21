@@ -2,6 +2,7 @@ import batALuckyBlock from "@/assets/bat-a-lucky-block.png";
 import bonfireSimulator from "@/assets/bonfire-simulator.png";
 import carpetCleaning from "@/assets/carpet-cleaning-simulator.png";
 import chefs from "@/assets/chefs.png";
+import cleanAllTheLeaves from "@/assets/clean-all-the-leaves.svg";
 import cleanThePlushieStore from "@/assets/clean-the-plushie-store.png";
 import cleanTheStores from "@/assets/clean-the-stores.png";
 import darkVsLight from "@/assets/dark-vs-light.png";
@@ -54,6 +55,19 @@ export const CATEGORIES: WorkCategory[] = [
 
 export const works: Work[] = [
   {
+    slug: "clean-all-the-leaves",
+    title: "Clean All The Leaves",
+    category: "QA Testing",
+    role: "QA Tester",
+    description:
+      "QA testing on leaf cleanup mechanics, tool progression, and currency scaling. Verified spawn rates, prompt reliability, and upgrade pacing across extended sessions.",
+    tags: ["Simulator QA", "Economy Testing", "Featured Game"],
+    href: "https://www.roblox.com/games/92637789841354/Clean-all-the-leaves",
+    linkLabel: "View on Roblox",
+    image: cleanAllTheLeaves,
+    featured: true,
+  },
+  {
     slug: "simple-bricks",
     title: "Simple Bricks",
     category: "QA Testing",
@@ -62,7 +76,7 @@ export const works: Work[] = [
       "QA testing for Simple Bricks — a game that caught the attention of major Roblox content creators. Both KreekCraft and Caylus made content in this game.",
     tags: ["Featured Game", "QA Testing"],
     linkLabel: "View on Roblox",
-    featured: true,
+    featured: false,
   },
 
   // ---------- SFX / Audio ----------

@@ -2,6 +2,7 @@ import batALuckyBlock from "@/assets/bat-a-lucky-block.png";
 import bonfireSimulator from "@/assets/bonfire-simulator.png";
 import carpetCleaning from "@/assets/carpet-cleaning-simulator.png";
 import chefs from "@/assets/chefs.png";
+import cleanAllTheLeaves from "@/assets/clean-all-the-leaves.svg";
 import cleanThePlushieStore from "@/assets/clean-the-plushie-store.png";
 import cleanTheStores from "@/assets/clean-the-stores.png";
 import darkVsLight from "@/assets/dark-vs-light.png";
@@ -35,6 +36,7 @@ const ASSETS: Record<string, string> = {
   "bonfire-simulator.png": bonfireSimulator,
   "carpet-cleaning-simulator.png": carpetCleaning,
   "chefs.png": chefs,
+  "clean-all-the-leaves.svg": cleanAllTheLeaves,
   "clean-the-plushie-store.png": cleanThePlushieStore,
   "clean-the-stores.png": cleanTheStores,
   "dark-vs-light.png": darkVsLight,

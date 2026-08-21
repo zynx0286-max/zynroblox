@@ -15,6 +15,7 @@ const links: NavLink[] = [
 export function SiteNav() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -23,11 +24,20 @@ export function SiteNav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const scrollToHash = (hash: string) => {
+    const el = document.getElementById(hash);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4">
       <nav
         className={`mx-auto flex max-w-5xl items-center justify-between rounded-full px-3 py-2 transition-all duration-300 ${
-          scrolled ? "glass-strong" : "glass"
+          scrolled
+            ? "glass-strong bg-black/40 backdrop-blur-xl"
+            : "glass bg-black/20 backdrop-blur-lg"
         }`}
       >
         <Link
@@ -40,13 +50,31 @@ export function SiteNav() {
           ZYN
         </Link>
 
-        <div className="hidden items-center gap-1 md:flex">
-          {links.map((l) => (
+        <div
+          className="hidden items-center gap-1 md:flex"
+          onMouseLeave={() => setHoveredIndex(null)}
+        >
+          {links.map((l, i) => (
             <Link
               key={l.label}
               to={l.to}
               {...(l.hash ? { hash: l.hash } : {})}
-              className="rounded-full px-4 py-2 font-display text-sm tracking-wide text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+              onMouseEnter={() => setHoveredIndex(i)}
+              onClick={(e) => {
+                if (l.hash) {
+                  e.preventDefault();
+                  scrollToHash(l.hash);
+                }
+              }}
+              className={`relative rounded-full px-4 py-2 font-display text-sm tracking-wide transition-all duration-300 ${
+                hoveredIndex !== null && hoveredIndex !== i
+                  ? "blur-sm opacity-40 scale-95"
+                  : "hover:blur-0 hover:opacity-100 hover:scale-100"
+              } ${
+                l.hash
+                  ? "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
               activeOptions={{ exact: true }}
               activeProps={{ className: "text-foreground bg-secondary/60" }}
             >
@@ -82,7 +110,10 @@ export function SiteNav() {
               key={l.label}
               to={l.to}
               {...(l.hash ? { hash: l.hash } : {})}
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                if (l.hash) scrollToHash(l.hash);
+              }}
               className="rounded-xl px-4 py-3 font-display text-sm text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
             >
               {l.label}

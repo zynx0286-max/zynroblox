@@ -5,6 +5,7 @@ import heroBg from "@/assets/hero-bg.jpg";
 import { track } from "@/lib/analytics";
 import type { HeroSettings } from "@/lib/site-settings";
 import { cn } from "@/lib/utils";
+import { AnimatedCounter } from "./AnimatedCounter";
 import { AmbientField } from "./AmbientField";
 import { MagneticButton } from "./MagneticButton";
 import { LiveStats } from "./LiveStats";
@@ -200,7 +201,8 @@ export function Hero({
         </div>
 
         <p className="mt-4 text-[0.7rem] text-muted-foreground sm:text-xs">
-          {workCount} {settings.ctaNote}
+          <AnimatedCounter value={workCount} duration={1500} className="font-semibold" />{" "}
+          {settings.ctaNote}
         </p>
 
         {/* Live Roblox counters (visits + CCU), refreshed every 30s. */}

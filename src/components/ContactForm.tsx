@@ -1,22 +1,37 @@
 import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Send, CheckCircle2, MessageCircle, AlertCircle } from "lucide-react";
+import {
+  Loader2,
+  Send,
+  CheckCircle2,
+  MessageCircle,
+  AlertCircle,
+  Mail,
+  ExternalLink,
+} from "lucide-react";
 import { contactSchema, sendContactMessage } from "@/lib/contact.functions";
 import { track } from "@/lib/analytics";
 
-
-const projectTypes = [
-  "SFX Design",
-  "QA Testing",
-  "Community Management",
-  "Game Research",
-  "Other",
-];
+const projectTypes = ["SFX Design", "QA Testing", "Community Management", "Game Research", "Other"];
 
 type FieldKey = "name" | "email" | "projectType" | "message";
 type Errors = Partial<Record<FieldKey, string>>;
 
 const MESSAGE_MAX = 1200;
+const GMAIL_EMAIL = "zynx0286@gmail.com";
+
+const buildGmailUrl = (values: {
+  projectType: string;
+  message: string;
+  name: string;
+  email: string;
+}) => {
+  const subject = encodeURIComponent(`Portfolio Contact: ${values.projectType} - ${values.name}`);
+  const body = encodeURIComponent(
+    `Name: ${values.name}\nEmail: ${values.email}\nProject Type: ${values.projectType}\n\nMessage:\n${values.message}`,
+  );
+  return `https://mail.google.com/mail/?view=cm&fs=1&to=${GMAIL_EMAIL}&su=${subject}&body=${body}`;
+};
 
 export function ContactForm() {
   const send = useServerFn(sendContactMessage);
@@ -32,7 +47,6 @@ export function ContactForm() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState("");
   const startedAt = useRef(Date.now());
-
 
   const validate = (next = values): Errors => {
     const parsed = contactSchema.safeParse(next);
@@ -64,6 +78,12 @@ export function ContactForm() {
     "w-full rounded-xl border bg-background/40 px-4 py-3 text-sm text-foreground outline-none transition-all placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/40";
   const fieldCls = (key: FieldKey) =>
     `${fieldBase} ${errors[key] ? "border-destructive/70 focus:border-destructive" : "border-border focus:border-primary/60"}`;
+
+  const openGmail = () => {
+    const url = buildGmailUrl(values);
+    window.open(url, "_blank", "noopener,noreferrer");
+    track("contact_gmail_opened", { projectType: values.projectType });
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,7 +119,6 @@ export function ContactForm() {
     }
   };
 
-
   const Label = ({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) => (
     <label
       htmlFor={htmlFor}
@@ -123,8 +142,8 @@ export function ContactForm() {
         <CheckCircle2 className="mx-auto size-9 text-primary" />
         <h3 className="mt-4 font-display text-xl font-semibold">Message sent</h3>
         <p className="mt-2 text-sm text-muted-foreground">
-          It landed in my inbox. Email replies can take a while — ping me on Discord for a
-          faster answer.
+          It landed in my inbox. Email replies can take a while — ping me on Discord for a faster
+          answer.
         </p>
         <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a
@@ -174,7 +193,6 @@ export function ContactForm() {
           Takes about a minute — all fields are required. Protected against spam.
         </p>
       </div>
-
 
       <div className="relative mt-6 grid gap-4 sm:grid-cols-2">
         <div>
@@ -260,14 +278,29 @@ export function ContactForm() {
         </p>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={status === "sending"}
-        className="relative mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-4 font-display text-base font-bold text-primary-foreground transition-all hover:shadow-[var(--shadow-glow)] disabled:opacity-60"
-      >
-        {status === "sending" ? <Loader2 className="size-5 animate-spin" /> : <Send className="size-5" />}
-        {status === "sending" ? "Sending…" : "Send message"}
-      </button>
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+        <button
+          type="submit"
+          disabled={status === "sending"}
+          className="relative inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-4 font-display text-base font-bold text-primary-foreground transition-all hover:shadow-[var(--shadow-glow)] disabled:opacity-60"
+        >
+          {status === "sending" ? (
+            <Loader2 className="size-5 animate-spin" />
+          ) : (
+            <Send className="size-5" />
+          )}
+          {status === "sending" ? "Sending…" : "Send message"}
+        </button>
+
+        <button
+          type="button"
+          onClick={openGmail}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-green-600/10 border border-green-500/30 px-7 py-4 font-display text-base font-semibold text-green-400 hover:bg-green-600/20 transition-colors"
+        >
+          <Mail className="size-5" />
+          Open in Gmail
+        </button>
+      </div>
 
       <a
         href="https://discord.com/users/acczyn"
@@ -278,6 +311,17 @@ export function ContactForm() {
         <MessageCircle className="size-4 text-primary" />
         Or message me on Discord — @acczyn
       </a>
+
+      <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+        <span>Direct email:</span>
+        <a
+          href={`mailto:${GMAIL_EMAIL}`}
+          className="inline-flex items-center gap-1 text-primary hover:underline font-mono"
+        >
+          {GMAIL_EMAIL}
+          <ExternalLink className="size-3" />
+        </a>
+      </div>
     </form>
   );
 }

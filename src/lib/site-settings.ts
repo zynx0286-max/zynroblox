@@ -291,7 +291,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
       },
       {
         q: "Do you work in Robux or real money?",
-        a: "Both. Robux is the default for services listed on the pricing page; USD is also fine for larger or long-term projects.",
+        a: "Both. I accept Robux (game passes, group payouts, DevEx-eligible) or gift cards of your selection (Roblox, Visa, Amazon). USD via PayPal/Stripe is also fine for larger or long-term projects.",
       },
       {
         q: "Can you do a full game sound pack?",

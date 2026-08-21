@@ -1,13 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 
-// Barely-audible procedural ambient pad built with the Web Audio API — no audio
-// files shipped. A handful of detuned sine/triangle oscillators form a soft,
-// open-fifth drone through a lowpass filter with a slow LFO, plus gentle
-// amplitude swells so it breathes.
-//
-// Browsers block audio until a user gesture, so it starts quietly on the first
-// click / keypress anywhere on the page (never interrupts — it fades in at a
-// very low volume). A mute toggle sits in the corner; `M` toggles it too.
 export function AmbientAudio() {
   const [muted, setMuted] = useState(false);
   const [armed, setArmed] = useState(false);
@@ -32,38 +24,36 @@ export function AmbientAudio() {
       ctxRef.current = ctx;
 
       master = ctx.createGain();
-      master.gain.value = 0; // fade in
+      master.gain.value = 0;
       master.connect(ctx.destination);
       masterRef.current = master;
 
       const filter = ctx.createBiquadFilter();
       filter.type = "lowpass";
-      filter.frequency.value = 620;
+      filter.frequency.value = 800;
       filter.Q.value = 0.7;
       filter.connect(master);
 
-      // Soft drone — root + open fifth + shimmer, each slightly detuned.
-      const root = 55; // A1
+      const root = 55;
       const partials: Array<{ freq: number; type: OscillatorType; gain: number }> = [
-        { freq: root, type: "sine", gain: 0.5 },
-        { freq: root * 1.5, type: "sine", gain: 0.28 },
-        { freq: root * 2, type: "triangle", gain: 0.16 },
-        { freq: root * 2.5, type: "sine", gain: 0.12 },
-        { freq: root * 3, type: "triangle", gain: 0.08 },
-        { freq: root * 4.01, type: "sine", gain: 0.05 },
-        { freq: root * 5.02, type: "sine", gain: 0.04 },
+        { freq: root, type: "sine", gain: 0.6 },
+        { freq: root * 1.5, type: "sine", gain: 0.35 },
+        { freq: root * 2, type: "triangle", gain: 0.2 },
+        { freq: root * 2.5, type: "sine", gain: 0.15 },
+        { freq: root * 3, type: "triangle", gain: 0.1 },
+        { freq: root * 4.01, type: "sine", gain: 0.06 },
+        { freq: root * 5.02, type: "sine", gain: 0.05 },
       ];
       for (const p of partials) {
         const o = ctx.createOscillator();
         o.type = p.type;
         o.frequency.value = p.freq;
         const g = ctx.createGain();
-        g.gain.value = p.gain * 0.5;
-        // Slow detune drift so the pad is never static.
+        g.gain.value = p.gain * 0.6;
         const lfo = ctx.createOscillator();
         lfo.frequency.value = 0.05 + Math.random() * 0.05;
         const lfoGain = ctx.createGain();
-        lfoGain.gain.value = 2.5;
+        lfoGain.gain.value = 3;
         lfo.connect(lfoGain).connect(o.detune);
         lfo.start();
         o.connect(g).connect(filter);
@@ -71,33 +61,30 @@ export function AmbientAudio() {
         oscs.push(o, lfo);
       }
 
-      // Breathing amplitude swell (skipped for reduced-motion).
       if (!reduced) {
         const swell = ctx.createOscillator();
         swell.type = "sine";
-        swell.frequency.value = 0.06;
+        swell.frequency.value = 0.07;
         const swellGain = ctx.createGain();
-        swellGain.gain.value = 0.12;
+        swellGain.gain.value = 0.15;
         swell.connect(swellGain).connect(master.gain);
         swell.start();
         oscs.push(swell);
       }
 
-      // Filter sweep for life.
       if (!reduced) {
         const fl = ctx.createOscillator();
-        fl.frequency.value = 0.04;
+        fl.frequency.value = 0.045;
         const flg = ctx.createGain();
-        flg.gain.value = 180;
+        flg.gain.value = 200;
         fl.connect(flg).connect(filter.frequency);
         fl.start();
         oscs.push(fl);
       }
 
-      // Fade in to a very low volume over ~4s.
-      const target = reduced ? 0.02 : 0.04;
+      const target = reduced ? 0.08 : 0.15;
       master.gain.setValueAtTime(0, ctx.currentTime);
-      master.gain.linearRampToValueAtTime(target, ctx.currentTime + 4);
+      master.gain.linearRampToValueAtTime(target, ctx.currentTime + 3);
 
       setArmed(true);
     };
@@ -108,8 +95,8 @@ export function AmbientAudio() {
       window.removeEventListener("keydown", arm);
     };
 
-    window.addEventListener("pointerdown", arm, { once: true });
-    window.addEventListener("keydown", arm, { once: true });
+    window.addEventListener("pointerdown", arm, { once: true, passive: true });
+    window.addEventListener("keydown", arm, { once: true, passive: true });
 
     return () => {
       window.removeEventListener("pointerdown", arm);
@@ -118,7 +105,7 @@ export function AmbientAudio() {
         const now = ctx.currentTime;
         master.gain.cancelScheduledValues(now);
         master.gain.setValueAtTime(master.gain.value, now);
-        master.gain.linearRampToValueAtTime(0, now + 0.6);
+        master.gain.linearRampToValueAtTime(0, now + 0.5);
         const ctxToClose = ctx;
         setTimeout(() => {
           for (const o of oscs) {
@@ -129,7 +116,7 @@ export function AmbientAudio() {
             }
           }
           ctxToClose.close().catch(() => {});
-        }, 700);
+        }, 600);
       }
     };
   }, []);
@@ -138,9 +125,9 @@ export function AmbientAudio() {
     const ctx = ctxRef.current;
     const master = masterRef.current;
     if (!ctx || !master) return;
-    const target = muted ? 0 : 0.04;
+    const target = muted ? 0 : 0.15;
     master.gain.cancelScheduledValues(ctx.currentTime);
-    master.gain.linearRampToValueAtTime(target, ctx.currentTime + 0.5);
+    master.gain.linearRampToValueAtTime(target, ctx.currentTime + 0.4);
   }, [muted]);
 
   useEffect(() => {

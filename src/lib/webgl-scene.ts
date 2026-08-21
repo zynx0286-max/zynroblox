@@ -34,9 +34,42 @@ export function mountWebGLScene(canvas: HTMLCanvasElement, options: WebGLSceneOp
   const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
   camera.position.set(0, 0, 7);
 
-  const primary = getComputedStyle(document.documentElement)
-    .getPropertyValue("--primary")
-    .trim() || "#7c7cff";
+  const parseCssColor = (css: string): string => {
+    const clean = css.trim();
+    if (clean.startsWith("#")) return clean;
+    const rgbMatch = clean.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (rgbMatch) {
+      const r = Number(rgbMatch[1]).toString(16).padStart(2, "0");
+      const g = Number(rgbMatch[2]).toString(16).padStart(2, "0");
+      const b = Number(rgbMatch[3]).toString(16).padStart(2, "0");
+      return `#${r}${g}${b}`;
+    }
+    const hslMatch = clean.match(/hsla?\((\d+),\s*(\d+)%,\s*(\d+)%/);
+    if (hslMatch) {
+      const h = Number(hslMatch[1]) / 360;
+      const s = Number(hslMatch[2]) / 100;
+      const l = Number(hslMatch[3]) / 100;
+      const hue2rgb = (p: number, q: number, t: number) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+      };
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      const r = Math.round(hue2rgb(p, q, h + 1 / 3) * 255);
+      const g = Math.round(hue2rgb(p, q, h) * 255);
+      const b = Math.round(hue2rgb(p, q, h - 1 / 3) * 255);
+      return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+    }
+    return "#7c7cff";
+  };
+
+  const primary = parseCssColor(
+    getComputedStyle(document.documentElement).getPropertyValue("--primary"),
+  );
 
   // Low-poly wireframe "globe" — the hero's centrepiece.
   const wireGeo = new THREE.IcosahedronGeometry(2.3, 6);

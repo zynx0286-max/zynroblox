@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import { GlassFrame } from "@/components/GlassFrame";
+import { AnimatedCounter } from "./AnimatedCounter";
 import type { AboutSettings } from "@/lib/site-settings";
 
 export function About({ settings }: { settings: AboutSettings }) {
@@ -35,11 +36,15 @@ export function About({ settings }: { settings: AboutSettings }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="glass rounded-2xl px-5 py-5">
-              <p className="font-display text-2xl font-bold">{settings.stat1.value}</p>
+              <p className="font-display text-2xl font-bold">
+                <AnimatedCounter value={settings.stat1.value} duration={1800} />
+              </p>
               <p className="text-xs text-muted-foreground">{settings.stat1.label}</p>
             </div>
             <div className="glass rounded-2xl px-5 py-5">
-              <p className="font-display text-2xl font-bold">{settings.stat2.value}</p>
+              <p className="font-display text-2xl font-bold">
+                <AnimatedCounter value={settings.stat2.value} duration={1800} />
+              </p>
               <p className="text-xs text-muted-foreground">{settings.stat2.label}</p>
             </div>
           </div>

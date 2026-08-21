@@ -7,7 +7,7 @@ export function Marquee({ items }: { items: MarqueeItem[] }) {
 
   return (
     <section className="relative overflow-hidden border-y border-border py-8">
-      <div className="marquee-track flex w-max gap-12">
+      <div className="marquee-track flex w-max gap-12 animate-marquee">
         {row.map((item, i) => {
           const Icon = ICONS[item.icon] ?? ICONS.audio;
           return (

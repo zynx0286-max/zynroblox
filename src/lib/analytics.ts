@@ -6,7 +6,8 @@ type EventName =
   | "email_click"
   | "work_view"
   | "work_external_click"
-  | "cta_click";
+  | "cta_click"
+  | "contact_gmail_opened";
 
 type Props = Record<string, string | number | boolean | undefined>;
 

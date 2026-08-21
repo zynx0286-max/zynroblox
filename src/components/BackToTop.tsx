@@ -2,10 +2,6 @@ import { useEffect, useState } from "react";
 import { ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/**
- * Back-to-top button: appears after the page has been scrolled, hides once
- * you're back at the top. Transform/opacity only, so it's cheap.
- */
 export function BackToTop() {
   const [shown, setShown] = useState(false);
 
@@ -38,7 +34,7 @@ export function BackToTop() {
       aria-label="Back to top"
       onClick={scrollTop}
       className={cn(
-        "glass-card fixed right-5 bottom-5 z-50 grid size-11 place-items-center rounded-full text-primary shadow-[var(--shadow-glow)] transition-all duration-300 hover:-translate-y-0.5 sm:right-7 sm:bottom-7",
+        "fixed right-5 bottom-5 z-50 grid size-11 place-items-center rounded-full bg-black/30 backdrop-blur-sm text-primary shadow-lg transition-all duration-300 hover:bg-black/50 hover:-translate-y-0.5 sm:right-7 sm:bottom-7",
         shown
           ? "pointer-events-auto translate-y-0 opacity-100"
           : "pointer-events-none translate-y-3 opacity-0",
