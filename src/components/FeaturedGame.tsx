@@ -4,7 +4,8 @@ import type { Work } from "@/data/works";
 import type { FeaturedSettings } from "@/lib/site-settings";
 
 export function FeaturedGame({ works, settings }: { works: Work[]; settings: FeaturedSettings }) {
-  const featured = works.find((w) => w.featured);
+  // Show Clean All The Leaves as featured (highest priority)
+  const featured = works.find((w) => w.slug === "clean-all-the-leaves") ?? works.find((w) => w.featured);
   if (!featured) return null;
 
   return (

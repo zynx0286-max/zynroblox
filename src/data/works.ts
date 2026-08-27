@@ -43,6 +43,7 @@ export type Work = {
   linkLabel?: string;
   image?: string;
   featured?: boolean;
+  popularity?: number; // CCU/popularity for sorting
 };
 
 export const CATEGORIES: WorkCategory[] = [
@@ -55,6 +56,18 @@ export const CATEGORIES: WorkCategory[] = [
 
 export const works: Work[] = [
   {
+    slug: "simple-bricks",
+    title: "Simple Bricks",
+    category: "QA Testing",
+    role: "QA Tester",
+    description:
+      "QA testing for Simple Bricks — a game that caught the attention of major Roblox content creators. Both KreekCraft and Caylus made content in this game.",
+    tags: ["Featured Game", "QA Testing"],
+    linkLabel: "View on Roblox",
+    featured: true,
+    popularity: 15000,
+  },
+  {
     slug: "clean-all-the-leaves",
     title: "Clean All The Leaves",
     category: "QA Testing",
@@ -66,40 +79,8 @@ export const works: Work[] = [
     linkLabel: "View on Roblox",
     image: cleanAllTheLeaves,
     featured: true,
+    popularity: 12000,
   },
-  {
-    slug: "simple-bricks",
-    title: "Simple Bricks",
-    category: "QA Testing",
-    role: "QA Tester",
-    description:
-      "QA testing for Simple Bricks — a game that caught the attention of major Roblox content creators. Both KreekCraft and Caylus made content in this game.",
-    tags: ["Featured Game", "QA Testing"],
-    linkLabel: "View on Roblox",
-    featured: false,
-  },
-
-  // ---------- SFX / Audio ----------
-  {
-    slug: "cultivation-mmorpg",
-    title: "Roblox Cultivation MMORPG",
-    category: "SFX / Audio",
-    role: "Lead SFX Artist",
-    description:
-      "Lead sound effects artist for an upcoming Roblox cultivation MMORPG. Designed ambient beds, cultivation ability SFX, combat impacts and environmental audio.",
-    tags: ["Lead SFX", "MMORPG", "Ambient Audio"],
-  },
-  {
-    slug: "roshel-survivors",
-    title: "Roshel Survivors",
-    category: "SFX / Audio",
-    role: "SFX Designer",
-    description:
-      "Sound design for Roshel Survivors — survivor ability sounds, environment ambiance, pickup feedback and UI audio cues.",
-    tags: ["SFX Design", "Survivors Genre", "UI Audio"],
-  },
-
-  // ---------- QA Testing ----------
   {
     slug: "hammer-fishing",
     title: "Hammer Fishing",
@@ -111,6 +92,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/76627283311558/Hammer-Fishing",
     linkLabel: "View on Roblox",
     image: hammerFishing,
+    popularity: 8500,
   },
   {
     slug: "saber-per-click",
@@ -123,6 +105,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/135464400227494/1-Saber-Per-Click",
     linkLabel: "View on Roblox",
     image: saberPerClick,
+    popularity: 7200,
   },
   {
     slug: "fuse-beasts",
@@ -135,6 +118,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/108393667410597/Fuse-Beasts",
     linkLabel: "View on Roblox",
     image: fuseBeasts,
+    popularity: 6800,
   },
   {
     slug: "clean-the-stores",
@@ -147,6 +131,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/139422634028895/Clean-The-Stores",
     linkLabel: "View on Roblox",
     image: cleanTheStores,
+    popularity: 6200,
   },
   {
     slug: "clean-the-plushie-store",

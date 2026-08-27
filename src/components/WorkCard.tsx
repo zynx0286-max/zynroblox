@@ -1,11 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, ExternalLink, Gamepad2 } from "lucide-react";
+import { ArrowUpRight, ExternalLink, Gamepad2, Users } from "lucide-react";
 import { GlassImage } from "@/components/GlassFrame";
 import { Tilt3D } from "@/components/Reveal";
 import { track } from "@/lib/analytics";
 import type { Work } from "@/data/works";
 
 export function WorkCard({ work }: { work: Work }) {
+  const hasPop = work.popularity && work.popularity > 0;
+
   return (
     <Tilt3D className="h-full" strength={6}>
       <Link
@@ -22,16 +24,23 @@ export function WorkCard({ work }: { work: Work }) {
           </p>
           <h3 className="mt-2 font-display text-base font-semibold sm:text-lg">{work.title}</h3>
           <p className="text-xs text-muted-foreground">{work.role}</p>
-          <p className="mt-3 line-clamp-4 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
             {work.description}
           </p>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        {hasPop && (
+          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary">
+            <Users className="size-3" />
+            <span className="font-medium">{work.popularity!.toLocaleString()} CCU</span>
+          </div>
+        )}
+
+        <div className="mt-3 flex flex-wrap gap-1.5">
           {work.tags.map((tag) => (
             <span
               key={tag}
-              className="rounded-full border border-border bg-secondary/40 px-2.5 py-1 text-[0.68rem] text-muted-foreground sm:px-3 sm:text-[0.7rem]"
+              className="rounded-full border border-border bg-secondary/40 px-2.5 py-1 text-[0.6rem] text-muted-foreground sm:px-3 sm:text-[0.65rem]"
             >
               {tag}
             </span>

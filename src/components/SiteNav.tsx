@@ -31,23 +31,28 @@ export function SiteNav() {
     }
   };
 
+  const getLinkClass = (l: NavLink, i: number) => {
+    const hovered = hoveredIndex !== null && hoveredIndex !== i;
+    const isHash = l.hash ? true : false;
+    const base =
+      "relative rounded-full px-4 py-2 font-display text-sm tracking-wide transition-colors";
+    const hover = hovered ? "opacity-60 scale-95" : "hover:opacity-100 hover:scale-100";
+    const linkType = l.hash
+      ? "text-muted-foreground hover:text-foreground"
+      : "text-muted-foreground hover:text-foreground";
+    return `${base} ${hover} ${linkType}`;
+  };
+
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4">
-      <nav
-        className={`mx-auto flex max-w-5xl items-center justify-between rounded-full px-3 py-2 transition-all duration-300 ${
-          scrolled
-            ? "glass-strong bg-black/40 backdrop-blur-xl"
-            : "glass bg-black/20 backdrop-blur-lg"
-        }`}
-      >
+      <nav className="mx-auto flex max-w-5xl items-center justify-between rounded-full px-3 py-2 transition-colors bg-black/20 backdrop-blur-md">
         <Link
           to="/"
           className="flex items-center gap-2 pl-2 font-display text-lg font-bold tracking-[0.2em]"
         >
-          <span className="glass flex size-8 items-center justify-center overflow-hidden rounded-lg text-primary">
+          <span className="glass flex size-8 items-center justify-center overflow-hidden rounded-lg">
             <RobloxMark className="size-5" />
           </span>
-          ZYN
         </Link>
 
         <div
@@ -66,15 +71,7 @@ export function SiteNav() {
                   scrollToHash(l.hash);
                 }
               }}
-              className={`relative rounded-full px-4 py-2 font-display text-sm tracking-wide transition-all duration-300 ${
-                hoveredIndex !== null && hoveredIndex !== i
-                  ? "blur-sm opacity-40 scale-95"
-                  : "hover:blur-0 hover:opacity-100 hover:scale-100"
-              } ${
-                l.hash
-                  ? "text-muted-foreground hover:text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className="relative rounded-full px-4 py-2 font-display text-sm tracking-wide transition-colors hover:opacity-100 hover:scale-100 "
               activeOptions={{ exact: true }}
               activeProps={{ className: "text-foreground bg-secondary/60" }}
             >

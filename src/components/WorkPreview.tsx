@@ -6,7 +6,14 @@ import { Reveal } from "@/components/Reveal";
 import type { WorkPreviewSettings } from "@/lib/site-settings";
 
 export function WorkPreview({ works, settings }: { works: Work[]; settings: WorkPreviewSettings }) {
-  const preview = works.filter((w) => !w.featured).slice(0, 6);
+  // Sort by popularity (CCU) descending, featured first
+  const sortedWorks = [...works].sort((a, b) => {
+    if (a.featured && !b.featured) return -1;
+    if (!a.featured && b.featured) return 1;
+    return (b.popularity || 0) - (a.popularity || 0);
+  });
+
+  const preview = sortedWorks.filter((w) => !w.featured).slice(0, 6);
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:py-20">

@@ -3,19 +3,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteNav } from "@/components/SiteNav";
 import { Hero } from "@/components/Hero";
 import { Marquee } from "@/components/Marquee";
-import { Stats } from "@/components/Stats";
 import { About } from "@/components/About";
-import { Services } from "@/components/Services";
 import { FeaturedGame } from "@/components/FeaturedGame";
 import { WorkPreview } from "@/components/WorkPreview";
-import { Skills } from "@/components/Skills";
-import { Testimonials } from "@/components/Testimonials";
 import { ContactCta } from "@/components/ContactCta";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Reveal } from "@/components/Reveal";
 import { ScrollProgress } from "@/components/ScrollProgress";
-import { Process } from "@/components/Process";
-import { Faq } from "@/components/Faq";
 import { getPublicSiteData } from "@/lib/public-data";
 import { getLiveGameStats } from "@/lib/live-stats.functions";
 
@@ -74,27 +68,15 @@ function Index() {
         <Hero settings={settings.hero} workCount={works.length} liveStats={liveStats} />
         <Marquee items={settings.marquee} />
         <Reveal as="section">
-          <Services items={settings.services} />
-        </Reveal>
-        <Reveal as="section">
           <FeaturedGame works={works} settings={settings.featured} />
         </Reveal>
         <Reveal as="section">
           <About settings={settings.about} />
         </Reveal>
-        <Process settings={settings.process} />
         <WorkPreview works={works} settings={settings.workPreview} />
         <Reveal as="section">
-          <Stats settings={settings.stats} />
+          <ContactCta settings={settings.contact} />
         </Reveal>
-        <Reveal as="section">
-          <Skills settings={settings.skills} />
-        </Reveal>
-        <Reveal as="section">
-          <Testimonials testimonials={testimonials} reviews={reviews} />
-        </Reveal>
-        <Faq settings={settings.faq} />
-        <ContactCta settings={settings.contact} />
       </main>
       <SiteFooter />
     </div>

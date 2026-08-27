@@ -30,11 +30,12 @@ export function AmbientAudio() {
 
       const filter = ctx.createBiquadFilter();
       filter.type = "lowpass";
-      filter.frequency.value = 800;
+      filter.frequency.value = 750;
       filter.Q.value = 0.7;
       filter.connect(master);
 
-      const root = 55;
+      // Soft drone — root + open fifth + shimmer, each slightly detuned.
+      const root = 55; // A1
       const partials: Array<{ freq: number; type: OscillatorType; gain: number }> = [
         { freq: root, type: "sine", gain: 0.6 },
         { freq: root * 1.5, type: "sine", gain: 0.35 },
@@ -50,6 +51,7 @@ export function AmbientAudio() {
         o.frequency.value = p.freq;
         const g = ctx.createGain();
         g.gain.value = p.gain * 0.6;
+        // Slow detune drift so the pad is never static.
         const lfo = ctx.createOscillator();
         lfo.frequency.value = 0.05 + Math.random() * 0.05;
         const lfoGain = ctx.createGain();
@@ -61,6 +63,7 @@ export function AmbientAudio() {
         oscs.push(o, lfo);
       }
 
+      // Breathing amplitude swell (skipped for reduced-motion).
       if (!reduced) {
         const swell = ctx.createOscillator();
         swell.type = "sine";
@@ -72,6 +75,7 @@ export function AmbientAudio() {
         oscs.push(swell);
       }
 
+      // Filter sweep for life.
       if (!reduced) {
         const fl = ctx.createOscillator();
         fl.frequency.value = 0.045;
@@ -82,7 +86,8 @@ export function AmbientAudio() {
         oscs.push(fl);
       }
 
-      const target = reduced ? 0.08 : 0.15;
+      // Fade in to a clearly audible volume over ~3s.
+      const target = reduced ? 0.08 : 0.2;
       master.gain.setValueAtTime(0, ctx.currentTime);
       master.gain.linearRampToValueAtTime(target, ctx.currentTime + 3);
 
@@ -125,7 +130,7 @@ export function AmbientAudio() {
     const ctx = ctxRef.current;
     const master = masterRef.current;
     if (!ctx || !master) return;
-    const target = muted ? 0 : 0.15;
+    const target = muted ? 0 : 0.2;
     master.gain.cancelScheduledValues(ctx.currentTime);
     master.gain.linearRampToValueAtTime(target, ctx.currentTime + 0.4);
   }, [muted]);

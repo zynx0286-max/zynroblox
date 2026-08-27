@@ -97,24 +97,22 @@ export function Hero({
           height={1088}
           loading="eager"
           decoding="async"
-          className="h-full w-full scale-105 object-cover opacity-40 blur-0 sm:scale-125 sm:blur-[8px] lg:blur-[10px]"
+          className="h-full w-full scale-105 object-cover opacity-30 blur-0 sm:scale-125 sm:blur-[8px] lg:blur-[10px]"
         />
-        <div className="absolute inset-0 bg-background/55" />
+        <div className="absolute inset-0 bg-background/30" />
         <div ref={glowRef} className="hero-glow absolute inset-0 will-change-transform" />
-        {/* WebGL immersive layer (boots after the click-to-activate intro) */}
+        {/* WebGL immersive layer - on top of background/overlay */}
         <WebGLHero />
         {/* Soft floating light blooms */}
         <div
           ref={bloom1Ref}
-          className="float-slow absolute -top-20 -left-24 size-[18rem] rounded-full bg-primary/20 blur-[40px] will-change-transform sm:size-[28rem] sm:blur-[120px]"
+          className="float-slow absolute -top-20 -left-24 size-[18rem] rounded-full bg-primary/15 blur-[40px] will-change-transform sm:size-[28rem] sm:blur-[120px]"
         />
         <div
           ref={bloom2Ref}
-          className="float-slow absolute -right-24 top-24 size-[16rem] rounded-full bg-accent/20 blur-[45px] will-change-transform [animation-delay:-4s] sm:size-[24rem] sm:blur-[130px]"
+          className="float-slow absolute -right-24 top-24 size-[16rem] rounded-full bg-accent/15 blur-[45px] will-change-transform [animation-delay:-4s] sm:size-[24rem] sm:blur-[130px]"
         />
-        {/* Ambient particle field (GPU-cheap canvas, skips itself on
-            reduced-motion / low-power screens). */}
-        <AmbientField className="opacity-70 mix-blend-screen" />
+        <AmbientField className="opacity-50 mix-blend-screen" />
         <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent to-background sm:h-64" />
       </div>
 
