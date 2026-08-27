@@ -65,7 +65,7 @@ export const works: Work[] = [
     tags: ["Featured Game", "QA Testing"],
     linkLabel: "View on Roblox",
     featured: true,
-    popularity: 15000,
+    popularity: 42,
   },
   {
     slug: "clean-all-the-leaves",
@@ -79,7 +79,7 @@ export const works: Work[] = [
     linkLabel: "View on Roblox",
     image: cleanAllTheLeaves,
     featured: true,
-    popularity: 12000,
+    popularity: 156,
   },
   {
     slug: "hammer-fishing",
@@ -92,7 +92,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/76627283311558/Hammer-Fishing",
     linkLabel: "View on Roblox",
     image: hammerFishing,
-    popularity: 8500,
+    popularity: 8,
   },
   {
     slug: "saber-per-click",
@@ -105,7 +105,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/135464400227494/1-Saber-Per-Click",
     linkLabel: "View on Roblox",
     image: saberPerClick,
-    popularity: 7200,
+    popularity: 23,
   },
   {
     slug: "fuse-beasts",
@@ -118,7 +118,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/108393667410597/Fuse-Beasts",
     linkLabel: "View on Roblox",
     image: fuseBeasts,
-    popularity: 6800,
+    popularity: 12,
   },
   {
     slug: "clean-the-stores",
@@ -131,7 +131,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/139422634028895/Clean-The-Stores",
     linkLabel: "View on Roblox",
     image: cleanTheStores,
-    popularity: 6200,
+    popularity: 34,
   },
   {
     slug: "clean-the-plushie-store",
@@ -144,6 +144,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/140213417266552/Clean-the-Plushie-Store",
     linkLabel: "View on Roblox",
     image: cleanThePlushieStore,
+    popularity: 19,
   },
   {
     slug: "mine-and-craft",
@@ -156,6 +157,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/82792613389716/Mine-Craft",
     linkLabel: "View on Roblox",
     image: mineAndCraft,
+    popularity: 41,
   },
   {
     slug: "killer",
@@ -168,6 +170,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/127829441663442/KILLER",
     linkLabel: "View on Roblox",
     image: killer,
+    popularity: 67,
   },
   {
     slug: "carpet-cleaning-simulator",
@@ -180,6 +183,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/124374448373637/Carpet-Cleaning-Simulator",
     linkLabel: "View on Roblox",
     image: carpetCleaning,
+    popularity: 89,
   },
   {
     slug: "fire-to-burn",
@@ -192,6 +196,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/128817055149531/Fire-To-Burn-Testing-Place",
     linkLabel: "View on Roblox",
     image: fireToBurn,
+    popularity: 5,
   },
   {
     slug: "bonfire-simulator",
@@ -203,6 +208,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/118453620477435/Bonfire-Simulator",
     linkLabel: "View on Roblox",
     image: bonfireSimulator,
+    popularity: 31,
   },
   {
     slug: "roll-and-cook",
@@ -214,6 +220,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/76324403646826/Roll-and-Cook",
     linkLabel: "View on Roblox",
     image: rollAndCook,
+    popularity: 14,
   },
   {
     slug: "chefs",
@@ -225,6 +232,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/95619050204839/Chefs",
     linkLabel: "View on Roblox",
     image: chefs,
+    popularity: 56,
   },
   {
     slug: "squishy-card-farm",
@@ -237,6 +245,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/74595134564362/Squishy-Card-Farm",
     linkLabel: "View on Roblox",
     image: squishyCardFarm,
+    popularity: 28,
   },
   {
     slug: "dark-vs-light",
@@ -249,6 +258,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/132840462842306/Dark-vs-Light",
     linkLabel: "View on Roblox",
     image: darkVsLight,
+    popularity: 73,
   },
   {
     slug: "head-tap",
@@ -261,6 +271,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/124673719670870/HEAD-TAP",
     linkLabel: "View on Roblox",
     image: headTap,
+    popularity: 11,
   },
   {
     slug: "engineria-project-x",
@@ -273,6 +284,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/131306380730931/Engineria-Project-X",
     linkLabel: "View on Roblox",
     image: engineria,
+    popularity: 9,
   },
   {
     slug: "real-or-fake",
@@ -285,6 +297,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/76003622011064/Real-Or-Fake",
     linkLabel: "View on Roblox",
     image: realOrFake,
+    popularity: 6,
   },
   {
     slug: "lost-at-sea",
@@ -297,6 +310,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/77718866164617/Lost-At-Sea",
     linkLabel: "View on Roblox",
     image: lostAtSea,
+    popularity: 18,
   },
   {
     slug: "bat-a-lucky-block",
@@ -309,6 +323,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/121566235598425/Bat-A-Lucky-Block",
     linkLabel: "View on Roblox",
     image: batALuckyBlock,
+    popularity: 15,
   },
   {
     slug: "survive-and-save-slimes",
@@ -321,6 +336,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/games/128747993322083/Survive-and-Save-Slimes",
     linkLabel: "View on Roblox",
     image: surviveSlimes,
+    popularity: 24,
   },
   {
     slug: "fortify-tower-defense",
@@ -333,6 +349,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/users/1752054483/profile",
     linkLabel: "View on Roblox",
     image: fortify,
+    popularity: 37,
   },
 
   // ---------- QA communities / studios ----------
@@ -347,6 +364,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/communities/1112217926/Fluxwerk#!/about",
     linkLabel: "View Community",
     image: fluxwerk,
+    popularity: 22,
   },
   {
     slug: "star-realm",
@@ -359,6 +377,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/communities/986454152/Star-Realm#!/about",
     linkLabel: "View Community",
     image: starRealm,
+    popularity: 33,
   },
   {
     slug: "pow-productions",
@@ -371,6 +390,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/communities/33152116",
     linkLabel: "View Community",
     image: powProductions,
+    popularity: 17,
   },
   {
     slug: "horizon-qa",
@@ -383,6 +403,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/communities/691606265/Horizon-QA#!/about",
     linkLabel: "View Community",
     image: horizonQa,
+    popularity: 29,
   },
 
   // ---------- Community work ----------
@@ -396,6 +417,7 @@ export const works: Work[] = [
     tags: ["Discord", "9.7k Members", "Events"],
     href: "https://discord.gg/5CM7GTFRx",
     linkLabel: "Join Discord",
+    popularity: 45,
   },
   {
     slug: "zae-studios",
@@ -408,6 +430,7 @@ export const works: Work[] = [
     href: "https://zae-build-core.base44.app/",
     linkLabel: "View Studio",
     image: zaeStudios,
+    popularity: 38,
   },
   {
     slug: "higher-elites",
@@ -420,6 +443,7 @@ export const works: Work[] = [
     href: "https://www.roblox.com/communities/1095211077/Higher-Elites#!/about",
     linkLabel: "View Community",
     image: higherElites,
+    popularity: 21,
   },
   {
     slug: "unnamed-community",
@@ -429,6 +453,7 @@ export const works: Work[] = [
     description:
       "Served as a community moderator, enforcing rules, resolving disputes and maintaining a healthy server environment.",
     tags: ["Moderation", "Server Management"],
+    popularity: 12,
   },
 ];
 
