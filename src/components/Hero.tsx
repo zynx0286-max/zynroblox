@@ -9,7 +9,6 @@ import { AnimatedCounter } from "./AnimatedCounter";
 import { AmbientField } from "./AmbientField";
 import { MagneticButton } from "./MagneticButton";
 import { LiveStats } from "./LiveStats";
-import { WebGLHero } from "./WebGLHero";
 
 type LayerRef = HTMLDivElement | null;
 
@@ -86,8 +85,7 @@ export function Hero({
       className="relative isolate overflow-hidden pt-28 pb-16 sm:pt-44 sm:pb-32"
     >
       {/* Full-bleed background stack. Order matters: the blurred image + dark
-          overlay come first, then the WebGL canvas paints ON TOP of them so it
-          is actually visible, and finally the ambient dust + fade. */}
+          overlay come first, then the ambient dust + fade. */}
       <div ref={bgRef} className="pointer-events-none absolute inset-0 -z-10 will-change-transform">
         <img
           src={heroBg}
@@ -101,8 +99,6 @@ export function Hero({
         />
         <div className="absolute inset-0 bg-background/30" />
         <div ref={glowRef} className="hero-glow absolute inset-0 will-change-transform" />
-        {/* WebGL immersive layer - on top of background/overlay */}
-        <WebGLHero />
         {/* Soft floating light blooms */}
         <div
           ref={bloom1Ref}

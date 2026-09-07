@@ -6,6 +6,8 @@ import { Marquee } from "@/components/Marquee";
 import { About } from "@/components/About";
 import { FeaturedGame } from "@/components/FeaturedGame";
 import { WorkPreview } from "@/components/WorkPreview";
+import { Testimonials } from "@/components/Testimonials";
+import { ExampleWorks } from "@/components/ExampleWorks";
 import { ContactCta } from "@/components/ContactCta";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Reveal } from "@/components/Reveal";
@@ -58,7 +60,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { works, testimonials, reviews, settings, liveStats } = Route.useLoaderData();
+  const { works, settings, liveStats } = Route.useLoaderData();
 
   return (
     <div className="min-h-screen bg-background">
@@ -74,6 +76,12 @@ function Index() {
           <About settings={settings.about} />
         </Reveal>
         <WorkPreview works={works} settings={settings.workPreview} />
+        <Reveal as="section">
+          <Testimonials settings={settings.testimonials} />
+        </Reveal>
+        <Reveal as="section">
+          <ExampleWorks settings={settings.exampleWorks} />
+        </Reveal>
         <Reveal as="section">
           <ContactCta settings={settings.contact} />
         </Reveal>

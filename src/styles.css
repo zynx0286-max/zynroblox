@@ -413,19 +413,10 @@ html.zyn-cursor-active * {
 /*
  * Immersive layer.
  *
- * These styles back the WebGL hero backdrop, the kinetic typography, and the
- * ambient-audio toggle. Every element starts automatically and degrades
- * gracefully when WebGL / WebAudio or a user gesture is unavailable.
+ * These styles back the kinetic typography and the ambient-audio toggle.
+ * Every element starts automatically and degrades gracefully when
+ * WebAudio or a user gesture is unavailable.
  */
-
-/* WebGL hero canvas — sits behind the hero copy, full-bleed. */
-.zyn-webgl-hero {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
 
 /* Kinetic typography word wrappers (see ScrollFX). */
 .zyn-kword {

@@ -13,6 +13,7 @@ import {
   Headphones,
   type LucideIcon,
 } from "lucide-react";
+import testimonialCodex from "@/assets/testimonial-codex.webp";
 
 export type IconKey =
   | "audio"
@@ -107,6 +108,18 @@ export type WorkPreviewSettings = {
   ctaLabel: string;
 };
 
+export type TestimonialItem = {
+  quote: string;
+  author: string;
+  role: string;
+  project?: string;
+  image?: string;
+};
+export type TestimonialSettings = { heading: string; sub: string; items: TestimonialItem[] };
+
+export type ExampleWorkItem = { title: string; description: string; image?: string; href?: string; tags: string[] };
+export type ExampleWorksSettings = { heading: string; sub: string; items: ExampleWorkItem[] };
+
 export type ProcessStep = { icon: IconKey; title: string; copy: string };
 export type ProcessSettings = { heading: string; sub: string; steps: ProcessStep[] };
 export type FaqItem = { q: string; a: string };
@@ -124,6 +137,8 @@ export type SiteSettings = {
   workPreview: WorkPreviewSettings;
   process: ProcessSettings;
   faq: FaqSettings;
+  testimonials: TestimonialSettings;
+  exampleWorks: ExampleWorksSettings;
 };
 
 export const DEFAULT_SETTINGS: SiteSettings = {
@@ -307,6 +322,59 @@ export const DEFAULT_SETTINGS: SiteSettings = {
       },
     ],
   },
+  testimonials: {
+    heading: "What clients say",
+    sub: "Real feedback from developers I've worked with.",
+    items: [
+      {
+        quote:
+          "ZYN's marketing work helped Codex Customs grow with real engagement — consistent, creative, and always on time with deliverables.",
+        author: "Codex Customs",
+        role: "Marketing Team",
+        project: "Codex Customs — 5.4k members",
+        image: testimonialCodex,
+      },
+      {
+        quote: "ZYN caught critical bugs before launch that would've broken the player experience. Professional, thorough, and fast.",
+        author: "Dev @ Fluxwerk",
+        role: "Lead Developer",
+        project: "Multiple titles",
+      },
+      {
+        quote: "Best SFX artist I've worked with. Delivered exactly what we needed on time, and the sounds elevated our game's feel instantly.",
+        author: "Dev @ Star Realm",
+        role: "Producer",
+        project: "Star Realm",
+      },
+      {
+        quote: "Community management on point. Grew our Discord from 2k to 10k+ members with real engagement, not just numbers.",
+        author: "Owner @ Trading Port",
+        role: "Server Owner",
+        project: "Trading Port — Blox Fruits",
+      },
+    ],
+  },
+  exampleWorks: {
+    heading: "Example Works",
+    sub: "Selected projects showcasing QA, community, and SFX work.",
+    items: [
+      {
+        title: "Simple Bricks",
+        description: "QA testing for a viral Roblox game featured by KreekCraft and Caylus.",
+        tags: ["QA Testing", "Featured"],
+      },
+      {
+        title: "Clean All The Leaves",
+        description: "Simulator QA — economy testing, tool progression, and currency scaling.",
+        tags: ["Simulator QA", "Economy Testing"],
+      },
+      {
+        title: "Fluxwerk Studio",
+        description: "Studio QA — structured test passes, reproducible bug reports, release verification.",
+        tags: ["Studio QA", "Release QA"],
+      },
+    ],
+  },
 };
 
 export function mergeSettings(stored: Record<string, unknown> | undefined): SiteSettings {
@@ -384,6 +452,16 @@ export function mergeSettings(stored: Record<string, unknown> | undefined): Site
     ? (faqRaw["items"] as FaqItem[])
     : DEFAULT_SETTINGS.faq.items;
 
+  const testimonialsRaw = pickObj("testimonials");
+  const testimonialItems = Array.isArray(testimonialsRaw?.["items"])
+    ? (testimonialsRaw["items"] as TestimonialItem[])
+    : DEFAULT_SETTINGS.testimonials.items;
+
+  const exampleWorksRaw = pickObj("exampleWorks");
+  const exampleWorksItems = Array.isArray(exampleWorksRaw?.["items"])
+    ? (exampleWorksRaw["items"] as ExampleWorkItem[])
+    : DEFAULT_SETTINGS.exampleWorks.items;
+
   return {
     hero: {
       ...DEFAULT_SETTINGS.hero,
@@ -428,6 +506,16 @@ export function mergeSettings(stored: Record<string, unknown> | undefined): Site
       ...DEFAULT_SETTINGS.faq,
       ...faqRaw,
       items: faqItems,
+    },
+    testimonials: {
+      ...DEFAULT_SETTINGS.testimonials,
+      ...testimonialsRaw,
+      items: testimonialItems,
+    },
+    exampleWorks: {
+      ...DEFAULT_SETTINGS.exampleWorks,
+      ...exampleWorksRaw,
+      items: exampleWorksItems,
     },
   };
 }

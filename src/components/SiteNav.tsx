@@ -1,14 +1,16 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { RobloxMark } from "./RobloxMark";
 
-type NavLink = { label: string; to: "/" | "/work"; hash?: string };
+type NavLink = { label: string; to: "/" | "/work" | "/reviews"; hash?: string };
 
 const links: NavLink[] = [
   { label: "Home", to: "/" },
   { label: "About", to: "/", hash: "about" },
   { label: "Work", to: "/work" },
+  { label: "Testimonials", to: "/", hash: "testimonials" },
+  { label: "Reviews", to: "/reviews" },
   { label: "Contact", to: "/", hash: "contact" },
 ];
 
@@ -16,6 +18,8 @@ export function SiteNav() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -24,28 +28,25 @@ export function SiteNav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const scrollToHash = (hash: string) => {
-    const el = document.getElementById(hash);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
+  const goToHash = (hash: string) => {
+    if (location.pathname !== "/") {
+      void navigate({ to: "/", hash }).then(() => {
+        window.setTimeout(() => {
+          document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+      });
+      return;
     }
-  };
-
-  const getLinkClass = (l: NavLink, i: number) => {
-    const hovered = hoveredIndex !== null && hoveredIndex !== i;
-    const isHash = l.hash ? true : false;
-    const base =
-      "relative rounded-full px-4 py-2 font-display text-sm tracking-wide transition-colors";
-    const hover = hovered ? "opacity-60 scale-95" : "hover:opacity-100 hover:scale-100";
-    const linkType = l.hash
-      ? "text-muted-foreground hover:text-foreground"
-      : "text-muted-foreground hover:text-foreground";
-    return `${base} ${hover} ${linkType}`;
+    document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4">
-      <nav className="mx-auto flex max-w-5xl items-center justify-between rounded-full px-3 py-2 transition-colors bg-black/20 backdrop-blur-md">
+      <nav
+        className={`mx-auto flex max-w-5xl items-center justify-between rounded-full px-3 py-2 transition-colors ${
+          scrolled ? "bg-black/10 backdrop-blur-sm" : "bg-black/5 backdrop-blur-sm"
+        }`}
+      >
         <Link
           to="/"
           className="flex items-center gap-2 pl-2 font-display text-lg font-bold tracking-[0.2em]"
@@ -59,25 +60,35 @@ export function SiteNav() {
           className="hidden items-center gap-1 md:flex"
           onMouseLeave={() => setHoveredIndex(null)}
         >
-          {links.map((l, i) => (
-            <Link
-              key={l.label}
-              to={l.to}
-              {...(l.hash ? { hash: l.hash } : {})}
-              onMouseEnter={() => setHoveredIndex(i)}
-              onClick={(e) => {
-                if (l.hash) {
-                  e.preventDefault();
-                  scrollToHash(l.hash);
-                }
-              }}
-              className="relative rounded-full px-4 py-2 font-display text-sm tracking-wide transition-colors hover:opacity-100 hover:scale-100 "
-              activeOptions={{ exact: true }}
-              activeProps={{ className: "text-foreground bg-secondary/60" }}
-            >
-              {l.label}
-            </Link>
-          ))}
+          {links.map((l, i) => {
+              // Dark oval only on the Work page's Work tab — nowhere else.
+              const isActive = l.to === "/work" && location.pathname.startsWith("/work");
+              const hovered = hoveredIndex !== null && hoveredIndex !== i;
+              const base = "relative rounded-full px-4 py-2 font-display text-sm tracking-wide transition-all duration-300";
+              const hover = hovered ? "opacity-70 scale-98" : "hover:opacity-100 hover:scale-100";
+              const activeStyle = isActive
+                ? "bg-black/30 text-foreground shadow-md"
+                : "text-muted-foreground hover:text-foreground";
+              const className = `${base} ${hover} ${activeStyle}`;
+              return (
+                <Link
+                  key={l.label}
+                  to={l.to}
+                  {...(l.hash ? { hash: l.hash } : {})}
+                  onMouseEnter={() => setHoveredIndex(i)}
+                  onClick={(e) => {
+                    if (l.hash) {
+                      e.preventDefault();
+                      setHoveredIndex(null);
+                      goToHash(l.hash);
+                    }
+                  }}
+                  className={className}
+                >
+                  {l.label}
+                </Link>
+              );
+            })}
         </div>
 
         <div className="flex items-center gap-2">
@@ -107,9 +118,10 @@ export function SiteNav() {
               key={l.label}
               to={l.to}
               {...(l.hash ? { hash: l.hash } : {})}
-              onClick={() => {
+              onClick={(e) => {
+                if (l.hash) e.preventDefault();
                 setOpen(false);
-                if (l.hash) scrollToHash(l.hash);
+                if (l.hash) goToHash(l.hash);
               }}
               className="rounded-xl px-4 py-3 font-display text-sm text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
             >

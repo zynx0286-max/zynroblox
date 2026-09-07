@@ -26,6 +26,11 @@ import squishyCardFarm from "@/assets/squishy-card-farm.png";
 import starRealm from "@/assets/star-realm.png";
 import surviveSlimes from "@/assets/survive-and-save-slimes.png";
 import zaeStudios from "@/assets/zae-studios.png";
+import stealALuckyEgg from "@/assets/steal-a-lucky-egg.png";
+import cleanYourAsmr from "@/assets/clean-your-asmr.png";
+import amazarkIcon from "@/assets/amazark-icon.png";
+import codexCustomsIcon from "@/assets/codex-customs-icon.png";
+import animeChroniclesIcon from "@/assets/anime-chronicles-icon.png";
 
 export const SITE_URL = "https://zynroblox.lovable.app";
 
@@ -454,6 +459,71 @@ export const works: Work[] = [
       "Served as a community moderator, enforcing rules, resolving disputes and maintaining a healthy server environment.",
     tags: ["Moderation", "Server Management"],
     popularity: 12,
+  },
+  {
+    slug: "steal-a-lucky-egg",
+    title: "Steal A Lucky Egg",
+    category: "SFX / Audio",
+    role: "SFX Artist",
+    description:
+      "SFX artist for Steal A Lucky Egg — a viral incremental simulator with 6.8M+ visits. Crafted ability, hatch and UI sounds that match the game's fast, playful loop.",
+    tags: ["SFX Design", "6.8M Visits", "Simulator"],
+    href: "https://www.roblox.com/games/123698673940079/Steal-A-Lucky-Egg",
+    linkLabel: "View on Roblox",
+    image: stealALuckyEgg,
+    popularity: 200,
+  },
+  {
+    slug: "clean-your-asmr",
+    title: "Clean Your ASMR",
+    category: "QA Testing",
+    role: "QA Tester",
+    description:
+      "QA tester for Clean Your ASMR — a satisfying cleaning tycoon with 2.2M+ visits. Tested squish collection, cleaner hires, base upgrades and steal mechanics across sessions.",
+    tags: ["Tycoon QA", "2.2M Visits", "Economy Testing"],
+    href: "https://www.roblox.com/games/79880685816862/Clean-your-ASMR",
+    linkLabel: "View on Roblox",
+    image: cleanYourAsmr,
+    popularity: 190,
+  },
+  {
+    slug: "amazark-client-acquisition",
+    title: "Amazark Corporation",
+    category: "Community Manager",
+    role: "Assistant Manager / Client Acquisition Specialist",
+    description:
+      "Assistant manager and client acquisition specialist for Amazark Corporation LLC — a Roblox development services community with 5.6k+ members. Handling client intake, service scoping and acquisition flow.",
+    tags: ["Discord", "5.6k Members", "Client Acquisition"],
+    href: "https://discord.gg/C3pzQGFmmT",
+    linkLabel: "Join Discord",
+    image: amazarkIcon,
+    popularity: 60,
+  },
+  {
+    slug: "codex-customs-marketing",
+    title: "Codex Customs",
+    category: "Community Coordinator",
+    role: "Marketing Team",
+    description:
+      "Marketing team member for Codex Customs — a Roblox development studio community with 5.4k+ members focused on quality builds, assets and vehicles.",
+    tags: ["Discord", "5.4k Members", "Marketing"],
+    href: "https://discord.gg/codexcustoms",
+    linkLabel: "Join Discord",
+    image: codexCustomsIcon,
+    popularity: 55,
+  },
+  {
+    slug: "anime-chronicles-staff",
+    title: "Anime Chronicles",
+    category: "Community Manager",
+    role: "Head of Staff",
+    description:
+      "Head of staff for Anime Chronicles — an in-development anime TD on Roblox. Leading the staff team, moderation structure and launch preparation.",
+    tags: ["Discord", "Head of Staff", "In Development"],
+    href: "https://discord.gg/rJf2S5Atqh",
+    linkLabel: "Join Discord",
+    image: animeChroniclesIcon,
+    popularity: 40,
   },
 ];
 

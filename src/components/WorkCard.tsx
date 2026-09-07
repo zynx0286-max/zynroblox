@@ -1,13 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, ExternalLink, Gamepad2, Users } from "lucide-react";
+import { ArrowUpRight, ExternalLink, Gamepad2 } from "lucide-react";
 import { GlassImage } from "@/components/GlassFrame";
 import { Tilt3D } from "@/components/Reveal";
 import { track } from "@/lib/analytics";
 import type { Work } from "@/data/works";
 
 export function WorkCard({ work }: { work: Work }) {
-  const hasPop = work.popularity && work.popularity > 0;
-
   return (
     <Tilt3D className="h-full" strength={6}>
       <Link
@@ -28,13 +26,6 @@ export function WorkCard({ work }: { work: Work }) {
             {work.description}
           </p>
         </div>
-
-        {hasPop && (
-          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary">
-            <Users className="size-3" />
-            <span className="font-medium">{work.popularity!.toLocaleString()} CCU</span>
-          </div>
-        )}
 
         <div className="mt-3 flex flex-wrap gap-1.5">
           {work.tags.map((tag) => (

@@ -26,6 +26,11 @@ import squishyCardFarm from "@/assets/squishy-card-farm.png";
 import starRealm from "@/assets/star-realm.png";
 import surviveSlimes from "@/assets/survive-and-save-slimes.png";
 import zaeStudios from "@/assets/zae-studios.png";
+import stealALuckyEgg from "@/assets/steal-a-lucky-egg.png";
+import cleanYourAsmr from "@/assets/clean-your-asmr.png";
+import amazarkIcon from "@/assets/amazark-icon.png";
+import codexCustomsIcon from "@/assets/codex-customs-icon.png";
+import animeChroniclesIcon from "@/assets/anime-chronicles-icon.png";
 
 // Lookup for assets referenced by the data layer. Work images are stored as
 // paths (e.g. "/src/assets/hammer-fishing.png" or a bare filename); at build
@@ -60,6 +65,11 @@ const ASSETS: Record<string, string> = {
   "star-realm.png": starRealm,
   "survive-and-save-slimes.png": surviveSlimes,
   "zae-studios.png": zaeStudios,
+  "steal-a-lucky-egg.png": stealALuckyEgg,
+  "clean-your-asmr.png": cleanYourAsmr,
+  "amazark-icon.png": amazarkIcon,
+  "codex-customs-icon.png": codexCustomsIcon,
+  "anime-chronicles-icon.png": animeChroniclesIcon,
 };
 
 const KNOWN = new Set(Object.keys(ASSETS));
