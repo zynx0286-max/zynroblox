@@ -32,7 +32,7 @@ import amazarkIcon from "@/assets/amazark-icon.png";
 import codexCustomsIcon from "@/assets/codex-customs-icon.png";
 import animeChroniclesIcon from "@/assets/anime-chronicles-icon.png";
 
-export const SITE_URL = "https://zynroblox.lovable.app";
+export const SITE_URL = "https://zyn-roblox-portfolio.zynx0286.workers.dev";
 
 export type WorkCategory =
   "QA Testing" | "Game Scout" | "Community Manager" | "Community Coordinator" | "SFX / Audio";
