@@ -19,9 +19,10 @@ dist-ssr
 # Runtime data (self-hosted store) — re-seeded from the static catalog
 data/
 
-# Environment — only non-secret, public values are stored in .env
-# (Supabase publishable key + project URL). Keep any real secrets (service
-# role key, admin password) out of git and in platform env vars instead.
+# Environment — secrets live in .env.local (dev) or platform env vars (prod).
+# .env is ignored too: it has contained real keys before and must never be
+# committed. Public template lives in .env.example.
+.env
 .env.local
 .env.*.local
 !.env.example

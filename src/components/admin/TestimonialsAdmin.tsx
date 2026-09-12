@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   ArrowDown,
@@ -46,6 +47,7 @@ const toInput = (t: Testimonial): TestimonialInput => ({
 
 export function TestimonialsAdmin() {
   const qc = useQueryClient();
+  const router = useRouter();
   const list = useServerFn(adminListTestimonials);
   const create = useServerFn(createTestimonial);
   const update = useServerFn(updateTestimonial);
@@ -61,7 +63,11 @@ export function TestimonialsAdmin() {
     queryFn: () => list(),
   });
 
-  const invalidate = () => void qc.invalidateQueries({ queryKey: ["admin-testimonials"] });
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ["admin-testimonials"] });
+    // Public pages read via route loaders — refetch them so edits show live.
+    void router.invalidate();
+  };
   const onError = (err: unknown) => {
     captureError(err, { area: "admin" });
     setError(err instanceof Error ? err.message : "Something went wrong");

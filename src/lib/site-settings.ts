@@ -117,9 +117,6 @@ export type TestimonialItem = {
 };
 export type TestimonialSettings = { heading: string; sub: string; items: TestimonialItem[] };
 
-export type ExampleWorkItem = { title: string; description: string; image?: string; href?: string; tags: string[] };
-export type ExampleWorksSettings = { heading: string; sub: string; items: ExampleWorkItem[] };
-
 export type ProcessStep = { icon: IconKey; title: string; copy: string };
 export type ProcessSettings = { heading: string; sub: string; steps: ProcessStep[] };
 export type FaqItem = { q: string; a: string };
@@ -138,7 +135,6 @@ export type SiteSettings = {
   process: ProcessSettings;
   faq: FaqSettings;
   testimonials: TestimonialSettings;
-  exampleWorks: ExampleWorksSettings;
 };
 
 export const DEFAULT_SETTINGS: SiteSettings = {
@@ -150,7 +146,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     titleSuffix: "for Roblox games",
     subtext:
       "I craft original sound effects — abilities, impacts, UI and ambience — that make Roblox games feel alive. Alongside audio I also handle QA testing, community management and game research.",
-    ctaLabel: "Hear My Work",
+    ctaLabel: "See My Works",
     ctaNote: "projects in the portfolio — sound design, QA and community work.",
     discordLabel: "Message me on Discord",
     discordUrl: "https://discord.com/users/acczyn",
@@ -306,7 +302,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
       },
       {
         q: "Do you work in Robux or real money?",
-        a: "Both. I accept Robux (game passes, group payouts, DevEx-eligible) or gift cards of your selection (Roblox, Visa, Amazon).",
+        a: "Both. I accept Robux or Visa gift cards at 100 Robux = $1. Games over 100 concurrent players can also discuss long-term rev share.",
       },
       {
         q: "Can you do a full game sound pack?",
@@ -335,43 +331,25 @@ export const DEFAULT_SETTINGS: SiteSettings = {
         image: testimonialCodex,
       },
       {
-        quote: "ZYN caught critical bugs before launch that would've broken the player experience. Professional, thorough, and fast.",
+        quote:
+          "ZYN caught critical bugs before launch that would've broken the player experience. Professional, thorough, and fast.",
         author: "Dev @ Fluxwerk",
         role: "Lead Developer",
         project: "Multiple titles",
       },
       {
-        quote: "Best SFX artist I've worked with. Delivered exactly what we needed on time, and the sounds elevated our game's feel instantly.",
+        quote:
+          "Best SFX artist I've worked with. Delivered exactly what we needed on time, and the sounds elevated our game's feel instantly.",
         author: "Dev @ Star Realm",
         role: "Producer",
         project: "Star Realm",
       },
       {
-        quote: "Community management on point. Grew our Discord from 2k to 10k+ members with real engagement, not just numbers.",
+        quote:
+          "Community management on point. Grew our Discord from 2k to 10k+ members with real engagement, not just numbers.",
         author: "Owner @ Trading Port",
         role: "Server Owner",
-        project: "Trading Port — Blox Fruits",
-      },
-    ],
-  },
-  exampleWorks: {
-    heading: "Example Works",
-    sub: "Selected projects showcasing QA, community, and SFX work.",
-    items: [
-      {
-        title: "Simple Bricks",
-        description: "QA testing for a viral Roblox game featured by KreekCraft and Caylus.",
-        tags: ["QA Testing", "Featured"],
-      },
-      {
-        title: "Clean All The Leaves",
-        description: "Simulator QA — economy testing, tool progression, and currency scaling.",
-        tags: ["Simulator QA", "Economy Testing"],
-      },
-      {
-        title: "Fluxwerk Studio",
-        description: "Studio QA — structured test passes, reproducible bug reports, release verification.",
-        tags: ["Studio QA", "Release QA"],
+          project: "Trading Port — Blox Fruits",
       },
     ],
   },
@@ -457,11 +435,6 @@ export function mergeSettings(stored: Record<string, unknown> | undefined): Site
     ? (testimonialsRaw["items"] as TestimonialItem[])
     : DEFAULT_SETTINGS.testimonials.items;
 
-  const exampleWorksRaw = pickObj("exampleWorks");
-  const exampleWorksItems = Array.isArray(exampleWorksRaw?.["items"])
-    ? (exampleWorksRaw["items"] as ExampleWorkItem[])
-    : DEFAULT_SETTINGS.exampleWorks.items;
-
   return {
     hero: {
       ...DEFAULT_SETTINGS.hero,
@@ -511,11 +484,6 @@ export function mergeSettings(stored: Record<string, unknown> | undefined): Site
       ...DEFAULT_SETTINGS.testimonials,
       ...testimonialsRaw,
       items: testimonialItems,
-    },
-    exampleWorks: {
-      ...DEFAULT_SETTINGS.exampleWorks,
-      ...exampleWorksRaw,
-      items: exampleWorksItems,
     },
   };
 }

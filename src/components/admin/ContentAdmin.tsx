@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { Check, Loader2, Plus, Trash2, GripVertical } from "lucide-react";
 import { captureError } from "@/lib/sentry";
@@ -26,7 +27,6 @@ const SECTIONS: { key: SectionKey; label: string }[] = [
   { key: "process", label: "How I work" },
   { key: "faq", label: "FAQ" },
   { key: "testimonials", label: "Testimonials" },
-  { key: "exampleWorks", label: "Example Works" },
   { key: "contact", label: "Contact" },
 ];
 
@@ -38,6 +38,7 @@ const ICON_KEYS = Object.keys(ICONS) as IconKey[];
 
 export function ContentAdmin() {
   const qc = useQueryClient();
+  const router = useRouter();
   const load = useServerFn(listSiteSettings);
   const save = useServerFn(saveSiteSettings);
 
@@ -68,6 +69,8 @@ export function ContentAdmin() {
       setTimeout(() => setSaved(false), 2000);
       void qc.invalidateQueries({ queryKey: ["site-settings"] });
       void qc.invalidateQueries({ queryKey: ["site-settings-public"] });
+      // Public pages read via route loaders — refetch them so edits show live.
+      void router.invalidate();
     },
     onError: (err: unknown) => {
       captureError(err, { area: "admin" });
@@ -149,7 +152,6 @@ export function ContentAdmin() {
           {active === "process" ? <ProcessEditor settings={settings} set={set} /> : null}
 {active === "faq" ? <FaqEditor settings={settings} set={set} /> : null}
           {active === "testimonials" ? <TestimonialsEditor settings={settings} set={set} /> : null}
-          {active === "exampleWorks" ? <ExampleWorksEditor settings={settings} set={set} /> : null}
         {active === "contact" ? <ContactEditor settings={settings} set={set} /> : null}
         </div>
       </div>
@@ -934,132 +936,6 @@ function TestimonialsEditor({
           className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 font-display text-xs"
         >
           <Plus className="size-3.5" /> Add testimonial
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ExampleWorksEditor({
-  settings,
-  set,
-}: {
-  settings: SiteSettings;
-  set: <K extends SectionKey>(k: K, v: SiteSettings[K]) => void;
-}) {
-  const w = settings.exampleWorks;
-  return (
-    <div className="grid gap-4">
-      <div>
-        <span className={label}>Heading</span>
-        <TextField value={w.heading} onChange={(v) => set("exampleWorks", { ...w, heading: v })} />
-      </div>
-      <div>
-        <span className={label}>Subheading</span>
-        <TextField value={w.sub} onChange={(v) => set("exampleWorks", { ...w, sub: v })} />
-      </div>
-      <div className="space-y-4">
-        {w.items.map((item, i) => (
-          <div key={i} className="rounded-2xl border border-border bg-secondary/20 p-4">
-            <div className="flex items-center justify-between">
-              <p className="font-display text-sm font-semibold">{item.title || `Work ${i + 1}`}</p>
-              <button
-                type="button"
-                onClick={() =>
-                  set("exampleWorks", { ...w, items: w.items.filter((_, j) => j !== i) })
-                }
-                className="rounded-full border border-destructive/50 p-2 text-destructive"
-              >
-                <Trash2 className="size-3.5" />
-              </button>
-            </div>
-            <div className="mt-3 grid gap-3">
-              <div>
-                <span className={label}>Title</span>
-                <input
-                  className={field}
-                  value={item.title}
-                  onChange={(e) =>
-                    set("exampleWorks", {
-                      ...w,
-                      items: w.items.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)),
-                    })
-                  }
-                />
-              </div>
-              <div>
-                <span className={label}>Description</span>
-                <textarea
-                  rows={2}
-                  className={`${field} resize-none`}
-                  value={item.description}
-                  onChange={(e) =>
-                    set("exampleWorks", {
-                      ...w,
-                      items: w.items.map((x, j) =>
-                        j === i ? { ...x, description: e.target.value } : x,
-                      ),
-                    })
-                  }
-                />
-              </div>
-              <div>
-                <span className={label}>Image URL (optional)</span>
-                <input
-                  className={field}
-                  value={item.image ?? ""}
-                  onChange={(e) =>
-                    set("exampleWorks", {
-                      ...w,
-                      items: w.items.map((x, j) => (j === i ? { ...x, image: e.target.value } : x)),
-                    })
-                  }
-                />
-              </div>
-              <div>
-                <span className={label}>Link (optional)</span>
-                <input
-                  className={field}
-                  value={item.href ?? ""}
-                  onChange={(e) =>
-                    set("exampleWorks", {
-                      ...w,
-                      items: w.items.map((x, j) => (j === i ? { ...x, href: e.target.value } : x)),
-                    })
-                  }
-                />
-              </div>
-              <div>
-                <span className={label}>Tags (comma-separated)</span>
-                <input
-                  className={field}
-                  value={item.tags.join(", ")}
-                  onChange={(e) =>
-                    set("exampleWorks", {
-                      ...w,
-                      items: w.items.map((x, j) =>
-                        j === i
-                          ? { ...x, tags: e.target.value.split(",").map((t) => t.trim()) }
-                          : x,
-                      ),
-                    })
-                  }
-                />
-              </div>
-            </div>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={() =>
-            set("exampleWorks", {
-              ...w,
-              items: [...w.items, { title: "", description: "", tags: [], image: "", href: "" }],
-            })
-          }
-          className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 font-display text-xs"
-        >
-          <Plus className="size-3.5" /> Add example work
         </button>
       </div>
     </div>

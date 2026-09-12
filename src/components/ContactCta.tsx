@@ -21,7 +21,7 @@ export function ContactCta({ settings }: { settings: ContactSettings }) {
             target="_blank"
             rel="noreferrer"
             onClick={() => track("discord_click", { from: "contact_cta" })}
-            className="group mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-4 text-center font-display text-base font-bold sm:gap-3 sm:px-8 sm:py-5 sm:text-lg text-primary-foreground shadow-[var(--shadow-glow)] transition-transform duration-300 hover:scale-[1.03]"
+            className="group mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-4 text-center font-display text-base font-bold text-primary-foreground transition-transform hover:scale-[1.02] sm:w-auto sm:gap-3 sm:px-8 sm:py-5 sm:text-lg"
           >
             <MessageCircle className="size-5 shrink-0 sm:size-6" />
             <span className="truncate">{settings.discordLabel}</span>

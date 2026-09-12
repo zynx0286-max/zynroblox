@@ -1,15 +1,6 @@
-import { useRef, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
-import {
-  Loader2,
-  Send,
-  CheckCircle2,
-  MessageCircle,
-  AlertCircle,
-  Mail,
-  ExternalLink,
-} from "lucide-react";
-import { contactSchema, sendContactMessage } from "@/lib/contact.functions";
+import { useState } from "react";
+import { MessageCircle, Mail, ExternalLink } from "lucide-react";
+import { contactSchema } from "@/lib/contact.functions";
 import { track } from "@/lib/analytics";
 
 const projectTypes = ["SFX Design", "QA Testing", "Community Management", "Game Research", "Other"];
@@ -19,6 +10,7 @@ type Errors = Partial<Record<FieldKey, string>>;
 
 const MESSAGE_MAX = 1200;
 const GMAIL_EMAIL = "zynx0286@gmail.com";
+const DISCORD_URL = "https://discord.com/users/acczyn";
 
 const buildGmailUrl = (values: {
   projectType: string;
@@ -34,7 +26,6 @@ const buildGmailUrl = (values: {
 };
 
 export function ContactForm() {
-  const send = useServerFn(sendContactMessage);
   const [values, setValues] = useState({
     name: "",
     email: "",
@@ -43,10 +34,6 @@ export function ContactForm() {
   });
   const [errors, setErrors] = useState<Errors>({});
   const [touched, setTouched] = useState<Partial<Record<FieldKey, boolean>>>({});
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [honeypot, setHoneypot] = useState("");
-  const startedAt = useRef(Date.now());
 
   const validate = (next = values): Errors => {
     const parsed = contactSchema.safeParse(next);
@@ -80,14 +67,6 @@ export function ContactForm() {
     `${fieldBase} ${errors[key] ? "border-destructive/70 focus:border-destructive" : "border-border focus:border-primary/60"}`;
 
   const openGmail = () => {
-    const url = buildGmailUrl(values);
-    window.open(url, "_blank", "noopener,noreferrer");
-    track("contact_gmail_opened", { projectType: values.projectType });
-  };
-
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setServerError(null);
     const found = validate();
     setTouched({ name: true, email: true, projectType: true, message: true });
     if (Object.keys(found).length) {
@@ -95,28 +74,8 @@ export function ContactForm() {
       return;
     }
     setErrors({});
-    setStatus("sending");
-    track("contact_submit", { projectType: values.projectType });
-    try {
-      await send({
-        data: {
-          ...contactSchema.parse(values),
-          website: honeypot,
-          elapsedMs: Date.now() - startedAt.current,
-        },
-      });
-      setStatus("sent");
-      track("contact_success", { projectType: values.projectType });
-      setValues({ name: "", email: "", projectType: "SFX Design", message: "" });
-      setTouched({});
-      startedAt.current = Date.now();
-    } catch (err) {
-      setStatus("error");
-      track("contact_error", {});
-      setServerError(
-        err instanceof Error ? err.message : "Something went wrong. Try Discord instead.",
-      );
-    }
+    window.open(buildGmailUrl(values), "_blank", "noopener,noreferrer");
+    track("contact_gmail_opened", { projectType: values.projectType });
   };
 
   const Label = ({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) => (
@@ -131,66 +90,23 @@ export function ContactForm() {
   const ErrorText = ({ id, msg }: { id: string; msg?: string | undefined }) =>
     msg ? (
       <p id={id} className="mt-1.5 flex items-center gap-1.5 text-xs text-destructive">
-        <AlertCircle className="size-3.5" />
         {msg}
       </p>
     ) : null;
 
-  if (status === "sent") {
-    return (
-      <div className="glass-card rounded-2xl p-8 text-center">
-        <CheckCircle2 className="mx-auto size-9 text-primary" />
-        <h3 className="mt-4 font-display text-xl font-semibold">Message sent</h3>
-        <p className="mt-2 text-sm text-muted-foreground">
-          It landed in my inbox. Email replies can take a while — ping me on Discord for a faster
-          answer.
-        </p>
-        <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <a
-            href="https://discord.com/users/acczyn"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-display text-sm font-bold text-primary-foreground shadow-[var(--shadow-glow)] transition-transform hover:scale-[1.03]"
-          >
-            <MessageCircle className="size-4" />
-            Discord — @acczyn
-          </a>
-          <button
-            type="button"
-            onClick={() => setStatus("idle")}
-            className="rounded-full border border-border px-5 py-3 font-display text-sm hover:bg-secondary/60"
-          >
-            Send another
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <form
-      onSubmit={onSubmit}
+      onSubmit={(e) => {
+        e.preventDefault();
+        openGmail();
+      }}
       noValidate
       className="glass-card relative rounded-2xl p-5 text-left sm:p-8"
     >
-      {/* Honeypot — hidden from humans, irresistible to bots */}
-      <div aria-hidden className="pointer-events-none absolute -left-[9999px] opacity-0">
-        <label htmlFor="website">Website</label>
-        <input
-          id="website"
-          name="website"
-          type="text"
-          tabIndex={-1}
-          autoComplete="off"
-          value={honeypot}
-          onChange={(e) => setHoneypot(e.target.value)}
-        />
-      </div>
-
       <div className="relative">
         <h3 className="font-display text-lg font-semibold">Start a project</h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          Takes about a minute — all fields are required. Protected against spam.
+          Fill this in, then send it via Gmail or Discord — your message arrives pre-written.
         </p>
       </div>
 
@@ -219,7 +135,7 @@ export function ContactForm() {
             aria-invalid={Boolean(errors.email)}
             aria-describedby={errors.email ? "email-error" : undefined}
             className={`mt-2 ${fieldCls("email")}`}
-            placeholder="you@studio.com"
+            placeholder="Your email address"
             value={values.email}
             onChange={(e) => setField("email", e.target.value)}
             onBlur={() => blur("email")}
@@ -271,46 +187,26 @@ export function ContactForm() {
         <ErrorText id="message-error" msg={errors.message} />
       </div>
 
-      {serverError ? (
-        <p className="relative mt-4 flex items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          <AlertCircle className="size-4 shrink-0" />
-          {serverError}
-        </p>
-      ) : null}
-
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <button
           type="submit"
-          disabled={status === "sending"}
-          className="relative inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-4 font-display text-base font-bold text-primary-foreground transition-all hover:shadow-[var(--shadow-glow)] disabled:opacity-60"
-        >
-          {status === "sending" ? (
-            <Loader2 className="size-5 animate-spin" />
-          ) : (
-            <Send className="size-5" />
-          )}
-          {status === "sending" ? "Sending…" : "Send message"}
-        </button>
-
-        <button
-          type="button"
-          onClick={openGmail}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-green-600/10 border border-green-500/30 px-7 py-4 font-display text-base font-semibold text-green-400 hover:bg-green-600/20 transition-colors"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-4 font-display text-base font-bold text-primary-foreground transition-all hover:shadow-[var(--shadow-glow)]"
         >
           <Mail className="size-5" />
           Open in Gmail
         </button>
-      </div>
 
-      <a
-        href="https://discord.com/users/acczyn"
-        target="_blank"
-        rel="noreferrer"
-        className="relative mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full border border-border px-7 py-3 font-display text-sm text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
-      >
-        <MessageCircle className="size-4 text-primary" />
-        Or message me on Discord — @acczyn
-      </a>
+        <a
+          href={DISCORD_URL}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => track("discord_click", { from: "contact" })}
+          className="glass-card inline-flex w-full items-center justify-center gap-2 rounded-full px-7 py-4 font-display text-base font-semibold text-foreground transition-colors hover:bg-secondary/50"
+        >
+          <MessageCircle className="size-5 text-primary" />
+          Message me on Discord
+        </a>
+      </div>
 
       <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
         <span>Direct email:</span>

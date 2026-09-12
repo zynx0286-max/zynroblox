@@ -1,16 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
-import { ArrowRight, MessageCircle, AudioLines, Headphones } from "lucide-react";
+import { ArrowRight, MessageCircle, Headphones } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 import { track } from "@/lib/analytics";
 import type { HeroSettings } from "@/lib/site-settings";
-import { cn } from "@/lib/utils";
 import { AnimatedCounter } from "./AnimatedCounter";
-import { AmbientField } from "./AmbientField";
-import { MagneticButton } from "./MagneticButton";
 import { LiveStats } from "./LiveStats";
+import { TextType } from "./bits/TextType";
 
-type LayerRef = HTMLDivElement | null;
+const ROTATING_ROLES = ["SFX Artist", "QA Tester", "Community Manager", "Sound Designer"];
 
 export function Hero({
   settings,
@@ -21,72 +18,11 @@ export function Hero({
   workCount: number;
   liveStats?: import("@/lib/live-stats.functions").LiveGameStats | null;
 }) {
-  const sectionRef = useRef<HTMLElement | null>(null);
-  const bgRef = useRef<LayerRef>(null);
-  const glowRef = useRef<LayerRef>(null);
-  const bloom1Ref = useRef<LayerRef>(null);
-  const bloom2Ref = useRef<LayerRef>(null);
-  const panel1Ref = useRef<LayerRef>(null);
-  const panel2Ref = useRef<LayerRef>(null);
-  const [enabled, setEnabled] = useState(false);
-
-  useEffect(() => {
-    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    setEnabled(true);
-  }, []);
-
-  useEffect(() => {
-    if (!enabled) return;
-    const section = sectionRef.current;
-    if (!section) return;
-
-    let raf = 0;
-    let tx = 0;
-    let ty = 0;
-    let cx = 0;
-    let cy = 0;
-
-    const onMove = (e: PointerEvent) => {
-      const rect = section.getBoundingClientRect();
-      tx = ((e.clientX - rect.left) / Math.max(rect.width, 1) - 0.5) * 2;
-      ty = ((e.clientY - rect.top) / Math.max(rect.height, 1) - 0.5) * 2;
-    };
-
-    const tick = () => {
-      cx += (tx - cx) * 0.06;
-      cy += (ty - cy) * 0.06;
-      const apply = (el: LayerRef, x: number, y: number, r = 0) => {
-        if (el) {
-          el.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) rotate(${r.toFixed(2)}deg)`;
-        }
-      };
-      apply(bgRef.current, -cx * 14, -cy * 10);
-      apply(glowRef.current, cx * 6, cy * 6);
-      apply(bloom1Ref.current, -cx * 26, -cy * 22);
-      apply(bloom2Ref.current, cx * 30, cy * 18);
-      apply(panel1Ref.current, -cx * 34, -cy * 28, -8);
-      apply(panel2Ref.current, cx * 38, cy * 30, 7);
-      raf = requestAnimationFrame(tick);
-    };
-
-    section.addEventListener("pointermove", onMove);
-    raf = requestAnimationFrame(tick);
-    return () => {
-      section.removeEventListener("pointermove", onMove);
-      cancelAnimationFrame(raf);
-    };
-  }, [enabled]);
-
   return (
-    <section
-      id="home"
-      ref={sectionRef}
-      className="relative isolate overflow-hidden pt-28 pb-16 sm:pt-44 sm:pb-32"
-    >
-      {/* Full-bleed background stack. Order matters: the blurred image + dark
-          overlay come first, then the ambient dust + fade. */}
-      <div ref={bgRef} className="pointer-events-none absolute inset-0 -z-10 will-change-transform">
+    <section id="home" className="relative isolate overflow-hidden pt-28 pb-16 sm:pt-44 sm:pb-32">
+      {/* Lightweight background: single image + flat overlay. Heavy blur
+          blooms and floating glass panels were removed for low-end GPUs. */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
         <img
           src={heroBg}
           alt=""
@@ -95,48 +31,15 @@ export function Hero({
           height={1088}
           loading="eager"
           decoding="async"
-          className="h-full w-full scale-105 object-cover opacity-30 blur-0 sm:scale-125 sm:blur-[8px] lg:blur-[10px]"
+          fetchPriority="high"
+          className="h-full w-full object-cover opacity-25"
         />
-        <div className="absolute inset-0 bg-background/30" />
-        <div ref={glowRef} className="hero-glow absolute inset-0 will-change-transform" />
-        {/* Soft floating light blooms */}
-        <div
-          ref={bloom1Ref}
-          className="float-slow absolute -top-20 -left-24 size-[18rem] rounded-full bg-primary/15 blur-[40px] will-change-transform sm:size-[28rem] sm:blur-[120px]"
-        />
-        <div
-          ref={bloom2Ref}
-          className="float-slow absolute -right-24 top-24 size-[16rem] rounded-full bg-accent/15 blur-[45px] will-change-transform [animation-delay:-4s] sm:size-[24rem] sm:blur-[130px]"
-        />
-        <AmbientField className="opacity-50 mix-blend-screen" />
+        <div className="absolute inset-0 bg-background/40" />
         <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent to-background sm:h-64" />
       </div>
 
-      {/* Floating glass panels */}
-      <div
-        ref={panel1Ref}
-        aria-hidden
-        className={cn(
-          "glass-card pointer-events-none absolute top-40 -left-16 hidden h-40 w-72 rounded-3xl lg:block",
-          enabled && "float-slow will-change-transform",
-        )}
-        style={{ transform: "rotate(-8deg)" }}
-      />
-      <div
-        ref={panel2Ref}
-        aria-hidden
-        className={cn(
-          "glass-card pointer-events-none absolute bottom-24 -right-14 hidden h-44 w-72 rounded-3xl lg:block",
-          enabled && "float-slow will-change-transform [animation-delay:-3s]",
-        )}
-        style={{ transform: "rotate(7deg)" }}
-      />
-
       <div className="relative mx-auto max-w-4xl px-4 text-center">
-        <p
-          data-scrub
-          className="rise-in font-display text-2xl font-bold tracking-[0.35em] text-primary sm:text-4xl sm:tracking-[0.45em]"
-        >
+        <p className="rise-in font-display text-2xl font-bold tracking-[0.35em] text-primary sm:text-4xl sm:tracking-[0.45em]">
           {settings.name}
         </p>
 
@@ -150,20 +53,26 @@ export function Hero({
           </p>
         ) : null}
 
-        <p className="glass-card mt-5 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 font-display text-[0.6rem] tracking-[0.18em] text-muted-foreground uppercase sm:mt-6 sm:px-4 sm:text-[0.7rem] sm:tracking-[0.25em]">
-          <AudioLines className="size-3.5 text-primary" />
+        <p className="glass-card mt-5 inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 font-display text-[0.6rem] tracking-[0.18em] uppercase sm:mt-6 sm:px-4 sm:text-[0.7rem] sm:tracking-[0.25em]">
           {settings.badge}
         </p>
 
-        <h1
-          data-kinetic
-          className="mt-5 font-display text-[2rem] leading-[1.08] font-bold sm:mt-6 sm:text-6xl sm:leading-[1.05]"
-        >
-          {settings.titlePrefix}{" "}
-          <span className="inline-block bg-primary px-2 text-primary-foreground">
-            {settings.titleHighlight}
+        {/* Fixed two-line headline: the rotating role always gets its own
+            line, so the longest role ("Community Manager") can never push the
+            suffix onto a third line. The highlight hugs the text exactly —
+            no reserved width, no trailing gap. */}
+        <h1 className="mt-5 font-display text-[2rem] leading-[1.15] font-bold sm:mt-6 sm:text-6xl sm:leading-[1.1]">
+          <span className="block">
+            {settings.titlePrefix}{" "}
+            <TextType
+              text={ROTATING_ROLES}
+              className="inline-block bg-primary px-2 whitespace-nowrap text-primary-foreground"
+              typingSpeed={70}
+              deletingSpeed={32}
+              pauseDuration={2400}
+            />
           </span>
-          <br className="hidden sm:block" /> {settings.titleSuffix}
+          <span className="block">{settings.titleSuffix}</span>
         </h1>
 
         <p className="mx-auto mt-5 max-w-2xl text-sm text-muted-foreground sm:mt-6 sm:text-lg">
@@ -171,17 +80,15 @@ export function Hero({
         </p>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:mt-10 sm:flex-row sm:gap-4">
-          <MagneticButton>
-            <Link
-              to="/work"
-              onClick={() => track("cta_click", { cta: "hear_my_work" })}
-              className="group inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-primary px-6 py-4 font-display text-base font-bold tracking-wide text-primary-foreground shadow-[var(--shadow-glow)] transition-transform duration-300 hover:scale-[1.03] active:scale-[0.98] sm:w-auto sm:gap-3 sm:px-10 sm:py-5 sm:text-xl"
-            >
-              <Headphones className="size-5 sm:size-6" />
-              {settings.ctaLabel}
-              <ArrowRight className="size-5 transition-transform group-hover:translate-x-1 sm:size-6" />
-            </Link>
-          </MagneticButton>
+          <Link
+            to="/work"
+            onClick={() => track("cta_click", { cta: "see_my_works" })}
+            className="group inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-primary px-6 py-4 font-display text-base font-bold tracking-wide text-primary-foreground shadow-[var(--shadow-glow)] transition-transform duration-300 hover:scale-[1.03] active:scale-[0.98] sm:w-auto sm:gap-3 sm:px-10 sm:py-5 sm:text-xl"
+          >
+            <Headphones className="size-5 sm:size-6" />
+            {settings.ctaLabel}
+            <ArrowRight className="size-5 transition-transform group-hover:translate-x-1 sm:size-6" />
+          </Link>
           <a
             href={settings.discordUrl}
             target="_blank"
@@ -194,9 +101,36 @@ export function Hero({
           </a>
         </div>
 
+        {/* Quick links to the standalone pages — visible without scrolling. */}
+        <nav
+          aria-label="Explore"
+          className="mt-6 flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm"
+        >
+          {[
+            { to: "/services", label: "Services" },
+            { to: "/pricing", label: "Pricing" },
+            { to: "/reviews", label: "Reviews" },
+          ].map((l) => (
+            <Link
+              key={l.to}
+              to={l.to}
+              className="rounded-full border border-border bg-secondary/30 px-4 py-2 font-display transition-colors hover:border-primary/40 hover:text-foreground"
+            >
+              {l.label}
+            </Link>
+          ))}
+        </nav>
+
         <p className="mt-4 text-[0.7rem] text-muted-foreground sm:text-xs">
           <AnimatedCounter value={workCount} duration={1500} className="font-semibold" />{" "}
           {settings.ctaNote}
+        </p>
+
+        <p className="mx-auto mt-4 max-w-2xl rounded-full border border-primary/25 bg-primary/5 px-5 py-2.5 text-xs font-medium text-foreground/85 sm:text-sm">
+          One Roblox-native partner for <span className="font-semibold text-primary">sound</span>,{" "}
+          <span className="font-semibold text-primary">QA</span> and{" "}
+          <span className="font-semibold text-primary">community</span> — so updates ship smoother
+          and players stick around.
         </p>
 
         {/* Live Roblox counters (visits + CCU), refreshed every 30s. */}

@@ -1,4 +1,5 @@
 import { useServerFn } from "@tanstack/react-start";
+import { useRouter } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Loader2, Send, Star } from "lucide-react";
@@ -16,6 +17,7 @@ const empty = {
 
 export function ReviewForm() {
   const submit = useServerFn(createReview);
+  const router = useRouter();
   const [values, setValues] = useState(empty);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +38,8 @@ export function ReviewForm() {
       setDone(true);
       setValues(empty);
       setError(null);
+      // Refetch the page loader so the new review shows up immediately.
+      void router.invalidate();
     },
     onError: (err: unknown) => {
       captureError(err, { area: "reviews" });
@@ -52,7 +56,7 @@ export function ReviewForm() {
       <div className="glass-card rounded-[28px] p-6 text-center sm:p-8">
         <p className="font-display text-xl font-bold text-foreground">Thanks for the feedback!</p>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-          Your review has been submitted and will appear here once it's approved.
+          Your review is now live below for everyone to see.
         </p>
         <button
           onClick={() => setDone(false)}

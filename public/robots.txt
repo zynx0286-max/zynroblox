@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://zynroblox.lovable.app/sitemap.xml
+Sitemap: https://zyn-roblox-portfolio.zynx0286.workers.dev/sitemap.xml

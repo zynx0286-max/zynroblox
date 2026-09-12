@@ -263,123 +263,20 @@
 }
 
 /*
- * Interactive effects (custom cursor, film grain, preloader).
+ * Interactive effects (film grain).
  * Each effect is intentionally fail-safe: it only applies when the
- * supporting component has mounted (e.g. the native cursor is hidden
- * via `.zyn-cursor-active` on <html>, never unconditionally).
+ * supporting component has mounted.
  */
 
-/* Native cursor hidden only once the custom cursor has mounted. */
-html.zyn-cursor-active,
-html.zyn-cursor-active * {
-  cursor: none !important;
-}
-
-/* Custom cursor layers */
-.zyn-cursor-dot,
-.zyn-cursor-ring {
-  position: fixed;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  border-radius: 9999px;
-  will-change: transform;
-  z-index: 9999;
-}
-
-.zyn-cursor-dot {
-  width: 6px;
-  height: 6px;
-  margin: -3px 0 0 -3px;
-  background: var(--color-primary);
-  box-shadow: 0 0 12px color-mix(in oklab, var(--color-primary) 70%, transparent);
-}
-
-.zyn-cursor-ring {
-  width: 34px;
-  height: 34px;
-  margin: -17px 0 0 -17px;
-  border: 1px solid color-mix(in oklab, var(--color-primary) 60%, transparent);
-  background: color-mix(in oklab, var(--color-primary) 6%, transparent);
-  transition:
-    width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-    height 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-    margin 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.25s ease,
-    background-color 0.25s ease;
-}
-
-.zyn-cursor-ring.is-active {
-  width: 54px;
-  height: 54px;
-  margin: -27px 0 0 -27px;
-  border-color: color-mix(in oklab, var(--color-accent) 70%, transparent);
-  background: color-mix(in oklab, var(--color-accent) 10%, transparent);
-}
-
-/* Film grain overlay */
+/* Film grain overlay — static texture only (animation removed: it forced
+   full-screen repaints every frame on low-end GPUs). */
 .zyn-grain {
   position: fixed;
-  inset: -50%;
+  inset: 0;
   pointer-events: none;
   z-index: 70;
-  opacity: 0.035;
+  opacity: 0.03;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  animation: grain-shift 0.7s steps(4) infinite;
-}
-
-@keyframes grain-shift {
-  0% {
-    transform: translate3d(0, 0, 0);
-  }
-  25% {
-    transform: translate3d(-6%, 4%, 0);
-  }
-  50% {
-    transform: translate3d(5%, -6%, 0);
-  }
-  75% {
-    transform: translate3d(-4%, -3%, 0);
-  }
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-/* Preloader */
-.zyn-preloader {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: grid;
-  place-items: center;
-  background-color: var(--color-background);
-}
-
-.zyn-preloader-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--color-border);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: preloader-spin 0.8s linear infinite;
-}
-
-@keyframes preloader-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .zyn-grain {
-    animation: none;
-  }
-
-  .zyn-preloader-mark {
-    animation: none;
-    opacity: 1;
-  }
 }
 
 /*
@@ -410,121 +307,77 @@ html.zyn-cursor-active * {
   }
 }
 
-/*
- * Immersive layer.
- *
- * These styles back the kinetic typography and the ambient-audio toggle.
- * Every element starts automatically and degrades gracefully when
- * WebAudio or a user gesture is unavailable.
- */
 
-/* Kinetic typography word wrappers (see ScrollFX). */
-.zyn-kword {
+/* Mobile overflow guard: floating decor uses negative offsets, so never let
+   the page itself scroll horizontally. */
+html {
+  scroll-behavior: smooth;
+}
+html,
+body {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+/* Anchored home sections sit below the fixed pill nav. */
+section[id] {
+  scroll-margin-top: 96px;
+}
+
+/* Simple modern dot cursor: small white dot, blends over any background. */
+.zyn-dot-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 90;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #fff;
+  mix-blend-mode: difference;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+@media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .zyn-dot-cursor {
+    display: none;
+  }
+}
+
+/* ---- React Bits (adapted, MIT) -------------------------------------------
+   StarBorder: animated border beam replaced with a static pill — the beam
+   keyframes cost a permanent compositor animation on every page. */
+.zyn-star-border {
+  position: relative;
   display: inline-block;
   overflow: hidden;
-  vertical-align: bottom;
+  border-radius: 20px;
+}
+.zyn-star-beam {
+  display: none;
+}
+.zyn-star-inner {
+  position: relative;
+  z-index: 1;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  text-align: center;
 }
 
-.zyn-kword-inner {
+/* TextType cursor: CSS blink, no JS loop. */
+.zyn-text-cursor {
   display: inline-block;
-  will-change: transform;
+  margin-left: 0.1em;
+  color: var(--primary);
+  animation: zyn-cursor-blink 1s steps(2, start) infinite;
+}
+@keyframes zyn-cursor-blink {
+  50% { opacity: 0; }
 }
 
-/* Experience gate (click to activate). */
-.zyn-gate {
-  color: var(--foreground);
-}
-
-.zyn-gate-mark {
-  font-family: var(--font-display);
-  font-size: clamp(3.5rem, 12vw, 7rem);
-  font-weight: 700;
-  letter-spacing: 0.5em;
-  margin-right: -0.5em;
-  line-height: 1;
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--primary) 85%, var(--foreground)),
-    color-mix(in oklab, var(--primary) 35%, transparent)
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  filter: drop-shadow(0 0 24px color-mix(in oklab, var(--primary) 40%, transparent));
-  animation: gate-mark-float 3.2s ease-in-out infinite alternate;
-}
-
-@keyframes gate-mark-float {
-  from {
-    transform: translateY(6px);
-    opacity: 0.92;
-  }
-  to {
-    transform: translateY(-6px);
-    opacity: 1;
-  }
-}
-
-/* Ambient audio toggle. */
-.zyn-audio-toggle {
-  position: fixed;
-  right: 1.25rem;
-  bottom: 1.25rem;
-  z-index: 80;
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 3px;
-  height: 22px;
-  width: 30px;
-  padding: 5px 8px;
-  border-radius: 9999px;
-  border: 1px solid color-mix(in oklab, var(--primary) 40%, transparent);
-  background: color-mix(in oklab, var(--surface) 70%, transparent);
-  backdrop-filter: blur(8px);
-  transition:
-    border-color 0.2s ease,
-    background-color 0.2s ease;
-}
-
-.zyn-audio-toggle:hover {
-  border-color: color-mix(in oklab, var(--primary) 80%, transparent);
-  background: color-mix(in oklab, var(--surface-elevated) 70%, transparent);
-}
-
-.zyn-audio-bar {
-  width: 3px;
-  border-radius: 2px;
-  background: var(--primary);
-  height: 100%;
-  transform-origin: bottom;
-  animation: zyn-audio-bounce 1.2s ease-in-out infinite alternate;
-  transition: opacity 0.2s ease;
-}
-
-.zyn-audio-bar--off {
-  animation: none;
-  opacity: 0.35;
-  height: 30% !important;
-}
-
-@keyframes zyn-audio-bounce {
-  from {
-    transform: scaleY(0.35);
-  }
-  to {
-    transform: scaleY(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .zyn-gate-mark {
-    animation: none;
-    transform: none;
-  }
-
-  .zyn-audio-bar {
-    animation: none;
-    opacity: 0.8;
-  }
+/* Eyebrow/badge text — static (the infinite shine sweep was removed: it kept
+   the compositor busy on every page, painful on low-end Chromebooks). */
+.zyn-shine {
+  color: var(--muted-foreground);
 }
 

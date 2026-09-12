@@ -16,11 +16,11 @@ export function About({ settings }: { settings: AboutSettings }) {
 
           <ul className="mt-8 space-y-3">
             {settings.points.map((p) => (
-              <li key={p} className="flex items-start gap-3 text-sm">
-                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-                  <Check className="size-3" />
+              <li key={p} className="flex items-start gap-3 text-[15px] leading-relaxed">
+                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
+                  <Check className="size-3" strokeWidth={3} />
                 </span>
-                <span className="text-muted-foreground">{p}</span>
+                <span className="font-medium text-foreground/90">{p}</span>
               </li>
             ))}
           </ul>
@@ -28,24 +28,30 @@ export function About({ settings }: { settings: AboutSettings }) {
 
         <div className="space-y-4">
           <GlassFrame ratio="aspect-[4/3]">
-            <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-surface/40 text-center">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-surface/40 px-6 text-center">
               <span className="font-display text-5xl font-bold text-primary">{settings.badge}</span>
-              <p className="max-w-[16rem] text-xs text-muted-foreground">{settings.badgeCopy}</p>
+              <p className="max-w-[22rem] text-sm leading-relaxed font-medium text-foreground/85 sm:text-[15px]">
+                {settings.badgeCopy}
+              </p>
             </div>
           </GlassFrame>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="glass rounded-2xl px-5 py-5">
-              <p className="font-display text-2xl font-bold">
+            <div className="glass rounded-2xl border-l-2 border-l-primary px-5 py-5">
+              <p className="font-display text-2xl font-bold tracking-tight">
                 <AnimatedCounter value={settings.stat1.value} duration={1800} />
               </p>
-              <p className="text-xs text-muted-foreground">{settings.stat1.label}</p>
+              <p className="mt-1 text-sm leading-snug font-semibold text-foreground/90">
+                {settings.stat1.label}
+              </p>
             </div>
-            <div className="glass rounded-2xl px-5 py-5">
-              <p className="font-display text-2xl font-bold">
+            <div className="glass rounded-2xl border-l-2 border-l-primary px-5 py-5">
+              <p className="font-display text-2xl font-bold tracking-tight">
                 <AnimatedCounter value={settings.stat2.value} duration={1800} />
               </p>
-              <p className="text-xs text-muted-foreground">{settings.stat2.label}</p>
+              <p className="mt-1 text-sm leading-snug font-semibold text-foreground/90">
+                {settings.stat2.label}
+              </p>
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireOwner } from "@/lib/require-owner";
-import { loadStore, mutate } from "@/lib/store";
+import { getStoreBackendStatus, loadStore, mutate } from "@/lib/store";
 
 // ---------------------------------------------------------------------------
 // Testimonials
@@ -102,6 +102,15 @@ export const listSiteSettings = createServerFn({ method: "GET" }).handler(
     return (await loadStore()).settings;
   },
 );
+
+/** Owner-only: which persistence backend the server is actually using.
+ *  "kv" = durable on Workers. Anything else means admin edits will be lost
+ *  on redeploy/restart — the badge in /admin surfaces this. */
+export const getPersistenceStatus = createServerFn({ method: "GET" })
+  .middleware([requireOwner])
+  .handler(async () => {
+    return getStoreBackendStatus();
+  });
 
 export const saveSiteSettings = createServerFn({ method: "POST" })
   .middleware([requireOwner])

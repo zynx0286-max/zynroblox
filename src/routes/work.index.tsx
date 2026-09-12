@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { Search, X } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
@@ -7,6 +7,8 @@ import { WorkCard } from "@/components/WorkCard";
 import { Reveal } from "@/components/Reveal";
 import { CATEGORIES, SITE_URL } from "@/data/works";
 import { getPublicWorks } from "@/lib/public-data";
+import { getLiveGameStats } from "@/lib/live-stats.functions";
+import { ccuBySlug, sortByCcu } from "@/lib/reach";
 
 const PAGE_TITLE = "Roblox Work Archive — QA Testing, SFX & Community | ZYN";
 const PAGE_DESC =
@@ -15,7 +17,14 @@ const PAGE_DESC =
 export type WorkSearch = { q?: string; cat?: string };
 
 export const Route = createFileRoute("/work/")({
-  loader: async () => ({ works: await getPublicWorks() }),
+  // Most live players (CCU) first; falls back to visits/members order.
+  loader: async () => {
+    const [works, live] = await Promise.all([
+      getPublicWorks(),
+      getLiveGameStats().catch(() => null),
+    ]);
+    return { works: sortByCcu(works, ccuBySlug(live)) };
+  },
   validateSearch: (search: Record<string, unknown>): WorkSearch => {
     const out: WorkSearch = {};
     if (typeof search["q"] === "string" && search["q"]) out.q = search["q"];
@@ -33,6 +42,7 @@ export const Route = createFileRoute("/work/")({
         { property: "og:description", content: PAGE_DESC },
         { property: "og:type", content: "website" },
         { property: "og:url", content: `${SITE_URL}/work` },
+        { property: "og:image", content: `${SITE_URL}/favicon.png` },
         { name: "twitter:card", content: "summary_large_image" },
       ],
       links: [{ rel: "canonical", href: `${SITE_URL}/work` }],
@@ -81,17 +91,18 @@ function WorkPage() {
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
+    // Loader order (CCU first) is preserved — filter only.
     return works.filter((w) => {
-      const matchesCategory = cat === "All Work" || w.category === cat;
-      const matchesQuery =
-        needle.length === 0 ||
-        w.title.toLowerCase().includes(needle) ||
-        w.role.toLowerCase().includes(needle) ||
-        w.category.toLowerCase().includes(needle) ||
-        w.description.toLowerCase().includes(needle) ||
-        w.tags.some((t) => t.toLowerCase().includes(needle));
-      return matchesCategory && matchesQuery;
-    });
+        const matchesCategory = cat === "All Work" || w.category === cat;
+        const matchesQuery =
+          needle.length === 0 ||
+          w.title.toLowerCase().includes(needle) ||
+          w.role.toLowerCase().includes(needle) ||
+          w.category.toLowerCase().includes(needle) ||
+          w.description.toLowerCase().includes(needle) ||
+          w.tags.some((t) => t.toLowerCase().includes(needle));
+        return matchesCategory && matchesQuery;
+      });
   }, [q, cat, works]);
 
   const filters: string[] = ["All Work", ...CATEGORIES];
@@ -157,6 +168,25 @@ function WorkPage() {
             <p className="mt-4 text-xs text-muted-foreground">
               Showing {filtered.length} of {works.length} projects
             </p>
+
+            <div className="mx-auto mt-6 flex max-w-2xl flex-wrap items-center justify-center gap-2 text-xs">
+              <span className="text-muted-foreground">Hire by need:</span>
+              {[
+                { slug: "sfx", label: "SFX" },
+                { slug: "qa", label: "QA Testing" },
+                { slug: "community", label: "Community" },
+                { slug: "pre-release", label: "Pre-Release" },
+              ].map((s) => (
+                <Link
+                  key={s.slug}
+                  to="/services/$slug"
+                  params={{ slug: s.slug }}
+                  className="rounded-full border border-border bg-secondary/30 px-3 py-1.5 font-display text-xs transition-colors hover:border-primary/40 hover:text-foreground"
+                >
+                  {s.label}
+                </Link>
+              ))}
+            </div>
           </div>
         </section>
 

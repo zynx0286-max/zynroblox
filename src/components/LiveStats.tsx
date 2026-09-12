@@ -7,15 +7,15 @@ import { AnimatedCounter } from "./AnimatedCounter";
 // Live Roblox game counters. The route loader fetches the numbers during SSR so
 // real values are already in the initial HTML (no flash, no client fetch
 // needed). This component then polls the server fn (which reads the Roblox API)
-// every 30s and re-renders as animated live counts. Falls back gracefully: if
+// every 120s and re-renders as animated live counts. Falls back gracefully: if
 // the API is unavailable it shows the last known values — never crashes.
 export function LiveStats({ initial }: { initial?: LiveGameStats | null }) {
   const stats = useServerFn(getLiveGameStats);
   const query = useQuery({
     queryKey: ["live-game-stats"],
     queryFn: () => stats(),
-    refetchInterval: 30_000,
-    staleTime: 15_000,
+    refetchInterval: 120_000,
+    staleTime: 60_000,
     retry: 2,
     initialData: initial ?? undefined,
   });
@@ -24,6 +24,15 @@ export function LiveStats({ initial }: { initial?: LiveGameStats | null }) {
   const live = data !== undefined;
   const totalVisits = data?.totalVisits ?? 0;
   const totalPlaying = data?.totalPlaying ?? 0;
+
+  // A counter stuck at 0 means the live feed failed — say so instead of
+  // showing a misleading zero.
+  const renderCount = (value: number, duration: number) =>
+    value === 0 ? (
+      <span className="text-destructive">error</span>
+    ) : (
+      <AnimatedCounter value={value} duration={duration} />
+    );
 
   return (
     <div
@@ -49,7 +58,7 @@ export function LiveStats({ initial }: { initial?: LiveGameStats | null }) {
         </div>
         <p className="mt-2 font-display text-2xl font-bold text-primary sm:text-3xl">
           {data ? (
-            <AnimatedCounter value={totalPlaying} duration={800} />
+            renderCount(totalPlaying, 800)
           ) : (
             <span className="text-muted-foreground/50">—</span>
           )}
@@ -70,7 +79,7 @@ export function LiveStats({ initial }: { initial?: LiveGameStats | null }) {
         </div>
         <p className="mt-2 font-display text-2xl font-bold sm:text-3xl">
           {data ? (
-            <AnimatedCounter value={totalVisits} duration={1200} />
+            renderCount(totalVisits, 1200)
           ) : (
             <span className="text-muted-foreground/50">—</span>
           )}

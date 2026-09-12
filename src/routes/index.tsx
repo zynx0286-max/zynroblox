@@ -6,14 +6,14 @@ import { Marquee } from "@/components/Marquee";
 import { About } from "@/components/About";
 import { FeaturedGame } from "@/components/FeaturedGame";
 import { WorkPreview } from "@/components/WorkPreview";
-import { Testimonials } from "@/components/Testimonials";
-import { ExampleWorks } from "@/components/ExampleWorks";
+import { ReviewWall } from "@/components/ReviewWall";
 import { ContactCta } from "@/components/ContactCta";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Reveal } from "@/components/Reveal";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { getPublicSiteData } from "@/lib/public-data";
 import { getLiveGameStats } from "@/lib/live-stats.functions";
+import { ccuBySlug } from "@/lib/reach";
 
 const TITLE = "ZYN — Roblox SFX Artist, Sound Designer & QA Tester";
 const DESC =
@@ -35,6 +35,7 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: DESC },
       { property: "og:type", content: "website" },
       { property: "og:url", content: SITE_URL },
+      { property: "og:image", content: `${SITE_URL}/favicon.png` },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: TITLE },
       { name: "twitter:description", content: DESC },
@@ -60,7 +61,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { works, settings, liveStats } = Route.useLoaderData();
+  const { works, settings, reviews, liveStats } = Route.useLoaderData();
 
   return (
     <div className="min-h-screen bg-background">
@@ -75,12 +76,13 @@ function Index() {
         <Reveal as="section">
           <About settings={settings.about} />
         </Reveal>
-        <WorkPreview works={works} settings={settings.workPreview} />
+        <WorkPreview
+          works={works}
+          settings={settings.workPreview}
+          ccu={ccuBySlug(liveStats)}
+        />
         <Reveal as="section">
-          <Testimonials settings={settings.testimonials} />
-        </Reveal>
-        <Reveal as="section">
-          <ExampleWorks settings={settings.exampleWorks} />
+          <ReviewWall testimonials={settings.testimonials} reviews={reviews} preview />
         </Reveal>
         <Reveal as="section">
           <ContactCta settings={settings.contact} />

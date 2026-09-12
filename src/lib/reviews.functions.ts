@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { loadStore, mutate } from "@/lib/store";
 import { requireOwner } from "@/lib/require-owner";
@@ -6,10 +7,11 @@ import { requireOwner } from "@/lib/require-owner";
 // ---------------------------------------------------------------------------
 // Reviews
 //
-// Public client reviews with an admin verification workflow. Rows live in the
-// self-hosted JSON store (data/store.json); no external service required.
-// Public submissions start unverified and only appear once an admin verifies
-// them, so spam can never reach the site.
+// Public client reviews. Rows live in the self-hosted JSON store
+// (data/store.json); no external service required. Submissions publish
+// instantly so writers see their review right away; lightweight bot guards
+// (per-IP rate limit + link heuristic) plus the per-email daily cap keep spam
+// out, and the owner can still unverify or delete anything from /admin.
 // ---------------------------------------------------------------------------
 
 export type Review = {
@@ -39,6 +41,15 @@ export const reviewInput = z.object({
 
 export type ReviewInput = z.infer<typeof reviewInput>;
 
+/** Public-safe review — `authorEmail` is private and never leaves the server
+ *  except through owner-gated admin functions. */
+export type PublicReview = Omit<Review, "authorEmail">;
+
+function toPublicReview(review: Review): PublicReview {
+  const { authorEmail: _email, ...pub } = review;
+  return pub;
+}
+
 const reviewFilter = z
   .object({
     projectRef: z.string().trim().min(1).max(120).optional(),
@@ -47,24 +58,64 @@ const reviewFilter = z
 
 export const listReviews = createServerFn({ method: "GET" })
   .validator((data: unknown) => reviewFilter.parse(data ?? {}))
-  .handler(async ({ data }): Promise<Review[]> => {
+  .handler(async ({ data }): Promise<PublicReview[]> => {
     const all = [...(await loadStore()).reviews]
       .filter((r) => r.verified)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    return data.projectRef
+    const scoped = data.projectRef
       ? all.filter((r) => r.projectRef === data.projectRef).slice(0, 50)
       : all.slice(0, 50);
+    return scoped.map(toPublicReview);
   });
 
 const MAX_REVIEWS_PER_EMAIL_PER_DAY = 5;
 
+// Instant-publish bot guards (the old manual-approval gate is gone).
+const REVIEW_IP_LIMIT = 5;
+const REVIEW_IP_WINDOW_MS = 10 * 60 * 1000;
+const reviewIpHits = new Map<string, number[]>();
+
+function reviewIpLimited(key: string) {
+  const now = Date.now();
+  const recent = (reviewIpHits.get(key) ?? []).filter((t) => now - t < REVIEW_IP_WINDOW_MS);
+  recent.push(now);
+  reviewIpHits.set(key, recent);
+  if (reviewIpHits.size > 500) {
+    for (const [k, v] of reviewIpHits) if (!v.some((t) => now - t < REVIEW_IP_WINDOW_MS)) reviewIpHits.delete(k);
+  }
+  return recent.length > REVIEW_IP_LIMIT;
+}
+
+function looksLikeReviewSpam(content: string, authorName: string) {
+  const links = (content.match(/https?:\/\//gi) ?? []).length;
+  if (links > 1) return true;
+  if (/\b(seo services|crypto|casino|viagra|backlinks|forex|loan offer)\b/i.test(content)) {
+    return true;
+  }
+  if (authorName.length > 4 && authorName === authorName.toUpperCase() && /\d{3,}/.test(authorName)) {
+    return true;
+  }
+  return false;
+}
+
 export const createReview = createServerFn({ method: "POST" })
   .validator((data: unknown) => reviewInput.parse(data))
-  .handler(async ({ data }): Promise<Review> => {
+  .handler(async ({ data }): Promise<PublicReview> => {
     const now = new Date().toISOString();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayIso = today.toISOString();
+
+    const ip =
+      getRequestHeader("cf-connecting-ip") ??
+      getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() ??
+      "unknown";
+    if (reviewIpLimited(ip)) {
+      throw new Error("Too many reviews from this connection. Try again later.");
+    }
+    if (looksLikeReviewSpam(data.content, data.authorName)) {
+      throw new Error("This review was flagged as spam. Please reach me on Discord instead.");
+    }
 
     return mutate((store) => {
       const fromToday = store.reviews.filter(
@@ -84,12 +135,13 @@ export const createReview = createServerFn({ method: "POST" })
         screenshotUrls: data.screenshotUrls,
         ...(data.projectRef ? { projectRef: data.projectRef } : {}),
         featured: false,
-        verified: false,
+        // Publishes instantly so the writer sees it right away for everyone.
+        verified: true,
         createdAt: now,
         updatedAt: now,
       };
       store.reviews.push(review);
-      return review;
+      return toPublicReview(review);
     });
   });
 

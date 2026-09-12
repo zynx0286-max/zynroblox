@@ -3,15 +3,21 @@ import { ArrowRight, LayoutGrid } from "lucide-react";
 import { WorkCard } from "@/components/WorkCard";
 import type { Work } from "@/data/works";
 import { Reveal } from "@/components/Reveal";
+import { sortByCcu, sortByReach } from "@/lib/reach";
 import type { WorkPreviewSettings } from "@/lib/site-settings";
 
-export function WorkPreview({ works, settings }: { works: Work[]; settings: WorkPreviewSettings }) {
-  // Sort by popularity (CCU) descending, featured first
-  const sortedWorks = [...works].sort((a, b) => {
-    if (a.featured && !b.featured) return -1;
-    if (!a.featured && b.featured) return 1;
-    return (b.popularity || 0) - (a.popularity || 0);
-  });
+export function WorkPreview({
+  works,
+  settings,
+  ccu = {},
+}: {
+  works: Work[];
+  settings: WorkPreviewSettings;
+  ccu?: Record<string, number>;
+}) {
+  // Most live players (CCU) first; visits/members order when CCU is unknown.
+  const hasCcu = Object.keys(ccu).length > 0;
+  const sortedWorks = hasCcu ? sortByCcu(works, ccu) : sortByReach(works);
 
   const preview = sortedWorks.filter((w) => !w.featured).slice(0, 6);
 

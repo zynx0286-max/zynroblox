@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { FolderOpen, LogOut, MessageSquareQuote, Settings2, Star } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { isAdmin } from "@/lib/works.functions";
+import { getPersistenceStatus } from "@/lib/site.functions";
 import { logoutOwner } from "@/lib/auth.functions";
 import { WorksAdmin } from "@/components/admin/WorksAdmin";
 import { TestimonialsAdmin } from "@/components/admin/TestimonialsAdmin";
@@ -33,6 +34,34 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 type Tab = "works" | "testimonials" | "reviews" | "content";
 
+type StoreStatus = { backend: "kv" | "file" | "memory"; works: number; persisted: boolean };
+
+function StoreStatusBadge({ status }: { status: StoreStatus | undefined }) {
+  if (!status) return null;
+  if (status.backend === "kv") {
+    return (
+      <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
+        <span className="size-1.5 rounded-full bg-emerald-400" />
+        Saving to durable storage (KV)
+      </p>
+    );
+  }
+  if (status.backend === "file") {
+    return (
+      <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs text-amber-400">
+        <span className="size-1.5 rounded-full bg-amber-400" />
+        Local file storage — set up KV or edits may be lost on redeploy
+      </p>
+    );
+  }
+  return (
+    <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-400">
+      <span className="size-1.5 animate-pulse rounded-full bg-red-400" />
+      NOT SAVING — memory only, changes will be lost. Configure the STORE KV binding.
+    </p>
+  );
+}
+
 const TABS: { key: Tab; label: string; icon: typeof FolderOpen }[] = [
   { key: "works", label: "Works", icon: FolderOpen },
   { key: "testimonials", label: "Testimonials", icon: MessageSquareQuote },
@@ -45,9 +74,16 @@ function AdminPage() {
   const qc = useQueryClient();
   const admin = useServerFn(isAdmin);
   const logout = useServerFn(logoutOwner);
+  const statusFn = useServerFn(getPersistenceStatus);
   const [tab, setTab] = useState<Tab>("works");
 
   const adminQuery = useQuery({ queryKey: ["is-admin"], queryFn: () => admin() });
+  const statusQuery = useQuery({
+    queryKey: ["store-status"],
+    queryFn: () => statusFn(),
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  });
 
   // Not signed in (or the session expired) — send back to the sign-in page.
   useEffect(() => {
@@ -91,6 +127,7 @@ function AdminPage() {
           <div>
             <h1 className="font-display text-2xl font-bold sm:text-3xl">Admin</h1>
             <p className="text-sm text-muted-foreground">Edits go live on the site instantly.</p>
+            <StoreStatusBadge status={statusQuery.data} />
           </div>
           <div className="flex gap-2">
             <Link

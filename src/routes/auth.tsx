@@ -38,7 +38,13 @@ function AuthPage() {
     try {
       const res = await login({ data: { username, password } });
       if (!res.ok) {
-        setError("Invalid username or password.");
+        setError(
+          res.reason === "location"
+            ? "Sign-in is restricted to the Franklin Township, NJ area."
+            : res.reason === "unconfigured"
+              ? "Admin sign-in isn't configured yet (missing server secret)."
+              : "Invalid username or password.",
+        );
         return;
       }
       // Verify the session actually grants admin before navigating, so a

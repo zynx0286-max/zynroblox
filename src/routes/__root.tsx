@@ -7,16 +7,16 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, Suspense, lazy, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { Cursor } from "../components/Cursor";
-import { Grain } from "../components/Grain";
-import { Preloader } from "../components/Preloader";
 import { BackToTop } from "../components/BackToTop";
-import { AmbientAudio } from "../components/AmbientAudio";
-import { ScrollFX } from "../components/ScrollFX";
+import { CookieConsent } from "../components/CookieConsent";
+
+// Simple white dot cursor — a tiny component, no three.js, no canvas.
+// (The old GhostCursor shader trail was removed for low-end performance.)
+const DotCursorLazy = lazy(() => import("../components/DotCursor").then((m) => ({ default: m.DotCursor })));
 
 function NotFoundComponent() {
   return (
@@ -102,6 +102,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { name: "author", content: "ZYN" },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "/favicon.png" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
@@ -122,6 +123,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
       { rel: "shortcut icon", href: "/favicon.ico" },
+      { rel: "apple-touch-icon", href: "/favicon.png" },
     ],
   }),
 
@@ -155,16 +157,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Global interactive effects (each is fail-safe and skips itself on
-          touch / reduced-motion). */}
-      <Preloader />
-      <Cursor />
-      <Grain />
+      {/* Lightweight dot cursor (renders nothing on touch / reduced-motion). */}
+      <Suspense fallback={null}>
+        <DotCursorLazy />
+      </Suspense>
       <BackToTop />
-      {/* Immersive layer: ambient pad + GSAP scroll motion. Client-only,
-          degrades gracefully. */}
-      <AmbientAudio />
-      <ScrollFX />
+      <CookieConsent />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
     </QueryClientProvider>

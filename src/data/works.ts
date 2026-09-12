@@ -2,7 +2,7 @@ import batALuckyBlock from "@/assets/bat-a-lucky-block.png";
 import bonfireSimulator from "@/assets/bonfire-simulator.png";
 import carpetCleaning from "@/assets/carpet-cleaning-simulator.png";
 import chefs from "@/assets/chefs.png";
-import cleanAllTheLeaves from "@/assets/clean-all-the-leaves.svg";
+import cleanAllTheLeaves from "@/assets/clean-all-the-leaves.png";
 import cleanThePlushieStore from "@/assets/clean-the-plushie-store.png";
 import cleanTheStores from "@/assets/clean-the-stores.png";
 import darkVsLight from "@/assets/dark-vs-light.png";
@@ -31,6 +31,12 @@ import cleanYourAsmr from "@/assets/clean-your-asmr.png";
 import amazarkIcon from "@/assets/amazark-icon.png";
 import codexCustomsIcon from "@/assets/codex-customs-icon.png";
 import animeChroniclesIcon from "@/assets/anime-chronicles-icon.png";
+import boysVsGirlsTycoon from "@/assets/boys-vs-girls-tycoon.png";
+import escapeTheFire from "@/assets/escape-the-fire.png";
+import slideWithBrainrot from "@/assets/slide-with-brainrot.png";
+import growYourLuckyBlock from "@/assets/grow-your-lucky-block.png";
+import yeetTower from "@/assets/yeet-tower.png";
+import chopYourTree from "@/assets/chop-your-tree.png";
 
 export const SITE_URL = "https://zyn-roblox-portfolio.zynx0286.workers.dev";
 
@@ -85,6 +91,84 @@ export const works: Work[] = [
     image: cleanAllTheLeaves,
     featured: true,
     popularity: 156,
+  },
+  {
+    slug: "chop-your-tree",
+    title: "Chop Your Tree",
+    category: "QA Testing",
+    role: "QA Tester",
+    description:
+      "QA tester for Chop Your Tree — a 141M+ visit simulator from the Simple Bricks group. Tested watering/chopping loops, machine upgrades, prestige flow and luck-event balance.",
+    tags: ["Simulator QA", "141M Visits", "Economy Testing"],
+    href: "https://www.roblox.com/games/123557829667240/Chop-Your-Tree",
+    linkLabel: "View on Roblox",
+    image: chopYourTree,
+    popularity: 210,
+  },
+  {
+    slug: "boys-vs-girls-tycoon",
+    title: "Boys vs Girls Tycoon",
+    category: "QA Testing",
+    role: "QA Tester",
+    description:
+      "QA tester for Boys vs Girls Tycoon — a 3.6M+ visit tycoon battler. Tested tycoon progression, gear unlocks, morphs and team-fight balance.",
+    tags: ["Tycoon QA", "3.6M Visits", "Combat Testing"],
+    href: "https://www.roblox.com/games/100760208242053/Boys-vs-Girls-Tycoon",
+    linkLabel: "View on Roblox",
+    image: boysVsGirlsTycoon,
+    popularity: 120,
+  },
+  {
+    slug: "slide-with-brainrot",
+    title: "Slide with Brainrot",
+    category: "QA Testing",
+    role: "QA Tester",
+    description:
+      "QA tester for Slide with Brainrot — a 1.5M+ visit slide simulator. Tested slide physics, ride-on mechanics, egg hatching and prize payouts.",
+    tags: ["Simulator QA", "1.5M Visits", "Physics Testing"],
+    href: "https://www.roblox.com/games/71630956126422/Slide-with-Brainrot",
+    linkLabel: "View on Roblox",
+    image: slideWithBrainrot,
+    popularity: 110,
+  },
+  {
+    slug: "escape-the-fire",
+    title: "Escape the Fire",
+    category: "QA Testing",
+    role: "QA Tester",
+    description:
+      "QA tester for Escape the Fire — a speed-run survival game. Tested run-speed progression, pet army bonuses, world unlocks and leaderboard integrity.",
+    tags: ["Progression QA", "Leaderboard Testing"],
+    href: "https://www.roblox.com/games/108419984144397/Escape-the-Fire",
+    linkLabel: "View on Roblox",
+    image: escapeTheFire,
+    popularity: 36,
+  },
+  {
+    slug: "grow-your-lucky-block",
+    title: "Grow Your Lucky Block",
+    category: "QA Testing",
+    role: "QA Tester",
+    description:
+      "QA tester for Grow Your Lucky Block — a potion-and-prestige simulator. Tested potion fill rates, block breaks, machine upgrades and void prestige.",
+    tags: ["Simulator QA", "Economy Testing"],
+    href: "https://www.roblox.com/games/117321743875794/Grow-Your-Lucky-Block",
+    linkLabel: "View on Roblox",
+    image: growYourLuckyBlock,
+    popularity: 26,
+  },
+  {
+    slug: "yeet-tower",
+    title: "Yeet Tower",
+    category: "QA Testing",
+    role: "QA Tester",
+    description:
+      "QA tester for Yeet Tower — a troll tower climber from the Simple Bricks group. Tested climb mechanics, yeet interactions and round fairness.",
+    tags: ["Gameplay Testing", "Physics Testing"],
+    href: "https://www.roblox.com/games/120598963201948/Yeet-Tower",
+    linkLabel: "View on Roblox",
+    image: yeetTower,
+    popularity: 16,
   },
   {
     slug: "hammer-fishing",

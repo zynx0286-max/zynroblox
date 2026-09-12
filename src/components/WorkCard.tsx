@@ -1,18 +1,18 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, ExternalLink, Gamepad2 } from "lucide-react";
 import { GlassImage } from "@/components/GlassFrame";
-import { Tilt3D } from "@/components/Reveal";
+import { SpotlightCard } from "@/components/bits/SpotlightCard";
 import { track } from "@/lib/analytics";
 import type { Work } from "@/data/works";
 
 export function WorkCard({ work }: { work: Work }) {
   return (
-    <Tilt3D className="h-full" strength={6}>
+    <SpotlightCard className="glass-card h-full rounded-2xl transition-all duration-300 hover:border-primary/40 hover:shadow-[var(--shadow-glow)]">
       <Link
         to="/work/$slug"
         params={{ slug: work.slug }}
         onClick={() => track("work_view", { slug: work.slug, category: work.category })}
-        className="group glass-card relative flex h-full flex-col rounded-2xl p-3 transition-all duration-300 hover:border-primary/40 hover:shadow-[var(--shadow-glow)] active:scale-[0.99] sm:p-4"
+        className="group relative flex h-full flex-col rounded-2xl p-3 active:scale-[0.99] sm:p-4"
       >
         <GlassImage src={work.image} alt={`${work.title} thumbnail`} />
 
@@ -67,6 +67,6 @@ export function WorkCard({ work }: { work: Work }) {
           </span>
         </div>
       </Link>
-    </Tilt3D>
+    </SpotlightCard>
   );
 }

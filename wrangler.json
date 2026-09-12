@@ -1,3 +1,11 @@
 {
-  "name": "zyn-roblox-portfolio"
+  "name": "zyn-roblox-portfolio",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "kv_namespaces": [
+    {
+      "binding": "STORE",
+      "id": "1a7ae68fb41c4d2d9063447463e356cb"
+    }
+  ]
 }

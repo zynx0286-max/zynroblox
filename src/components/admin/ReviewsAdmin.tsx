@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { BadgeCheck, Loader2, Star, Trash2 } from "lucide-react";
 import { captureError } from "@/lib/sentry";
@@ -13,6 +14,7 @@ import {
 
 export function ReviewsAdmin() {
   const qc = useQueryClient();
+  const router = useRouter();
   const list = useServerFn(adminListReviews);
   const verify = useServerFn(verifyReview);
   const toggleFeatured = useServerFn(toggleReviewFeatured);
@@ -25,7 +27,11 @@ export function ReviewsAdmin() {
     queryFn: () => list(),
   });
 
-  const invalidate = () => void qc.invalidateQueries({ queryKey: ["admin-reviews"] });
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ["admin-reviews"] });
+    // Public pages read via route loaders — refetch them so edits show live.
+    void router.invalidate();
+  };
   const onError = (err: unknown) => {
     captureError(err, { area: "admin" });
     setError(err instanceof Error ? err.message : "Something went wrong");

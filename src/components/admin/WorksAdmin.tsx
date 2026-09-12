@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   ArrowDown,
@@ -66,6 +67,7 @@ const toInput = (w: DbWork): WorkInput => ({
 
 export function WorksAdmin() {
   const qc = useQueryClient();
+  const router = useRouter();
   const list = useServerFn(adminListWorks);
   const create = useServerFn(createWork);
   const update = useServerFn(updateWork);
@@ -81,6 +83,8 @@ export function WorksAdmin() {
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ["admin-works"] });
     void qc.invalidateQueries({ queryKey: ["works"] });
+    // Public pages read via route loaders — refetch them so edits show live.
+    void router.invalidate();
   };
 
   const onError = (err: unknown) => {
@@ -409,6 +413,7 @@ export function WorksAdmin() {
 
 function WorkMediaPanel({ work, onError }: { work: DbWork; onError: (err: unknown) => void }) {
   const qc = useQueryClient();
+  const router = useRouter();
   const list = useServerFn(listWorkMedia);
   const add = useServerFn(addWorkMedia);
   const update = useServerFn(updateWorkMedia);
@@ -420,7 +425,11 @@ function WorkMediaPanel({ work, onError }: { work: DbWork; onError: (err: unknow
     queryFn: () => list(),
   });
 
-  const invalidate = () => void qc.invalidateQueries({ queryKey: ["admin-media", work.id] });
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ["admin-media", work.id] });
+    // Public pages read via route loaders — refetch them so edits show live.
+    void router.invalidate();
+  };
 
   const media = (mediaQuery.data ?? []).filter((m) => m.workId === work.id);
 
