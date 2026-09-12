@@ -39,8 +39,8 @@ export function CookieConsent() {
     >
       <p className="text-sm font-semibold text-foreground">Cookies, minus the creepiness</p>
       <p className="mt-1 text-xs leading-relaxed text-muted-foreground sm:text-sm">
-        This portfolio sets no tracking or advertising cookies. If you contact ZYN, only your
-        message is stored so he can reply. See the{" "}
+        This portfolio sets no tracking or advertising cookies. Reviews you submit are stored so
+        they can be displayed; contacting ZYN goes through Gmail or Discord instead. See the{" "}
         <Link to="/privacy" className="underline hover:text-foreground">
           Privacy Policy
         </Link>{" "}

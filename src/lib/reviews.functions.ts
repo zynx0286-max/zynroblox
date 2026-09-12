@@ -81,7 +81,8 @@ function reviewIpLimited(key: string) {
   recent.push(now);
   reviewIpHits.set(key, recent);
   if (reviewIpHits.size > 500) {
-    for (const [k, v] of reviewIpHits) if (!v.some((t) => now - t < REVIEW_IP_WINDOW_MS)) reviewIpHits.delete(k);
+    for (const [k, v] of reviewIpHits)
+      if (!v.some((t) => now - t < REVIEW_IP_WINDOW_MS)) reviewIpHits.delete(k);
   }
   return recent.length > REVIEW_IP_LIMIT;
 }
@@ -92,7 +93,11 @@ function looksLikeReviewSpam(content: string, authorName: string) {
   if (/\b(seo services|crypto|casino|viagra|backlinks|forex|loan offer)\b/i.test(content)) {
     return true;
   }
-  if (authorName.length > 4 && authorName === authorName.toUpperCase() && /\d{3,}/.test(authorName)) {
+  if (
+    authorName.length > 4 &&
+    authorName === authorName.toUpperCase() &&
+    /\d{3,}/.test(authorName)
+  ) {
     return true;
   }
   return false;

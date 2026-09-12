@@ -76,11 +76,7 @@ function Index() {
         <Reveal as="section">
           <About settings={settings.about} />
         </Reveal>
-        <WorkPreview
-          works={works}
-          settings={settings.workPreview}
-          ccu={ccuBySlug(liveStats)}
-        />
+        <WorkPreview works={works} settings={settings.workPreview} ccu={ccuBySlug(liveStats)} />
         <Reveal as="section">
           <ReviewWall testimonials={settings.testimonials} reviews={reviews} preview />
         </Reveal>
