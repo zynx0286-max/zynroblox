@@ -1,8 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
 import { Activity, Users } from "lucide-react";
 import { getLiveGameStats, type LiveGameStats } from "@/lib/live-stats.functions";
 import { AnimatedCounter } from "./AnimatedCounter";
+
+// How long to keep showing a loading placeholder before admitting the live
+// feed failed. The Roblox API is rate-limited and universe resolution can take
+// a while on cold starts — showing "error" instantly (e.g. for a legit 0 CCU
+// at quiet hours) is wrong, so we wait out this grace period first.
+const ERROR_GRACE_MS = 60_000;
 
 // Live Roblox game counters. The route loader fetches the numbers during SSR so
 // real values are already in the initial HTML (no flash, no client fetch
@@ -20,26 +27,50 @@ export function LiveStats({ initial }: { initial?: LiveGameStats | null }) {
     initialData: initial ?? undefined,
   });
 
+  // Grace timer: only allow the "error" state after the feed has had a full
+  // minute to resolve. Resets whenever good data arrives.
+  const [graceExpired, setGraceExpired] = useState(false);
   const data = query.data;
-  const live = data !== undefined;
+  // The feed only counts as resolved when it actually carries game data — an
+  // empty games list with zeroed totals means the Roblox API failed, not that
+  // the games genuinely have 0 visits.
+  const resolved =
+    data !== undefined && (data.games.length > 0 || data.totalVisits > 0);
+  useEffect(() => {
+    if (resolved) {
+      setGraceExpired(false);
+      return;
+    }
+    const t = setTimeout(() => setGraceExpired(true), ERROR_GRACE_MS);
+    return () => clearTimeout(t);
+  }, [resolved]);
+
+  const live = resolved;
   const totalVisits = data?.totalVisits ?? 0;
   const totalPlaying = data?.totalPlaying ?? 0;
 
-  // A counter stuck at 0 means the live feed failed — say so instead of
-  // showing a misleading zero.
-  const renderCount = (value: number, duration: number) =>
-    value === 0 ? (
-      <span className="text-destructive">error</span>
-    ) : (
-      <AnimatedCounter value={value} duration={duration} />
-    );
+  // While the feed is still trying (first fetch in flight, retries running,
+  // grace period not yet over) show a neutral placeholder — never "error".
+  // "error" appears only after a full minute with no usable data. A genuine 0
+  // (e.g. nobody online in the dead of night) renders as 0 once resolved.
+  const settled = resolved || query.isError || graceExpired;
+  const renderCount = (value: number, duration: number) => {
+    if (resolved) {
+      return <AnimatedCounter value={value} duration={duration} />;
+    }
+    if (settled) {
+      return <span className="text-destructive">error</span>;
+    }
+    return <span className="text-muted-foreground/50">—</span>;
+  };
 
   return (
-    <div
-      className={`grid grid-cols-2 gap-2.5 sm:gap-3 ${
-        live ? "opacity-100" : "opacity-60"
-      } transition-opacity duration-500`}
-    >
+    <div>
+      <div
+        className={`grid grid-cols-2 gap-2.5 sm:gap-3 ${
+          live ? "opacity-100" : "opacity-60"
+        } transition-opacity duration-500`}
+      >
       <div className="glass-card relative overflow-hidden rounded-2xl px-3 py-4 sm:px-4 sm:py-5">
         <div className="flex items-center justify-between">
           <span className="inline-flex items-center gap-1.5 text-[0.6rem] tracking-[0.15em] text-muted-foreground uppercase sm:text-[0.65rem]">
@@ -57,11 +88,7 @@ export function LiveStats({ initial }: { initial?: LiveGameStats | null }) {
           ) : null}
         </div>
         <p className="mt-2 font-display text-2xl font-bold text-primary sm:text-3xl">
-          {data ? (
-            renderCount(totalPlaying, 800)
-          ) : (
-            <span className="text-muted-foreground/50">—</span>
-          )}
+          {renderCount(totalPlaying, 800)}
         </p>
       </div>
 
@@ -78,13 +105,13 @@ export function LiveStats({ initial }: { initial?: LiveGameStats | null }) {
           ) : null}
         </div>
         <p className="mt-2 font-display text-2xl font-bold sm:text-3xl">
-          {data ? (
-            renderCount(totalVisits, 1200)
-          ) : (
-            <span className="text-muted-foreground/50">—</span>
-          )}
+          {renderCount(totalVisits, 1200)}
         </p>
+        </div>
       </div>
+      <p className="mt-3 text-center text-xs text-muted-foreground sm:text-sm">
+        Combined players &amp; visits across every game I&apos;ve contributed to.
+      </p>
     </div>
   );
 }

@@ -133,7 +133,7 @@ export function Hero({
           and players stick around.
         </p>
 
-        {/* Live Roblox counters (visits + CCU), refreshed every 30s. */}
+        {/* Live Roblox counters (visits + CCU), refreshed every 120s. */}
         <div className="mx-auto mt-10 max-w-3xl sm:mt-14">
           <LiveStats initial={liveStats ?? null} />
         </div>

@@ -1,6 +1,7 @@
 import { Check } from "lucide-react";
 import { GlassFrame } from "@/components/GlassFrame";
 import { AnimatedCounter } from "./AnimatedCounter";
+import carpetCleaning from "@/assets/carpet-cleaning-simulator.png";
 import type { AboutSettings } from "@/lib/site-settings";
 
 export function About({ settings }: { settings: AboutSettings }) {
@@ -28,12 +29,13 @@ export function About({ settings }: { settings: AboutSettings }) {
 
         <div className="space-y-4">
           <GlassFrame ratio="aspect-[4/3]">
-            <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-surface/40 px-6 text-center">
-              <span className="font-display text-5xl font-bold text-primary">{settings.badge}</span>
-              <p className="max-w-[22rem] text-sm leading-relaxed font-medium text-foreground/85 sm:text-[15px]">
-                {settings.badgeCopy}
-              </p>
-            </div>
+            <img
+              src={carpetCleaning}
+              alt="Carpet Cleaning Simulator — QA tested Roblox game"
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover"
+            />
           </GlassFrame>
 
           <div className="grid grid-cols-2 gap-4">

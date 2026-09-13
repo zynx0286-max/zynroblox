@@ -221,6 +221,7 @@
 }
 
 @keyframes marquee {
+  /* Right-to-left scroll: items enter from the right, exit on the left. */
   from {
     transform: translateX(0);
   }
