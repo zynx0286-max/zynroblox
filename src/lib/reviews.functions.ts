@@ -188,6 +188,19 @@ export const verifyReview = createServerFn({ method: "POST" })
     });
   });
 
+export const unverifyReview = createServerFn({ method: "POST" })
+  .middleware([requireOwner])
+  .validator((data: unknown) => z.object({ id: z.string().min(1) }).parse(data))
+  .handler(async ({ data }): Promise<Review> => {
+    return mutate((store) => {
+      const review = store.reviews.find((r) => r.id === data.id);
+      if (!review) throw new Error("Review not found");
+      review.verified = false;
+      review.updatedAt = new Date().toISOString();
+      return review;
+    });
+  });
+
 export const toggleReviewFeatured = createServerFn({ method: "POST" })
   .middleware([requireOwner])
   .validator((data: unknown) => z.object({ id: z.string().min(1) }).parse(data))

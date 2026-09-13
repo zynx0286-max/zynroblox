@@ -8,6 +8,7 @@ import {
   adminListReviews,
   deleteReview,
   toggleReviewFeatured,
+  unverifyReview,
   verifyReview,
   type Review,
 } from "@/lib/reviews.functions";
@@ -17,6 +18,7 @@ export function ReviewsAdmin() {
   const router = useRouter();
   const list = useServerFn(adminListReviews);
   const verify = useServerFn(verifyReview);
+  const unverify = useServerFn(unverifyReview);
   const toggleFeatured = useServerFn(toggleReviewFeatured);
   const remove = useServerFn(deleteReview);
 
@@ -39,6 +41,11 @@ export function ReviewsAdmin() {
 
   const verifyMutation = useMutation({
     mutationFn: (id: string) => verify({ data: { id } }),
+    onSuccess: invalidate,
+    onError,
+  });
+  const unverifyMutation = useMutation({
+    mutationFn: (id: string) => unverify({ data: { id } }),
     onSuccess: invalidate,
     onError,
   });
@@ -66,10 +73,10 @@ export function ReviewsAdmin() {
 
       <div className="mt-6">
         <p className="text-sm text-muted-foreground">
-          Reviews submitted from the site start unverified and only show publicly after you approve
-          them.{" "}
+          Reviews publish instantly so writers see them right away. Hide spam with Unpublish or
+          remove it permanently with delete.{" "}
           {pending.length > 0 ? (
-            <span className="font-semibold text-primary">{pending.length} awaiting review.</span>
+            <span className="font-semibold text-primary">{pending.length} unpublished.</span>
           ) : null}
         </p>
       </div>
@@ -131,6 +138,15 @@ export function ReviewsAdmin() {
                       <BadgeCheck className="size-3.5" />
                     )}
                     Approve
+                  </button>
+                ) : null}
+                {r.verified ? (
+                  <button
+                    onClick={() => unverifyMutation.mutate(r.id)}
+                    disabled={unverifyMutation.isPending}
+                    className="rounded-full border border-amber-500/50 px-3.5 py-2 font-display text-xs text-amber-500 disabled:opacity-60"
+                  >
+                    Unpublish
                   </button>
                 ) : null}
                 <button

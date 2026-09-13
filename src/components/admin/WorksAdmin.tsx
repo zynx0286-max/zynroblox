@@ -521,7 +521,7 @@ function WorkMediaPanel({ work, onError }: { work: DbWork; onError: (err: unknow
             Video
           </button>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/40 px-3 py-2 font-display text-xs text-muted-foreground">
-            <Upload className="size-3.5" /> 100MB max
+            <Upload className="size-3.5" /> 1.5MB max
           </span>
         </div>
       </div>

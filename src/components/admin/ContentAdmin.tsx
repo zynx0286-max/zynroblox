@@ -489,12 +489,18 @@ function AboutEditor({
         <span className={label}>Body</span>
         <TextField rows={4} value={a.body} onChange={(v) => set("about", { ...a, body: v })} />
       </div>
+      <div className="sm:col-span-2">
+        <p className="rounded-xl border border-border bg-secondary/20 px-3.5 py-2.5 text-xs leading-relaxed text-muted-foreground">
+          The side panel shows the Carpet Cleaning Simulator artwork — the old badge text fields
+          below are kept for compatibility but no longer appear on the site.
+        </p>
+      </div>
       <div>
-        <span className={label}>Badge (big letters)</span>
+        <span className={label}>Badge (big letters, unused)</span>
         <TextField value={a.badge} onChange={(v) => set("about", { ...a, badge: v })} />
       </div>
       <div>
-        <span className={label}>Badge caption</span>
+        <span className={label}>Badge caption (unused)</span>
         <TextField value={a.badgeCopy} onChange={(v) => set("about", { ...a, badgeCopy: v })} />
       </div>
       <div>
