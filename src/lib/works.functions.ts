@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireOwner } from "@/lib/require-owner";
 import { loadStore, mutate } from "@/lib/store";
 import type { Work } from "@/data/works";
+import { safeExternalUrl } from "@/lib/url";
 
 export type DbWork = Work & { id: string; sortOrder: number };
 
@@ -15,6 +16,14 @@ export const listWorks = createServerFn({ method: "GET" }).handler(async (): Pro
   return sorted((await loadStore()).works);
 });
 
+// `z.string().url()` accepts `javascript:` URLs — every work link/image ends
+// up in an href/src attribute, so only genuine https URLs (or empty) pass.
+const httpsUrlOrEmpty = z
+  .string()
+  .max(2000)
+  .refine((v) => v === "" || /^https:\/\//i.test(v.trim()), "Use an https:// URL (or leave empty)")
+  .default("");
+
 export const workInput = z.object({
   slug: z
     .string()
@@ -26,9 +35,9 @@ export const workInput = z.object({
   role: z.string().max(120).default(""),
   description: z.string().max(2000).default(""),
   tags: z.array(z.string().max(40)).max(12).default([]),
-  href: z.string().url().or(z.literal("")).default(""),
+  href: httpsUrlOrEmpty,
   linkLabel: z.string().max(60).default(""),
-  imageUrl: z.string().url().or(z.literal("")).default(""),
+  imageUrl: httpsUrlOrEmpty,
   featured: z.boolean().default(false),
   sortOrder: z.number().int().min(0).max(9999).default(0),
 });
@@ -36,6 +45,10 @@ export const workInput = z.object({
 export type WorkInput = z.infer<typeof workInput>;
 
 function toWork(data: WorkInput, id: string): DbWork {
+  // Server-side re-check (validator already enforces https) so legacy rows
+  // and programmatic callers can't smuggle unsafe schemes through.
+  const href = safeExternalUrl(data.href);
+  const image = safeExternalUrl(data.imageUrl);
   return {
     id,
     slug: data.slug,
@@ -44,9 +57,9 @@ function toWork(data: WorkInput, id: string): DbWork {
     role: data.role,
     description: data.description,
     tags: data.tags,
-    ...(data.href ? { href: data.href } : {}),
+    ...(href ? { href } : {}),
     ...(data.linkLabel ? { linkLabel: data.linkLabel } : {}),
-    ...(data.imageUrl ? { image: data.imageUrl } : {}),
+    ...(image ? { image } : {}),
     featured: data.featured,
     sortOrder: data.sortOrder,
   };
@@ -103,17 +116,37 @@ export const deleteWork = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/**
+ * Moves a work one position up/down in display order by SWAPPING sortOrders
+ * with its neighbor. The previous set-a-number approach collided whenever two
+ * entries shared a sortOrder (ties made the arrows no-ops) and drifted out of
+ * sync with the visible list. Boundary moves are a no-op, not an error.
+ */
 export const reorderWork = createServerFn({ method: "POST" })
   .middleware([requireOwner])
   .validator((data: unknown) =>
-    z
-      .object({ id: z.string().min(1).max(120), sortOrder: z.number().int().min(0).max(9999) })
-      .parse(data),
+    z.object({ id: z.string().min(1).max(120), direction: z.enum(["up", "down"]) }).parse(data),
   )
   .handler(async ({ data }) => {
     await mutate((store) => {
-      const w = store.works.find((x) => x.id === data.id);
-      if (w) w.sortOrder = data.sortOrder;
+      const sorted = [...store.works].sort((a, b) => a.sortOrder - b.sortOrder);
+      const idx = sorted.findIndex((w) => w.id === data.id);
+      if (idx === -1) throw new Error("Project not found");
+      const swapWith = data.direction === "up" ? idx - 1 : idx + 1;
+      if (swapWith < 0 || swapWith >= sorted.length) return; // already at the edge
+      const current = sorted[idx];
+      const neighbor = sorted[swapWith];
+      if (!current || !neighbor) return;
+      // Legacy rows can share a sortOrder — renormalize first so the swap
+      // genuinely changes the visible order.
+      if (neighbor.sortOrder === current.sortOrder) {
+        sorted.forEach((w, i) => {
+          w.sortOrder = i;
+        });
+      }
+      const tmp = current.sortOrder;
+      current.sortOrder = neighbor.sortOrder;
+      neighbor.sortOrder = tmp;
     });
     return { ok: true as const };
   });

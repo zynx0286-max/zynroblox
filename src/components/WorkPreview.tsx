@@ -3,23 +3,19 @@ import { ArrowRight, LayoutGrid } from "lucide-react";
 import { WorkCard } from "@/components/WorkCard";
 import type { Work } from "@/data/works";
 import { Reveal } from "@/components/Reveal";
-import { sortByCcu, sortByReach } from "@/lib/reach";
 import type { WorkPreviewSettings } from "@/lib/site-settings";
 
 export function WorkPreview({
   works,
   settings,
-  ccu = {},
 }: {
   works: Work[];
   settings: WorkPreviewSettings;
   ccu?: Record<string, number>;
 }) {
-  // Most live players (CCU) first; visits/members order when CCU is unknown.
-  const hasCcu = Object.keys(ccu).length > 0;
-  const sortedWorks = hasCcu ? sortByCcu(works, ccu) : sortByReach(works);
-
-  const preview = sortedWorks.filter((w) => !w.featured).slice(0, 6);
+  // The incoming order is the admin's arrangement (loader → store sortOrder).
+  // No second sort heuristic here — the reorder arrows must be authoritative.
+  const preview = works.filter((w) => !w.featured).slice(0, 6);
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:py-20">

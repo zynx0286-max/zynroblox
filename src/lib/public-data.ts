@@ -1,4 +1,5 @@
-import { listWorks, type DbWork } from "@/lib/works.functions";import {
+import { listWorks, type DbWork } from "@/lib/works.functions";
+import {
   listTestimonials,
   listSiteSettings,
   listWorkMedia,
@@ -8,7 +9,6 @@ import { listWorks, type DbWork } from "@/lib/works.functions";import {
 import { listReviews, type PublicReview } from "@/lib/reviews.functions";
 import { mergeSettings, DEFAULT_SETTINGS, type SiteSettings } from "@/lib/site-settings";
 import { works as staticWorks } from "@/data/works";
-import { sortByReach } from "@/lib/reach";
 
 async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   try {
@@ -18,8 +18,10 @@ async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   }
 }
 
-/** Public works, ordered by visits/members (biggest first) so the most
- *  proven projects lead. The store is seeded from the static catalog, so it
+/** Public works in the order the owner arranged in the admin panel.
+ *  listWorks already sorts by sortOrder (and the store's reorder arrows swap
+ *  neighbors), so the admin ordering is authoritative — no second "reach"
+ *  heuristic on top of it. The store is seeded from the static catalog, so it
  *  always has content; custom images set by the owner win, otherwise we fall
  *  back to the bundled static thumbnail for each slug. */
 export async function getPublicWorks(): Promise<DbWork[]> {
@@ -28,14 +30,12 @@ export async function getPublicWorks(): Promise<DbWork[]> {
     const staticImageBySlug = new Map(
       staticWorks.filter((w) => w.image).map((w) => [w.slug, w.image]),
     );
-    return sortByReach(
-      db.map((w) => {
-        const img = staticImageBySlug.get(w.slug);
-        return img && !w.image ? { ...w, image: img } : w;
-      }),
-    );
+    return db.map((w) => {
+      const img = staticImageBySlug.get(w.slug);
+      return img && !w.image ? { ...w, image: img } : w;
+    });
   }
-  return sortByReach(staticWorks.map((w, i) => ({ ...w, id: `static-${i}`, sortOrder: i })));
+  return staticWorks.map((w, i) => ({ ...w, id: `static-${i}`, sortOrder: i }));
 }
 
 export async function getPublicTestimonials(): Promise<Testimonial[]> {

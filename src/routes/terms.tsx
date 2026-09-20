@@ -2,11 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
+import { LegalBody } from "@/components/LegalBody";
 import { SITE_URL } from "@/data/works";
+import { getPublicSettings } from "@/lib/public-data";
 
 const TITLE = "Terms of Service | ZYN";
-const DESC =
-  "The terms for commissioning ZYN: scope, payment, revisions, ownership, and contact.";
+const DESC = "The terms for commissioning ZYN: scope, payment, revisions, ownership, and contact.";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
@@ -21,10 +22,13 @@ export const Route = createFileRoute("/terms")({
     ],
     links: [{ rel: "canonical", href: `${SITE_URL}/terms` }],
   }),
+  loader: async () => ({ settings: await getPublicSettings() }),
   component: TermsPage,
 });
 
 function TermsPage() {
+  const { settings } = Route.useLoaderData();
+  const terms = settings.terms;
   return (
     <div className="min-h-screen bg-background">
       <SiteNav />
@@ -43,79 +47,20 @@ function TermsPage() {
             </p>
             <h1 className="mt-4 font-display text-3xl font-bold sm:text-5xl">Terms of service</h1>
             <p className="mt-4 text-sm text-muted-foreground">
-              Last updated: September 2026. Plain-language terms for working with ZYN — if
-              anything here is unclear, ask on Discord before commissioning.
+              Last updated: {terms.updated}. {terms.intro}
             </p>
 
             <div className="glass-card mt-8 space-y-6 rounded-2xl p-6 text-sm leading-relaxed text-muted-foreground sm:p-8">
-              <section>
-                <h2 className="font-display text-base font-semibold text-foreground">
-                  1. Scope & quotes
-                </h2>
-                <p className="mt-2">
-                  Every commission starts with a written brief: what is delivered, the timeline,
-                  and the price. Work begins once both sides confirm the brief. Anything outside
-                  the brief is quoted separately.
-                </p>
-              </section>
-              <section>
-                <h2 className="font-display text-base font-semibold text-foreground">
-                  2. Payment
-                </h2>
-                <p className="mt-2">
-                  Payment in Robux or Visa gift cards (100 Robux = $1) unless otherwise agreed.
-                  Larger projects may be split into milestones. Delivery happens after final
-                  payment clears, unless a milestone plan says otherwise.
-                </p>
-              </section>
-              <section>
-                <h2 className="font-display text-base font-semibold text-foreground">
-                  3. Revisions
-                </h2>
-                <p className="mt-2">
-                  Reasonable revisions are included until the work fits the agreed brief. New
-                  directions outside the brief count as new work and are quoted separately.
-                </p>
-              </section>
-              <section>
-                <h2 className="font-display text-base font-semibold text-foreground">
-                  4. Ownership & credit
-                </h2>
-                <p className="mt-2">
-                  Full rights transfer to you on final payment. ZYN may show delivered work in
-                  this portfolio unless you request otherwise in writing before delivery.
-                </p>
-              </section>
-              <section>
-                <h2 className="font-display text-base font-semibold text-foreground">
-                  5. QA & community work
-                </h2>
-                <p className="mt-2">
-                  QA reports describe issues found with reproduction steps — they do not guarantee
-                  a bug-free game. Community and moderation advice is best-effort guidance, not
-                  legal advice.
-                </p>
-              </section>
-              <section>
-                <h2 className="font-display text-base font-semibold text-foreground">
-                  6. Liability
-                </h2>
-                <p className="mt-2">
-                  To the maximum extent permitted by law, liability is limited to the amount paid
-                  for the commission in question. Nothing here limits rights you hold under
-                  applicable consumer-protection law.
-                </p>
-              </section>
-              <section>
-                <h2 className="font-display text-base font-semibold text-foreground">
-                  7. Contact
-                </h2>
-                <p className="mt-2">
-                  Questions about these terms: message @acczyn on Discord or email
-                  zynx0286@gmail.com. Continued use of this site after an update means you accept
-                  the updated terms.
-                </p>
-              </section>
+              {terms.sections.map((s) => (
+                <section key={s.heading}>
+                  <h2 className="font-display text-base font-semibold text-foreground">
+                    {s.heading}
+                  </h2>
+                  <p className="mt-2">
+                    <LegalBody body={s.body} />
+                  </p>
+                </section>
+              ))}
             </div>
           </div>
         </section>

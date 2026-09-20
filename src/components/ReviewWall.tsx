@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, Star, BadgeCheck } from "lucide-react";
 import type { PublicReview } from "@/lib/reviews.functions";
 import type { TestimonialItem, TestimonialSettings } from "@/lib/site-settings";
+import { safeExternalUrl } from "@/lib/url";
 
 const TRUSTED_BY = [
   "Codex Customs",
@@ -26,11 +27,12 @@ function Stars({ count, label }: { count: number; label: string }) {
 }
 
 function TestimonialCard({ t }: { t: TestimonialItem }) {
+  const image = safeExternalUrl(t.image);
   return (
     <figure className="glass flex flex-col rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1">
-      {t.image ? (
+      {image ? (
         <img
-          src={t.image}
+          src={image}
           alt={`${t.author} testimonial screenshot`}
           loading="lazy"
           decoding="async"
@@ -80,6 +82,26 @@ function ReviewCard({ r }: { r: PublicReview }) {
       <blockquote className="mt-1.5 flex-1 text-sm leading-relaxed text-foreground/85">
         “{r.content}”
       </blockquote>
+
+      {r.screenshotUrls.length > 0 ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {r.screenshotUrls
+            .map((u) => safeExternalUrl(u))
+            .filter((u): u is string => !!u)
+            .slice(0, 4)
+            .map((u, i) => (
+              <a key={u} href={u} target="_blank" rel="noreferrer" className="block">
+                <img
+                  src={u}
+                  alt={`${r.authorName} screenshot ${i + 1}`}
+                  loading="lazy"
+                  decoding="async"
+                  className="size-16 rounded-lg border border-border object-cover"
+                />
+              </a>
+            ))}
+        </div>
+      ) : null}
 
       <figcaption className="mt-5 flex items-center gap-3 border-t border-border pt-4">
         <span className="flex size-10 items-center justify-center rounded-full bg-primary/15 font-display text-sm font-bold text-primary">

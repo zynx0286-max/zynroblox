@@ -8,6 +8,9 @@ interface AnimatedCounterProps {
   prefix?: string;
   suffix?: string;
   triggerOnce?: boolean;
+  /** Render the final value in server HTML (SEO + no-JS) instead of 0, then
+   *  still animate 0 → value once the element scrolls into view. */
+  ssrStart?: boolean;
 }
 
 export function AnimatedCounter({
@@ -18,16 +21,18 @@ export function AnimatedCounter({
   prefix = "",
   suffix = "",
   triggerOnce = true,
+  ssrStart = false,
 }: AnimatedCounterProps) {
-  const [displayValue, setDisplayValue] = useState(0);
+  const numValue = typeof value === "string" ? parseInt(value.replace(/,/g, ""), 10) : value;
+  // ssrStart: the server-rendered HTML carries the real value (crawlers and
+  // no-JS visitors see it); the browser then animates 0 → value on reveal.
+  const [displayValue, setDisplayValue] = useState(ssrStart ? numValue : 0);
   const [isVisible, setIsVisible] = useState(false);
   const prevValueRef = useRef(0);
   const startTimeRef = useRef<number | null>(null);
   const animationIdRef = useRef<number | null>(null);
   const elementRef = useRef<HTMLSpanElement>(null);
   const hasAnimatedRef = useRef(false);
-
-  const numValue = typeof value === "string" ? parseInt(value.replace(/,/g, ""), 10) : value;
 
   useEffect(() => {
     const el = elementRef.current;

@@ -13,6 +13,7 @@ const empty = {
   title: "",
   content: "",
   projectRef: "",
+  screenshots: "",
 };
 
 export function ReviewForm() {
@@ -21,6 +22,12 @@ export function ReviewForm() {
   const [values, setValues] = useState(empty);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // One review per device: server enforces it by IP/email, this just stops
+  // the form early so people get a clear message without a round-trip.
+  const [deviceBlocked] = useState(
+    () =>
+      typeof window !== "undefined" && window.localStorage.getItem("zyn-review-submitted") === "1",
+  );
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -32,12 +39,22 @@ export function ReviewForm() {
           title: values.title,
           content: values.content,
           ...(values.projectRef ? { projectRef: values.projectRef } : {}),
+          screenshotUrls: values.screenshots
+            .split(/[\s,]+/)
+            .map((u) => u.trim())
+            .filter((u) => /^https:\/\//i.test(u))
+            .slice(0, 8),
         },
       }),
     onSuccess: () => {
       setDone(true);
       setValues(empty);
       setError(null);
+      try {
+        window.localStorage.setItem("zyn-review-submitted", "1");
+      } catch {
+        // Private mode etc. — server-side IP/email check still applies.
+      }
       // Refetch the page loader so the new review shows up immediately.
       void router.invalidate();
     },
@@ -51,19 +68,27 @@ export function ReviewForm() {
     "mt-1.5 w-full rounded-xl border border-border bg-background/40 px-3.5 py-2.5 text-sm outline-none focus:border-primary/60";
   const label = "font-display text-[0.68rem] tracking-wider text-muted-foreground uppercase";
 
+  // One review per device: the server enforces it by IP/email, this stops
+  // the form early with a clear message instead of a round-trip rejection.
+  if (deviceBlocked) {
+    return (
+      <div className="glass-card rounded-[28px] p-6 text-center sm:p-8">
+        <p className="font-display text-xl font-bold text-foreground">One review per device</p>
+        <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+          This device has already submitted a review. To change it, message @acczyn on Discord.
+        </p>
+      </div>
+    );
+  }
+
   if (done) {
     return (
       <div className="glass-card rounded-[28px] p-6 text-center sm:p-8">
         <p className="font-display text-xl font-bold text-foreground">Thanks for the feedback!</p>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-          Your review is now live below for everyone to see.
+          Your review is now live below for everyone to see. Need to change it later? Message
+          @acczyn on Discord.
         </p>
-        <button
-          onClick={() => setDone(false)}
-          className="mt-5 rounded-full border border-border px-5 py-2.5 font-display text-sm text-foreground transition-colors hover:border-primary/40"
-        >
-          Write another review
-        </button>
       </div>
     );
   }
@@ -155,6 +180,17 @@ export function ReviewForm() {
             placeholder="What was it like working together?"
             value={values.content}
             onChange={(e) => setValues({ ...values, content: e.target.value })}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <span className={label}>Screenshot links (optional, https:// — up to 8)</span>
+          <input
+            type="url"
+            multiple
+            className={field}
+            placeholder="https://… (comma separated)"
+            value={values.screenshots}
+            onChange={(e) => setValues({ ...values, screenshots: e.target.value })}
           />
         </div>
       </div>

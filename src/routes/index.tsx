@@ -13,7 +13,6 @@ import { Reveal } from "@/components/Reveal";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { getPublicSiteData } from "@/lib/public-data";
 import { getLiveGameStats } from "@/lib/live-stats.functions";
-import { ccuBySlug } from "@/lib/reach";
 
 const TITLE = "ZYN — Roblox SFX Artist, Sound Designer & QA Tester";
 const DESC =
@@ -76,7 +75,7 @@ function Index() {
         <Reveal as="section">
           <About settings={settings.about} />
         </Reveal>
-        <WorkPreview works={works} settings={settings.workPreview} ccu={ccuBySlug(liveStats)} />
+        <WorkPreview works={works} settings={settings.workPreview} />
         <Reveal as="section">
           <ReviewWall testimonials={settings.testimonials} reviews={reviews} preview />
         </Reveal>

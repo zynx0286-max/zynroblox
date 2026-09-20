@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getPublicWorks } from "@/lib/public-data";
+import { getUniverseIds, saveUniverseIds } from "@/lib/store";
 
 // Live Roblox game stats.
 //
@@ -30,58 +31,113 @@ export type LiveGameStats = {
 const GAME_HREF_RE = /roblox\.com\/games\/(\d+)/i;
 
 const CACHE_TTL_MS = 60_000;
-const UNIVERSE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // universe ids are stable
 
 let cache: { at: number; data: LiveGameStats | null } | null = null;
-const universeCache = new Map<number, { at: number; id: number }>();
-const inFlight = new Map<number, Promise<number | null>>();
 
-async function resolveUniverse(placeId: number): Promise<number | null> {
-  const hit = universeCache.get(placeId);
-  if (hit && Date.now() - hit.at < UNIVERSE_TTL_MS) return hit.id;
-  const pending = inFlight.get(placeId);
-  if (pending) return pending;
-  const run = (async () => {
-    try {
-      const res = await fetch(`https://apis.roblox.com/universes/v1/places/${placeId}/universe`, {
-        headers: { accept: "application/json" },
-      });
-      if (!res.ok) return null;
-      const body = (await res.json()) as { universeId?: number };
-      const id = typeof body.universeId === "number" ? body.universeId : null;
-      if (id !== null) universeCache.set(placeId, { at: Date.now(), id });
-      return id;
-    } catch {
-      return null;
-    } finally {
-      inFlight.delete(placeId);
+// Roblox rate-limits datacenter IPs (Cloudflare Workers) hard. Firing one
+// concurrent lookup per game used to get most of them 429'd on cold starts —
+// and a failed lookup silently counted that game as 0 visits, collapsing the
+// site-wide total. Resolution is now persisted in the store, and misses are
+// resolved through a small throttled retrying queue instead.
+const UNIVERSE_CONCURRENCY = 2;
+const UNIVERSE_GAP_MS = 250;
+const UNIVERSE_ATTEMPTS = 4;
+const BATCH_ATTEMPTS = 3;
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Resolves place ids to universe ids. Persistent map first (universe ids never
+ * change — a warm store needs ZERO per-place lookups), then a throttled queue
+ * for new games with per-place retries (429 = exponential backoff). Unresolved
+ * places are simply absent from the result; the next refresh retries them.
+ */
+async function resolveUniverses(placeIds: number[]): Promise<Map<number, number>> {
+  const out = new Map<number, number>();
+  const persisted = await getUniverseIds();
+  const missing: number[] = [];
+  for (const placeId of placeIds) {
+    const known = persisted[String(placeId)];
+    if (typeof known === "number" && known > 0) out.set(placeId, known);
+    else missing.push(placeId);
+  }
+  if (missing.length === 0) return out;
+
+  const resolved: Record<string, number> = {};
+  let index = 0;
+  const worker = async () => {
+    for (;;) {
+      const placeId = missing[index];
+      index += 1;
+      if (placeId === undefined) return;
+      let id: number | null = null;
+      for (let attempt = 0; attempt < UNIVERSE_ATTEMPTS && id === null; attempt++) {
+        if (attempt > 0) await sleep(500 * 2 ** (attempt - 1) + Math.random() * 250);
+        try {
+          const res = await fetch(
+            `https://apis.roblox.com/universes/v1/places/${placeId}/universe`,
+            { headers: { accept: "application/json" } },
+          );
+          if (res.status === 429) continue; // back off, retry this place
+          if (!res.ok) continue;
+          const body = (await res.json()) as { universeId?: number };
+          id = typeof body.universeId === "number" ? body.universeId : null;
+        } catch {
+          // network hiccup — retry
+        }
+      }
+      if (id !== null) {
+        out.set(placeId, id);
+        resolved[String(placeId)] = id;
+      }
+      await sleep(UNIVERSE_GAP_MS);
     }
-  })();
-  inFlight.set(placeId, run);
-  return run;
+  };
+  await Promise.all(Array.from({ length: Math.min(UNIVERSE_CONCURRENCY, missing.length) }, worker));
+  // Persist so every other isolate (and every cold start) skips these lookups.
+  // Best-effort: in memory-only mode the store can't persist, and stats must
+  // still render rather than throw.
+  try {
+    await saveUniverseIds(resolved);
+  } catch {
+    // non-persistent backend — stats still work, ids just resolve each time
+  }
+  return out;
 }
 
 async function fetchStats(
   universeIds: number[],
 ): Promise<Map<number, { visits: number; playing: number }>> {
   const out = new Map<number, { visits: number; playing: number }>();
-  // Roblox caps at 50 universe ids per request; chunk defensively.
+  // Roblox caps at 50 universe ids per request; chunk defensively. A failed
+  // chunk used to be skipped forever — now it retries with backoff (429s are
+  // the norm from datacenter IPs), so a rate-limited refresh recovers.
   for (let i = 0; i < universeIds.length; i += 50) {
     const chunk = universeIds.slice(i, i + 50);
-    try {
-      const res = await fetch(`https://games.roblox.com/v1/games?universeIds=${chunk.join(",")}`, {
-        headers: { accept: "application/json" },
-      });
-      if (!res.ok) continue;
-      const body = (await res.json()) as {
-        data?: Array<{ id?: number; visits?: number; playing?: number }>;
-      };
-      for (const g of body.data ?? []) {
-        if (typeof g.id !== "number") continue;
-        out.set(g.id, { visits: g.visits ?? 0, playing: g.playing ?? 0 });
+    for (let attempt = 0; attempt < BATCH_ATTEMPTS; attempt++) {
+      if (attempt > 0) await sleep(600 * 2 ** (attempt - 1) + Math.random() * 300);
+      try {
+        const res = await fetch(
+          `https://games.roblox.com/v1/games?universeIds=${chunk.join(",")}`,
+          {
+            headers: { accept: "application/json" },
+          },
+        );
+        if (!res.ok) {
+          console.error(`[live-stats] batch fetch attempt ${attempt + 1} status ${res.status}`);
+          continue;
+        }
+        const body = (await res.json()) as {
+          data?: Array<{ id?: number; visits?: number; playing?: number }>;
+        };
+        for (const g of body.data ?? []) {
+          if (typeof g.id !== "number") continue;
+          out.set(g.id, { visits: g.visits ?? 0, playing: g.playing ?? 0 });
+        }
+        break; // chunk fetched — next chunk
+      } catch {
+        // network hiccup — retry
       }
-    } catch {
-      // ignore — individual game failures shouldn't kill the whole batch
     }
   }
   return out;
@@ -105,13 +161,7 @@ export const getLiveGameStats = createServerFn({ method: "GET" }).handler(
     }
 
     const placeIds = [...byPlace.keys()];
-    const universeOf = new Map<number, number>();
-    await Promise.all(
-      placeIds.map(async (placeId) => {
-        const universeId = await resolveUniverse(placeId);
-        if (universeId !== null) universeOf.set(placeId, universeId);
-      }),
-    );
+    const universeOf = await resolveUniverses(placeIds);
 
     const stats = await fetchStats([...universeOf.values()]);
 

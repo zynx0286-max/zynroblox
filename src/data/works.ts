@@ -38,7 +38,7 @@ import growYourLuckyBlock from "@/assets/grow-your-lucky-block.png";
 import yeetTower from "@/assets/yeet-tower.png";
 import chopYourTree from "@/assets/chop-your-tree.png";
 
-export const SITE_URL = "https://zyn-roblox-portfolio.zynx0286.workers.dev";
+export const SITE_URL = "https://roblox.zynx0286.workers.dev";
 
 export type WorkCategory =
   "QA Testing" | "Game Scout" | "Community Manager" | "Community Coordinator" | "SFX / Audio";

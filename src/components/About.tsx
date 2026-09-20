@@ -41,7 +41,7 @@ export function About({ settings }: { settings: AboutSettings }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="glass rounded-2xl border-l-2 border-l-primary px-5 py-5">
               <p className="font-display text-2xl font-bold tracking-tight">
-                <AnimatedCounter value={settings.stat1.value} duration={1800} />
+                <AnimatedCounter value={settings.stat1.value} duration={1800} ssrStart />
               </p>
               <p className="mt-1 text-sm leading-snug font-semibold text-foreground/90">
                 {settings.stat1.label}
@@ -49,7 +49,7 @@ export function About({ settings }: { settings: AboutSettings }) {
             </div>
             <div className="glass rounded-2xl border-l-2 border-l-primary px-5 py-5">
               <p className="font-display text-2xl font-bold tracking-tight">
-                <AnimatedCounter value={settings.stat2.value} duration={1800} />
+                <AnimatedCounter value={settings.stat2.value} duration={1800} ssrStart />
               </p>
               <p className="mt-1 text-sm leading-snug font-semibold text-foreground/90">
                 {settings.stat2.label}

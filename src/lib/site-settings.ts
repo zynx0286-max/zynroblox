@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import testimonialCodex from "@/assets/testimonial-codex.webp";
+import { safeExternalUrl } from "@/lib/url";
 
 export type IconKey =
   | "audio"
@@ -50,7 +51,8 @@ export type HeroSettings = {
   name: string;
   badge: string;
   titlePrefix: string;
-  titleHighlight: string;
+  /** Rotating roles shown in the highlighted headline text. */
+  roles: string[];
   titleSuffix: string;
   subtext: string;
   ctaLabel: string;
@@ -108,6 +110,29 @@ export type WorkPreviewSettings = {
   ctaLabel: string;
 };
 
+export type PricingTier = {
+  name: string;
+  price: string;
+  gift: string;
+  unit: string;
+  blurb: string;
+  points: string[];
+  highlight?: boolean;
+  /** Small badge label (e.g. "Most requested · 2 slots left"). */
+  tag?: string;
+};
+
+export type PricingSettings = {
+  heading: string;
+  sub: string;
+  revShareNote: string;
+  availabilityNote: string;
+  replyNote: string;
+  bundleHeading: string;
+  bundleBody: string;
+  tiers: PricingTier[];
+};
+
 export type TestimonialItem = {
   quote: string;
   author: string;
@@ -122,6 +147,9 @@ export type ProcessSettings = { heading: string; sub: string; steps: ProcessStep
 export type FaqItem = { q: string; a: string };
 export type FaqSettings = { heading: string; sub: string; items: FaqItem[] };
 
+export type LegalSection = { heading: string; body: string };
+export type LegalSettings = { updated: string; intro: string; sections: LegalSection[] };
+
 export type SiteSettings = {
   hero: HeroSettings;
   marquee: MarqueeItem[];
@@ -132,9 +160,12 @@ export type SiteSettings = {
   contact: ContactSettings;
   featured: FeaturedSettings;
   workPreview: WorkPreviewSettings;
+  pricing: PricingSettings;
   process: ProcessSettings;
   faq: FaqSettings;
   testimonials: TestimonialSettings;
+  terms: LegalSettings;
+  privacy: LegalSettings;
 };
 
 export const DEFAULT_SETTINGS: SiteSettings = {
@@ -142,7 +173,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     name: "ZYN",
     badge: "Roblox Sound Design Portfolio",
     titlePrefix: "Professional",
-    titleHighlight: "SFX Artist",
+    roles: ["SFX Artist", "QA Tester", "Manager", "Sound Designer"],
     titleSuffix: "for Roblox games",
     subtext:
       "I craft original sound effects — abilities, impacts, UI and ambience — that make Roblox games feel alive. Alongside audio I also handle QA testing, community management and game research.",
@@ -266,6 +297,97 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     copy: "Click any card to view the project on Roblox or visit the community page.",
     ctaLabel: "View all projects",
   },
+  pricing: {
+    heading: "Simple Robux rates.",
+    sub: "Every service lists Robux and Visa gift card pricing — 100 Robux = $1. Pick a service, message me on Discord and we'll lock in scope and timeline.",
+    revShareNote: "Game over 100 CCU? Ask about long-term rev share instead of upfront rates.",
+    availabilityNote: "Available now — 2 commission slots left this week",
+    replyNote: "Avg. reply: 48h · Discord fastest",
+    bundleHeading: "Need a custom bundle?",
+    bundleBody:
+      "Full sound packs, long-term QA or a community + Discord retainer — send the details and I'll quote it. Discord gets the fastest reply.",
+    tiers: [
+      {
+        name: "Simple SFX",
+        price: "300–500 R$",
+        gift: "$3–$5 Visa gift card",
+        unit: "per simple sound",
+        blurb: "UI buttons, footsteps, doors and other quick one-shots.",
+        points: ["Custom-made, royalty free", "Game-ready formats", "Revisions until it fits"],
+        highlight: true,
+        tag: "Most requested · 2 slots left",
+      },
+      {
+        name: "Medium SFX",
+        price: "500–850 R$",
+        gift: "$5–$8.50 Visa gift card",
+        unit: "per sound",
+        blurb: "Weapon reloads, magic spells, small explosions, vehicle engine loops and ambience.",
+        points: ["Layered, game-ready mix", "Loop-ready where needed", "Revisions until it fits"],
+      },
+      {
+        name: "Hard SFX & Music",
+        price: "1,000–5,000+ R$",
+        gift: "$10–$50+ Visa gift card",
+        unit: "per sound · music per 30 seconds",
+        blurb: "Complex sound design and original looping music, priced per 30 seconds of track.",
+        points: ["Stems on request", "Theme written to your brief", "Revisions until it fits"],
+      },
+      {
+        name: "QA Testing",
+        price: "500 R$ + 100 R$/bug",
+        gift: "$5 + $1 per bug",
+        unit: "per game",
+        blurb: "Structured bug hunting with clear, reproducible reports.",
+        points: [
+          "Repro steps + severity",
+          "Device and edge-case passes",
+          "100 R$ ($1) per confirmed bug",
+        ],
+        tag: "3 QA slots / week",
+      },
+      {
+        name: "Community Management",
+        price: "1,000–5,000+ R$",
+        gift: "$10–$50+ Visa gift card",
+        unit: "per week",
+        blurb: "Day-to-day running of your game community.",
+        points: ["Moderation + escalation", "Announcements & events", "Player feedback loop"],
+      },
+      {
+        name: "Game Research",
+        price: "2500 R$",
+        gift: "$25 Visa gift card",
+        unit: "per report",
+        blurb: "Deep market and gameplay analysis on your genre and competitors.",
+        points: ["Competitor teardown", "Retention & monetization notes", "Actionable roadmap"],
+      },
+      {
+        name: "Discord Server Build",
+        price: "3000 R$",
+        gift: "$30 Visa gift card",
+        unit: "full setup",
+        blurb: "Full server build — structure, roles, bots, monetization.",
+        points: ["Server architecture & roles", "Bots + automation setup", "Monetization setup"],
+      },
+      {
+        name: "Bots & Automation",
+        price: "5,000+ R$",
+        gift: "$50+ Visa gift card",
+        unit: "per setup",
+        blurb: "Custom bots, automations and integrations for your server.",
+        points: ["Custom commands & flows", "Moderation automation", "Testing + handover docs"],
+      },
+      {
+        name: "Discord Management",
+        price: "1,000–5,000+ R$",
+        gift: "$10–$50+ Visa gift card",
+        unit: "per week",
+        blurb: "Ongoing management of an existing server.",
+        points: ["Daily moderation", "Event scheduling", "Growth reporting"],
+      },
+    ],
+  },
   process: {
     heading: "How I work",
     sub: "A clear, repeatable process so you always know what's happening next — no guesswork.",
@@ -349,7 +471,93 @@ export const DEFAULT_SETTINGS: SiteSettings = {
           "Community management on point. Grew our Discord from 2k to 10k+ members with real engagement, not just numbers.",
         author: "Owner @ Trading Port",
         role: "Server Owner",
-          project: "Trading Port — Blox Fruits",
+        project: "Trading Port — Blox Fruits",
+      },
+    ],
+  },
+  terms: {
+    updated: "September 2026",
+    intro:
+      "Plain-language terms for working with ZYN — if anything here is unclear, ask on Discord before commissioning.",
+    sections: [
+      {
+        heading: "1. Scope & quotes",
+        body: "Every commission starts with a written brief: what is delivered, the timeline, and the price. Work begins once both sides confirm the brief. Anything outside the brief is quoted separately.",
+      },
+      {
+        heading: "2. Payment & currency",
+        body: "Payment in Robux or Visa gift cards (100 Robux = $1) unless otherwise agreed. For Robux you may pay via gamepass, shirt, or group payout — whichever suits you. If you pay with a gamepass or shirt, you cover the Roblox tax on top of the quoted price so the agreed amount arrives in full. If you pay with a Visa gift card, you likewise cover any activation or transaction fees. Larger projects may be split into milestones. Delivery happens after final payment clears, unless a milestone plan says otherwise.",
+      },
+      {
+        heading: "3. Refunds",
+        body: "Deposits are non-refundable once work has started. If I cancel the project for personal reasons, a 100% refund of everything paid will be issued.",
+      },
+      {
+        heading: "4. Progress updates",
+        body: "Progress updates — including watermarked previews where applicable — are sent via Discord every 2–3 days so you always know where things stand.",
+      },
+      {
+        heading: "5. Revisions",
+        body: "Includes 3 rounds of minor revisions during the drafting phase. Major changes, new directions outside the brief, or revisions requested after the work is completed are quoted and billed separately — the extra fee is confirmed with you before any further work starts.",
+      },
+      {
+        heading: "6. Inactivity",
+        body: "If you fail to respond to updates for more than 7 consecutive days, the commission will be canceled, the deposit forfeited, and the assets may be resold.",
+      },
+      {
+        heading: "7. Ownership & credit",
+        body: "I own 100% of the assets until the final payment clears — using, publishing, or distributing them before full payment is a violation of these terms. Full rights transfer to you on final payment. I reserve the right to display all commissioned work in this portfolio and on social media for promotional purposes, unless a Non-Disclosure Agreement (NDA) is signed before work starts. Credit must be given in the game's description or an in-game credits menu linking to my Roblox profile.",
+      },
+      {
+        heading: "8. Rules & conduct",
+        body: "I will not create anything that violates the [Roblox Community Standards](https://create.roblox.com/docs/marketplace/marketplace-policy) (for example explicit content or copyrighted assets taken from other games). I reserve the right to decline or cancel a commission at any time if the client becomes hostile, disrespectful, or violates these terms.",
+      },
+      {
+        heading: "9. QA & community work",
+        body: "QA reports describe issues found with reproduction steps — they do not guarantee a bug-free game. Community and moderation advice is best-effort guidance, not legal advice.",
+      },
+      {
+        heading: "10. Liability",
+        body: "To the maximum extent permitted by law, liability is limited to the amount paid for the commission in question. Nothing here limits rights you hold under applicable consumer-protection law.",
+      },
+      {
+        heading: "11. Contact",
+        body: "Questions about these terms: message @acczyn on Discord or email zynx0286@gmail.com. Continued use of this site after an update means you accept the updated terms.",
+      },
+    ],
+  },
+  privacy: {
+    updated: "September 2026",
+    intro:
+      "Short version: this site collects the minimum needed to reply to you, and nothing else.",
+    sections: [
+      {
+        heading: "What is collected",
+        body: "Contacting ZYN opens Gmail or Discord — your message goes directly through those services, and this site itself stores nothing about it. To do business, minimal details may be exchanged: Roblox account details (user ID, username, and display name), contact information (Discord tags, X handles, or email addresses used to communicate or send invoices), and — if you write a review — what you submit (name, rating, title, content, optional project), which is stored so it can be displayed publicly; your email address is kept private and never shown. Payment details: I never see or store credit card numbers — all financial transactions are handled securely by third-party processors (Roblox and the gift-card provider) and are subject to their respective privacy policies. On-page events (like button clicks) are only kept in memory in your browser, and no third-party analytics, advertising, or cross-site trackers run on this site.",
+      },
+      {
+        heading: "How it is used",
+        body: "Your details are used to communicate about the commission, send progress updates, deliver the final files, and track payments and business receipts for invoicing. Your contact details will never be sold, leased, or shared with third parties for marketing purposes.",
+      },
+      {
+        heading: "Cookies & local storage",
+        body: "No tracking or advertising cookies are set. Three functional exceptions: (1) your cookie-banner choice is remembered in your browser's local storage, (2) the password-protected admin area uses a single strictly-necessary session cookie (zyn_session) for the site owner only, and (3) the review form remembers on your device if you already submitted, so each device can only review once. Declining the banner changes nothing about how the site works — there is nothing extra to opt out of.",
+      },
+      {
+        heading: "Where it goes",
+        body: "Published reviews are stored privately and shown publicly (minus your email) so ZYN can display them. They are never sold, shared, or used for marketing. Outbound links and contact channels (Gmail, Discord, Roblox) are covered by those services' own privacy policies.",
+      },
+      {
+        heading: "Your rights",
+        body: "Want a review you wrote viewed, corrected or deleted? Message @acczyn on Discord or email zynx0286@gmail.com and it will be handled directly. Under laws like the GDPR (EU/UK) and CCPA/CPRA (California) you can request access, correction, deletion, and — since nothing is sold or shared — there is no sale or sharing of personal information to opt out of.",
+      },
+      {
+        heading: "Children",
+        body: "This site is aimed at game developers, not children. If you are under the age of 13, you must have permission from a parent or legal guardian before hiring me or providing any personal communication details — otherwise, please have a parent or guardian contact ZYN on your behalf. Messages known to be from children under 13 are deleted on discovery.",
+      },
+      {
+        heading: "Retention & changes",
+        body: 'I only keep your contact information and chat logs for the duration of the commission and for historical financial records. Published reviews are kept so they can be displayed, and deleted on request or when no longer needed. If you wish for your commission records or contact details to be deleted from my private message history after a project is finished, you may request it by messaging me directly. If this policy changes materially, the "Last updated" date above will change with it — check back occasionally. Continued use of the site after a change means you accept the updated policy.',
       },
     ],
   },
@@ -375,6 +583,14 @@ export function mergeSettings(stored: Record<string, unknown> | undefined): Site
   ): string => (typeof obj?.[key] === "string" ? (obj[key] as string) : fallback);
 
   const heroRaw = pickObj("hero");
+  // `titleHighlight` is obsolete (the rotating roles replace it) — drop it so
+  // stale stored values can't linger in the merged output.
+  const { titleHighlight: _dropped, ...heroStored } = (heroRaw ?? {}) as Record<string, unknown>;
+  const heroRoles = Array.isArray(heroRaw?.["roles"])
+    ? (heroRaw["roles"] as unknown[])
+        .filter((r): r is string => typeof r === "string" && r.trim().length > 0)
+        .map((r) => r.slice(0, 60))
+    : DEFAULT_SETTINGS.hero.roles;
   const heroStats = Array.isArray(heroRaw?.["stats"])
     ? (heroRaw["stats"] as StatItem[])
     : DEFAULT_SETTINGS.hero.stats;
@@ -435,12 +651,65 @@ export function mergeSettings(stored: Record<string, unknown> | undefined): Site
     ? (testimonialsRaw["items"] as TestimonialItem[])
     : DEFAULT_SETTINGS.testimonials.items;
 
+  const contactRaw = pickObj("contact");
+
+  const pricingRaw = pickObj("pricing");
+  const pickTiers = (raw: unknown, fallback: PricingTier[]): PricingTier[] => {
+    if (!Array.isArray(raw)) return fallback;
+    const tiers = raw
+      .filter(
+        (t): t is Record<string, unknown> => !!t && typeof t === "object" && !Array.isArray(t),
+      )
+      .map((t) => ({
+        name: pickStr(t, "name", ""),
+        price: pickStr(t, "price", ""),
+        gift: pickStr(t, "gift", ""),
+        unit: pickStr(t, "unit", ""),
+        blurb: pickStr(t, "blurb", ""),
+        points: Array.isArray(t["points"])
+          ? (t["points"] as unknown[]).filter((p): p is string => typeof p === "string")
+          : [],
+        ...(typeof t["highlight"] === "boolean" && t["highlight"] ? { highlight: true } : {}),
+        ...(typeof t["tag"] === "string" && t["tag"] ? { tag: t["tag"] as string } : {}),
+      }))
+      .filter((t) => t.name.length > 0 || t.price.length > 0);
+    return tiers.length > 0 ? tiers.slice(0, 24) : fallback;
+  };
+
+  /** Editable link fields must survive the merge as genuine http(s) URLs. */
+  const safeUrlField = (v: unknown, fallback: string): string => {
+    const safe = safeExternalUrl(typeof v === "string" ? v : "");
+    return safe ?? fallback;
+  };
+
+  const pickLegal = (key: string, fallback: LegalSettings): LegalSettings => {
+    const raw = pickObj(key);
+    const sections = Array.isArray(raw?.["sections"])
+      ? (raw["sections"] as unknown[])
+          .filter(
+            (s): s is LegalSection =>
+              !!s &&
+              typeof s === "object" &&
+              typeof (s as LegalSection).heading === "string" &&
+              typeof (s as LegalSection).body === "string",
+          )
+          .map((s) => ({ heading: s.heading, body: s.body }))
+      : fallback.sections;
+    return {
+      updated: pickStr(raw, "updated", fallback.updated),
+      intro: pickStr(raw, "intro", fallback.intro),
+      sections,
+    };
+  };
+
   return {
     hero: {
       ...DEFAULT_SETTINGS.hero,
-      ...heroRaw,
+      ...heroStored,
+      roles: heroRoles,
       stats: heroStats,
       availability,
+      discordUrl: safeUrlField(heroRaw?.["discordUrl"], DEFAULT_SETTINGS.hero.discordUrl),
     },
     marquee: pickArr<MarqueeItem>("marquee", DEFAULT_SETTINGS.marquee),
     services: pickArr<ServiceItem>("services", DEFAULT_SETTINGS.services),
@@ -459,7 +728,8 @@ export function mergeSettings(stored: Record<string, unknown> | undefined): Site
     stats: { items: statsItems },
     contact: {
       ...DEFAULT_SETTINGS.contact,
-      ...pickObj("contact"),
+      ...contactRaw,
+      discordUrl: safeUrlField(contactRaw?.["discordUrl"], DEFAULT_SETTINGS.contact.discordUrl),
     },
     featured: {
       ...DEFAULT_SETTINGS.featured,
@@ -469,6 +739,11 @@ export function mergeSettings(stored: Record<string, unknown> | undefined): Site
     workPreview: {
       ...DEFAULT_SETTINGS.workPreview,
       ...pickObj("workPreview"),
+    },
+    pricing: {
+      ...DEFAULT_SETTINGS.pricing,
+      ...pricingRaw,
+      tiers: pickTiers(pricingRaw?.["tiers"], DEFAULT_SETTINGS.pricing.tiers),
     },
     process: {
       ...DEFAULT_SETTINGS.process,
@@ -485,5 +760,7 @@ export function mergeSettings(stored: Record<string, unknown> | undefined): Site
       ...testimonialsRaw,
       items: testimonialItems,
     },
+    terms: { ...DEFAULT_SETTINGS.terms, ...pickLegal("terms", DEFAULT_SETTINGS.terms) },
+    privacy: { ...DEFAULT_SETTINGS.privacy, ...pickLegal("privacy", DEFAULT_SETTINGS.privacy) },
   };
 }

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireOwner } from "@/lib/require-owner";
 import { getStoreBackendStatus, loadStore, mutate } from "@/lib/store";
+import { safeExternalUrl } from "@/lib/url";
 
 // ---------------------------------------------------------------------------
 // Testimonials
@@ -90,6 +91,40 @@ export const deleteTestimonial = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/**
+ * Moves a testimonial one position up/down by SWAPPING sortOrders with its
+ * neighbor. Replaces the old read-edit-rewrite flow that asserted a list
+ * lookup (crashing with `!` when the list moved mid-flight) and collided
+ * sortOrders on ties. Boundary moves are a no-op.
+ */
+export const reorderTestimonial = createServerFn({ method: "POST" })
+  .middleware([requireOwner])
+  .validator((data: unknown) =>
+    z.object({ id: z.string().min(1).max(120), direction: z.enum(["up", "down"]) }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    await mutate((store) => {
+      const sorted = [...store.testimonials].sort((a, b) => a.sortOrder - b.sortOrder);
+      const idx = sorted.findIndex((t) => t.id === data.id);
+      if (idx === -1) throw new Error("Testimonial not found");
+      const swapWith = data.direction === "up" ? idx - 1 : idx + 1;
+      if (swapWith < 0 || swapWith >= sorted.length) return; // already at the edge
+      const current = sorted[idx];
+      const neighbor = sorted[swapWith];
+      if (!current || !neighbor) return;
+      if (neighbor.sortOrder === current.sortOrder) {
+        // Legacy ties: renormalize so the swap changes the visible order.
+        sorted.forEach((t, i) => {
+          t.sortOrder = i;
+        });
+      }
+      const tmp = current.sortOrder;
+      current.sortOrder = neighbor.sortOrder;
+      neighbor.sortOrder = tmp;
+    });
+    return { ok: true as const };
+  });
+
 // ---------------------------------------------------------------------------
 // Site settings (JSON per section)
 // ---------------------------------------------------------------------------
@@ -115,14 +150,76 @@ export const getPersistenceStatus = createServerFn({ method: "GET" })
 export const saveSiteSettings = createServerFn({ method: "POST" })
   .middleware([requireOwner])
   .validator((data: unknown) =>
-    z.object({ key: z.string().min(1).max(60), value: z.unknown() }).parse(data),
+    z
+      .object({
+        key: z
+          .string()
+          .min(1)
+          .max(40)
+          .regex(/^[a-zA-Z][a-zA-Z0-9]{0,39}$/),
+        value: z.unknown(),
+      })
+      .parse(data),
   )
   .handler(async ({ data }) => {
+    const value = sanitizeSettingsValue(data.value, 0);
+    const json = JSON.stringify(value);
+    if (json.length > MAX_SETTINGS_BYTES) {
+      throw new Error("This section is too large to save (max ~500 KB)");
+    }
     await mutate((store) => {
-      store.settings[data.key] = data.value as SettingsValue;
+      store.settings[data.key] = value as SettingsValue;
     });
     return { ok: true as const };
   });
+
+// ---------------------------------------------------------------------------
+// Settings sanitization
+//
+// Previously any JSON could be stored under any key. A malformed save could
+// crash public rendering (mergeSettings trusts loose shapes) or quietly bloat
+// the KV store toward its limits. Every string that looks like a URL is also
+// scheme-checked: `javascript:`/`data:text/html` payloads in editable link
+// fields would otherwise become stored XSS the moment a visitor clicks.
+// ---------------------------------------------------------------------------
+
+const MAX_SETTINGS_BYTES = 500_000;
+const MAX_SETTINGS_DEPTH = 8;
+
+/** Legacy uploads were inline data URLs — keep those media types only. */
+const SAFE_DATA_URL =
+  /^data:(image\/(png|jpeg|jpg|gif|webp|avif|svg\+xml)|audio\/|video\/)[a-z0-9.+-]*;base64,[a-z0-9+/=]+$/i;
+
+function sanitizeUrlishString(raw: string): string {
+  const trimmed = raw.trim();
+  // Only strings that LOOK like absolute URLs are scheme-checked; plain copy
+  // (sentences, markdown legal text) passes through untouched.
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return raw;
+  if (SAFE_DATA_URL.test(trimmed)) return trimmed;
+  return safeExternalUrl(trimmed) ?? "";
+}
+
+function sanitizeSettingsValue(value: unknown, depth: number): unknown {
+  if (depth > MAX_SETTINGS_DEPTH) throw new Error("Settings nesting is too deep");
+  if (value === null) return null;
+  if (typeof value === "string") return sanitizeUrlishString(value);
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === "boolean") return value;
+  if (Array.isArray(value)) {
+    if (value.length > 500) throw new Error("Too many items in this section");
+    return value.map((v) => sanitizeSettingsValue(v, depth + 1));
+  }
+  if (typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>);
+    if (entries.length > 200) throw new Error("Too many fields in this section");
+    return Object.fromEntries(
+      entries.map(([k, v]) => [k.slice(0, 80), sanitizeSettingsValue(v, depth + 1)]),
+    );
+  }
+  return null; // functions/symbols/bigints etc. are not representable
+}
 
 // ---------------------------------------------------------------------------
 // Work media (image / audio / video attachments)
@@ -146,19 +243,33 @@ export const listWorkMedia = createServerFn({ method: "GET" }).handler(
 const workMediaInput = z.object({
   workId: z.string().min(1).max(120),
   mediaType: z.enum(["image", "audio", "video"]),
-  url: z.string().min(1).max(2000000),
+  url: z
+    .string()
+    .min(1)
+    .max(2000000)
+    .refine(
+      (v) =>
+        v.startsWith("/uploads/") || /^https:\/\//i.test(v.trim()) || SAFE_MEDIA_DATA_URL.test(v),
+      "Media URLs must be https:// links, /uploads/ paths or inline media data URLs",
+    ),
   caption: z.string().max(200).default(""),
   sortOrder: z.number().int().min(0).max(9999).default(0),
 });
 
+const SAFE_MEDIA_DATA_URL = /^data:(image\/|audio\/|video\/)[a-z0-9.+-]+;base64,[a-z0-9+/=]+$/i;
+
 export type WorkMediaInput = z.infer<typeof workMediaInput>;
 
 function toWorkMedia(data: WorkMediaInput, id: string): WorkMedia {
+  const url =
+    data.url.startsWith("/uploads/") || SAFE_MEDIA_DATA_URL.test(data.url)
+      ? data.url
+      : (safeExternalUrl(data.url) ?? "");
   return {
     id,
     workId: data.workId,
     mediaType: data.mediaType,
-    url: data.url,
+    url,
     caption: data.caption,
     sortOrder: data.sortOrder,
   };

@@ -58,12 +58,12 @@ function withSecurityHeaders(response: Response): Response {
     headers.set("X-Permitted-Cross-Domain-Policies", "none");
   // The site is HTTPS-only (Cloudflare Workers), so HSTS is safe to enforce here.
   if (!headers.has("Strict-Transport-Security"))
-    headers.set(
-      "Strict-Transport-Security",
-      "max-age=63072000; includeSubDomains; preload",
-    );
-  // Minimal CSP that still allows Vite/TanStack inline scripts + Google Fonts + Roblox thumbs.
-  // No HSTS here — Cloudflare serves HTTPS/HSTS at the edge.
+    headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  // Minimal CSP that still allows Vite/TanStack inline scripts + Google Fonts
+  // + admin-published images/media. img-src is https:* because the owner can
+  // publish images from arbitrary CDNs through the admin panel (they're
+  // scheme-checked at save time, so javascript:/data: never reach the DOM);
+  // media-src covers /uploads audio+video plus legacy inline data URLs.
   if (!headers.has("Content-Security-Policy")) {
     headers.set(
       "Content-Security-Policy",
@@ -72,7 +72,8 @@ function withSecurityHeaders(response: Response): Response {
         "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com",
-        "img-src 'self' data: blob: https://tr.rbxcdn.com https://t4.rbxcdn.com https://thumbnails.roblox.com",
+        "img-src 'self' data: blob: https:",
+        "media-src 'self' data: blob:",
         "connect-src 'self' https://apis.roblox.com https://games.roblox.com https://thumbnails.roblox.com",
         "frame-ancestors 'self'",
         "base-uri 'self'",

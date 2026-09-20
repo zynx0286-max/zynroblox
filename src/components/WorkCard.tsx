@@ -3,9 +3,13 @@ import { ArrowUpRight, ExternalLink, Gamepad2 } from "lucide-react";
 import { GlassImage } from "@/components/GlassFrame";
 import { SpotlightCard } from "@/components/bits/SpotlightCard";
 import { track } from "@/lib/analytics";
+import { safeExternalUrl } from "@/lib/url";
 import type { Work } from "@/data/works";
 
 export function WorkCard({ work }: { work: Work }) {
+  // Stored hrefs are validated at save time; re-checking here means even a
+  // hand-edited legacy row can never become a javascript: link.
+  const externalHref = safeExternalUrl(work.href);
   return (
     <SpotlightCard className="glass-card h-full rounded-2xl transition-all duration-300 hover:border-primary/40 hover:shadow-[var(--shadow-glow)]">
       <Link
@@ -39,25 +43,19 @@ export function WorkCard({ work }: { work: Work }) {
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-2">
-          {work.href ? (
-            <a
-              href={work.href}
-              target="_blank"
-              rel="noreferrer"
-              onClick={(e) => {
-                e.stopPropagation();
-                track("work_external_click", { slug: work.slug });
-              }}
-              className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 font-display text-xs text-primary transition-colors hover:bg-primary/20"
-            >
-              {work.href.includes("/games/") ? (
+          {externalHref ? (
+            // NOTE: not an <a> — the whole card is already a <Link> (an
+            // anchor); nesting anchors is invalid HTML and breaks hydration.
+            // The real external link lives on the work detail page.
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 font-display text-xs text-primary">
+              {externalHref.includes("/games/") ? (
                 <Gamepad2 className="size-3.5" />
               ) : (
                 <ExternalLink className="size-3.5" />
               )}
               {work.linkLabel ?? "Open"}
               <ArrowUpRight className="size-3.5" />
-            </a>
+            </span>
           ) : (
             <span />
           )}

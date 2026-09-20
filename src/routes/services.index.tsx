@@ -1,5 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, AudioLines, Bug, Users, Rocket } from "lucide-react";
+import {
+  ArrowRight,
+  AudioLines,
+  Bug,
+  Users,
+  Rocket,
+  Search,
+  Server,
+  Bot,
+  MessageSquare,
+} from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Reveal } from "@/components/Reveal";
@@ -11,7 +21,7 @@ const TITLE = "Services for Roblox Developers — SFX, QA, Community & Pre-Relea
 const DESC =
   "Hire by need: original SFX and sound design, structured QA testing, Discord community management, and pre-release verification for Roblox games.";
 
-const ICONS = [AudioLines, Bug, Users, Rocket] as const;
+const ICONS = [AudioLines, Bug, Users, Rocket, Search, Server, Bot, MessageSquare] as const;
 
 export const Route = createFileRoute("/services/")({
   head: () => ({
@@ -58,11 +68,7 @@ function ServicesPage() {
               return (
                 <Reveal key={u.slug} delay={(i % 2) * 80}>
                   <SpotlightCard className="glass-card h-full rounded-2xl transition-all duration-300 hover:border-primary/40 hover:shadow-[var(--shadow-glow)]">
-                    <Link
-                      to="/services/$slug"
-                      params={{ slug: u.slug }}
-                      className="group flex h-full flex-col p-6 sm:p-8"
-                    >
+                    <div className="group flex h-full flex-col p-6 sm:p-8">
                       <span className="flex size-11 items-center justify-center rounded-xl bg-primary/15 text-primary">
                         <Icon className="size-5" />
                       </span>
@@ -73,12 +79,25 @@ function ServicesPage() {
                       <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
                         {u.need}
                       </p>
-                      <p className="mt-3 text-xs font-medium text-foreground/70">{u.priceNote}</p>
-                      <span className="mt-5 inline-flex items-center gap-2 font-display text-sm font-semibold text-primary">
-                        See what&apos;s included
-                        <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-                      </span>
-                    </Link>
+                      <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2">
+                        <Link
+                          to="/services/$slug"
+                          params={{ slug: u.slug }}
+                          className="inline-flex items-center gap-2 font-display text-sm font-semibold text-primary"
+                        >
+                          See what&apos;s included
+                          <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                        </Link>
+                        <Link
+                          to="/pricing"
+                          hash={u.pricingAnchor}
+                          className="inline-flex items-center gap-2 font-display text-sm font-semibold text-foreground/70 transition-colors hover:text-primary"
+                        >
+                          See full prices
+                          <ArrowRight className="size-4" />
+                        </Link>
+                      </div>
+                    </div>
                   </SpotlightCard>
                 </Reveal>
               );

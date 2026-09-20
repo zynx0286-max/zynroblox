@@ -112,7 +112,7 @@ export function WorksAdmin() {
   });
 
   const moveMutation = useMutation({
-    mutationFn: (v: { id: string; sortOrder: number }) => reorder({ data: v }),
+    mutationFn: (v: { id: string; direction: "up" | "down" }) => reorder({ data: v }),
     onSuccess: invalidate,
     onError,
   });
@@ -371,16 +371,14 @@ export function WorksAdmin() {
                 <button
                   aria-label="Move up"
                   disabled={i === 0}
-                  onClick={() =>
-                    moveMutation.mutate({ id: w.id, sortOrder: Math.max(0, w.sortOrder - 1) })
-                  }
+                  onClick={() => moveMutation.mutate({ id: w.id, direction: "up" })}
                   className="rounded-full border border-border p-2 disabled:opacity-40"
                 >
                   <ArrowUp className="size-3.5" />
                 </button>
                 <button
                   aria-label="Move down"
-                  onClick={() => moveMutation.mutate({ id: w.id, sortOrder: w.sortOrder + 1 })}
+                  onClick={() => moveMutation.mutate({ id: w.id, direction: "down" })}
                   className="rounded-full border border-border p-2"
                 >
                   <ArrowDown className="size-3.5" />

@@ -28,6 +28,18 @@ const credentialsSchema = z.object({
 
 type LoginResult = { ok: boolean; reason?: "credentials" | "location" | "unconfigured" };
 
+/** Constant-time string comparison (always scans the full input length). */
+export function timingSafeEqual(a: string, b: string): boolean {
+  const aBytes = new TextEncoder().encode(a);
+  const bBytes = new TextEncoder().encode(b);
+  const len = Math.max(aBytes.length, bBytes.length);
+  let diff = aBytes.length ^ bBytes.length;
+  for (let i = 0; i < len; i++) {
+    diff |= (aBytes[i] ?? 0) ^ (bBytes[i] ?? 0);
+  }
+  return diff === 0;
+}
+
 async function slowReject(reason: NonNullable<LoginResult["reason"]>): Promise<LoginResult> {
   // Constant-time-ish delay so rejects don't leak which check failed quickly.
   await new Promise((r) => setTimeout(r, 250 + Math.random() * 250));
@@ -47,7 +59,8 @@ function loginRateLimited(key: string) {
   recent.push(now);
   loginHits.set(key, recent);
   if (loginHits.size > 500) {
-    for (const [k, v] of loginHits) if (!v.some((t) => now - t < LOGIN_WINDOW_MS)) loginHits.delete(k);
+    for (const [k, v] of loginHits)
+      if (!v.some((t) => now - t < LOGIN_WINDOW_MS)) loginHits.delete(k);
   }
   return recent.length > LOGIN_LIMIT;
 }
@@ -77,8 +90,12 @@ export const loginOwner = createServerFn({ method: "POST" })
     }
 
     const username = data.username.trim().toLowerCase();
-    const isOwnerUser = username === OWNER_USERNAME || username === OWNER_EMAIL.toLowerCase();
-    const isOwnerPassword = data.password === (await getAdminPassword());
+    const isOwnerUser =
+      timingSafeEqual(username, OWNER_USERNAME) ||
+      timingSafeEqual(username, OWNER_EMAIL.toLowerCase());
+    // Timing-safe comparison so response latency can't leak the password
+    // byte-by-byte to a brute-forcer measuring which prefixes fail faster.
+    const isOwnerPassword = timingSafeEqual(data.password, await getAdminPassword());
 
     if (!isOwnerUser || !isOwnerPassword) {
       return slowReject("credentials");

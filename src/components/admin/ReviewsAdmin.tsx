@@ -2,16 +2,27 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { BadgeCheck, Loader2, Star, Trash2 } from "lucide-react";
+import { BadgeCheck, Loader2, Pencil, Star, Trash2, X } from "lucide-react";
 import { captureError } from "@/lib/sentry";
 import {
   adminListReviews,
   deleteReview,
   toggleReviewFeatured,
   unverifyReview,
+  updateReview,
   verifyReview,
   type Review,
 } from "@/lib/reviews.functions";
+
+type EditState = {
+  id: string;
+  authorName: string;
+  rating: number;
+  title: string;
+  content: string;
+  projectRef: string;
+  screenshotUrls: string;
+};
 
 export function ReviewsAdmin() {
   const qc = useQueryClient();
@@ -21,8 +32,10 @@ export function ReviewsAdmin() {
   const unverify = useServerFn(unverifyReview);
   const toggleFeatured = useServerFn(toggleReviewFeatured);
   const remove = useServerFn(deleteReview);
+  const update = useServerFn(updateReview);
 
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<EditState | null>(null);
 
   const query = useQuery({
     queryKey: ["admin-reviews"],
@@ -59,9 +72,38 @@ export function ReviewsAdmin() {
     onSuccess: invalidate,
     onError,
   });
+  const editMutation = useMutation({
+    mutationFn: (e: EditState) =>
+      update({
+        data: {
+          id: e.id,
+          updates: {
+            authorName: e.authorName,
+            rating: e.rating,
+            title: e.title,
+            content: e.content,
+            ...(e.projectRef.trim() ? { projectRef: e.projectRef.trim() } : {}),
+            screenshotUrls: e.screenshotUrls
+              .split(/[\s,]+/)
+              .map((u) => u.trim())
+              .filter((u) => /^https:\/\//i.test(u))
+              .slice(0, 8),
+          },
+        },
+      }),
+    onSuccess: () => {
+      setEditing(null);
+      setError(null);
+      invalidate();
+    },
+    onError,
+  });
 
   const listItems = query.data ?? [];
   const pending = listItems.filter((r) => !r.verified);
+  const field =
+    "mt-1.5 w-full rounded-xl border border-border bg-background/40 px-3.5 py-2.5 text-sm outline-none focus:border-primary/60";
+  const label = "font-display text-[0.68rem] tracking-wider text-muted-foreground uppercase";
 
   return (
     <>
@@ -73,13 +115,108 @@ export function ReviewsAdmin() {
 
       <div className="mt-6">
         <p className="text-sm text-muted-foreground">
-          Reviews publish instantly so writers see them right away. Hide spam with Unpublish or
-          remove it permanently with delete.{" "}
+          Reviews publish instantly so writers see them right away. Hide spam with Unpublish, fix
+          typos with Edit, or remove it permanently with delete.{" "}
           {pending.length > 0 ? (
             <span className="font-semibold text-primary">{pending.length} unpublished.</span>
           ) : null}
         </p>
       </div>
+
+      {editing ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            editMutation.mutate(editing);
+          }}
+          className="glass-card mt-6 rounded-2xl p-5 sm:p-6"
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="font-display text-lg font-semibold">Edit review</h3>
+            <button type="button" onClick={() => setEditing(null)} aria-label="Close editor">
+              <X className="size-4 text-muted-foreground" />
+            </button>
+          </div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <span className={label}>Author name</span>
+              <input
+                required
+                minLength={2}
+                maxLength={100}
+                className={field}
+                value={editing.authorName}
+                onChange={(e) => setEditing({ ...editing, authorName: e.target.value })}
+              />
+            </div>
+            <div>
+              <span className={label}>Project</span>
+              <input
+                maxLength={120}
+                className={field}
+                value={editing.projectRef}
+                onChange={(e) => setEditing({ ...editing, projectRef: e.target.value })}
+              />
+            </div>
+            <div>
+              <span className={label}>Rating</span>
+              <div className="mt-1.5 flex gap-1">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    aria-label={`${n} stars`}
+                    onClick={() => setEditing({ ...editing, rating: n })}
+                  >
+                    <Star
+                      className={`size-6 ${n <= editing.rating ? "fill-primary text-primary" : "text-muted-foreground/40"}`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <span className={label}>Title</span>
+              <input
+                required
+                minLength={5}
+                maxLength={200}
+                className={field}
+                value={editing.title}
+                onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <span className={label}>Content</span>
+              <textarea
+                required
+                rows={4}
+                minLength={20}
+                maxLength={5000}
+                className={`${field} resize-none`}
+                value={editing.content}
+                onChange={(e) => setEditing({ ...editing, content: e.target.value })}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <span className={label}>Screenshot links (https://, comma separated)</span>
+              <input
+                className={field}
+                value={editing.screenshotUrls}
+                onChange={(e) => setEditing({ ...editing, screenshotUrls: e.target.value })}
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={editMutation.isPending}
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-display text-sm font-bold text-primary-foreground disabled:opacity-60"
+          >
+            {editMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+            Save changes
+          </button>
+        </form>
+      ) : null}
 
       <div className="mt-6 space-y-3">
         {query.isPending ? <p className="text-sm text-muted-foreground">Loading reviews…</p> : null}
@@ -155,6 +292,23 @@ export function ReviewsAdmin() {
                   className="rounded-full border border-border px-3.5 py-2 font-display text-xs disabled:opacity-60"
                 >
                   {r.featured ? "Unfeature" : "Feature"}
+                </button>
+                <button
+                  aria-label={`Edit review from ${r.authorName}`}
+                  onClick={() =>
+                    setEditing({
+                      id: r.id,
+                      authorName: r.authorName,
+                      rating: r.rating,
+                      title: r.title,
+                      content: r.content,
+                      projectRef: r.projectRef ?? "",
+                      screenshotUrls: r.screenshotUrls.join(", "),
+                    })
+                  }
+                  className="rounded-full border border-border p-2 disabled:opacity-60"
+                >
+                  <Pencil className="size-3.5" />
                 </button>
                 <button
                   aria-label={`Delete review from ${r.authorName}`}

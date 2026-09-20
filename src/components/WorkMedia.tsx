@@ -1,13 +1,20 @@
 import { FileAudio, Film, Image as ImageIcon } from "lucide-react";
 import type { WorkMedia as WorkMediaType } from "@/lib/site.functions";
+import { safeExternalUrl } from "@/lib/url";
 import { cn } from "@/lib/utils";
 
 export function WorkMedia({ media }: { media: WorkMediaType[] }) {
   if (media.length === 0) return null;
 
-  const images = media.filter((m) => m.mediaType === "image");
-  const audio = media.filter((m) => m.mediaType === "audio");
-  const videos = media.filter((m) => m.mediaType === "video");
+  // Only render entries whose URL is genuinely safe (https, /uploads/ or an
+  // inline media data URL). Anything else is skipped entirely.
+  const isSafeUrl = (u: string) =>
+    u.startsWith("/uploads/") || /^data:(image|audio|video)\//i.test(u) || !!safeExternalUrl(u);
+  const safeMedia = media.filter((m) => isSafeUrl(m.url));
+
+  const images = safeMedia.filter((m) => m.mediaType === "image");
+  const audio = safeMedia.filter((m) => m.mediaType === "audio");
+  const videos = safeMedia.filter((m) => m.mediaType === "video");
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-16">

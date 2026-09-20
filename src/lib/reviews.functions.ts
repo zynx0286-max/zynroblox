@@ -3,15 +3,19 @@ import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { loadStore, mutate } from "@/lib/store";
 import { requireOwner } from "@/lib/require-owner";
+import { getReviewHashSecret, getAdminPassword } from "@/lib/owner-session";
+import { safeExternalUrl } from "@/lib/url";
 
 // ---------------------------------------------------------------------------
 // Reviews
 //
 // Public client reviews. Rows live in the self-hosted JSON store
 // (data/store.json); no external service required. Submissions publish
-// instantly so writers see their review right away; lightweight bot guards
-// (per-IP rate limit + link heuristic) plus the per-email daily cap keep spam
-// out, and the owner can still unverify or delete anything from /admin.
+// instantly so writers see their review right away; anti-spam is strict:
+// ONE review per IP (persisted hash) and ONE per email, ever — plus a
+// per-IP burst rate limit and link heuristic so a bot can't flood or crash
+// the site. The owner can unverify or delete anything from /admin (deleting
+// keeps the IP blocked so the same bot can't just resubmit).
 // ---------------------------------------------------------------------------
 
 export type Review = {
@@ -29,13 +33,21 @@ export type Review = {
   updatedAt: string;
 };
 
+// `z.string().url()` happily accepts `javascript:…` — a stored-XSS vector
+// once rendered into <img src>/<a href>. Screenshots must be genuine images
+// served over HTTPS.
+const httpsImageUrl = z
+  .string()
+  .max(2000)
+  .refine((v) => /^https:\/\//i.test(v.trim()), "Screenshot URLs must be https:// links");
+
 export const reviewInput = z.object({
   authorName: z.string().trim().min(2).max(100),
   authorEmail: z.string().trim().email().max(200),
   rating: z.number().int().min(1).max(5),
   title: z.string().trim().min(5).max(200),
   content: z.string().trim().min(20).max(5000),
-  screenshotUrls: z.array(z.string().url()).max(8).default([]),
+  screenshotUrls: z.array(httpsImageUrl).max(8).default([]),
   projectRef: z.string().trim().min(1).max(120).optional(),
 });
 
@@ -68,12 +80,55 @@ export const listReviews = createServerFn({ method: "GET" })
     return scoped.map(toPublicReview);
   });
 
-const MAX_REVIEWS_PER_EMAIL_PER_DAY = 5;
-
 // Instant-publish bot guards (the old manual-approval gate is gone).
+// Burst guard only — the real one-review-per-IP rule is persisted below.
 const REVIEW_IP_LIMIT = 5;
 const REVIEW_IP_WINDOW_MS = 10 * 60 * 1000;
 const reviewIpHits = new Map<string, number[]>();
+
+/**
+ * One-way hash of a submitter IP so the store never keeps raw IPs.
+ *
+ * HMAC-SHA256 keyed with REVIEW_HASH_SECRET (falling back to the admin
+ * password, then a dev constant). The old djb2 + known-salt scheme was
+ * trivially reversible by brute-forcing the IPv4 space, which contradicted
+ * the privacy policy — HMAC with a server-only key fixes that.
+ */
+async function hashReviewIp(ip: string): Promise<string> {
+  const secret = (await getReviewHashSecret()) || (await getAdminPassword());
+  const keyMaterial = `zyn-review-hash:${secret || "local-dev-only"}`;
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(keyMaterial),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(ip.trim().toLowerCase()));
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(sig)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+  return `iph_${b64}`;
+}
+
+/**
+ * Legacy djb2 hash kept ONLY so existing entries still block resubmissions.
+ * Matched hashes are upgraded to HMAC on the spot and the legacy form is
+ * never written for new reviews.
+ */
+function legacyHashReviewIp(ip: string): string {
+  const salted = `zyn-review-v1:${ip.trim().toLowerCase()}`;
+  let h1 = 0x811c9dc5;
+  let h2 = 0x01000193;
+  for (let i = 0; i < salted.length; i++) {
+    const c = salted.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 16777619);
+    h2 = Math.imul(h2 ^ (c + 31), 16777619);
+  }
+  return `ip_${(h1 >>> 0).toString(36)}${(h2 >>> 0).toString(36)}`;
+}
 
 function reviewIpLimited(key: string) {
   const now = Date.now();
@@ -107,9 +162,6 @@ export const createReview = createServerFn({ method: "POST" })
   .validator((data: unknown) => reviewInput.parse(data))
   .handler(async ({ data }): Promise<PublicReview> => {
     const now = new Date().toISOString();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayIso = today.toISOString();
 
     const ip =
       getRequestHeader("cf-connecting-ip") ??
@@ -121,14 +173,36 @@ export const createReview = createServerFn({ method: "POST" })
     if (looksLikeReviewSpam(data.content, data.authorName)) {
       throw new Error("This review was flagged as spam. Please reach me on Discord instead.");
     }
+    const ipHash = ip === "unknown" ? null : await hashReviewIp(ip);
+    const legacyIpHash = ip === "unknown" ? null : legacyHashReviewIp(ip);
+    // Defence in depth: the validator already requires https://, this also
+    // drops anything unexpected that slips through (e.g. legacy rows).
+    const screenshotUrls = data.screenshotUrls
+      .map((u) => safeExternalUrl(u))
+      .filter((u): u is string => !!u);
 
     return mutate((store) => {
-      const fromToday = store.reviews.filter(
-        (r) =>
-          r.authorEmail.toLowerCase() === data.authorEmail.toLowerCase() && r.createdAt >= todayIso,
+      // ONE review per email, ever.
+      const emailUsed = store.reviews.some(
+        (r) => r.authorEmail.toLowerCase() === data.authorEmail.toLowerCase(),
       );
-      if (fromToday.length >= MAX_REVIEWS_PER_EMAIL_PER_DAY) {
-        throw new Error("Too many reviews from this email today. Try again tomorrow.");
+      if (emailUsed) {
+        throw new Error(
+          "This email has already submitted a review. Message me on Discord to update it.",
+        );
+      }
+      // ONE review per IP / device network, ever (persisted — survives restarts
+      // and deploys, unlike the in-memory burst guard above). Legacy hashes
+      // are upgraded in place to the HMAC form.
+      if (ipHash) {
+        const ips = store.reviewIps ?? (store.reviewIps = []);
+        const legacyIdx = legacyIpHash ? ips.indexOf(legacyIpHash) : -1;
+        if (legacyIdx !== -1) ips[legacyIdx] = ipHash;
+        if (ips.includes(ipHash)) {
+          throw new Error(
+            "A review has already been submitted from this device or network. Message me on Discord if you need it changed.",
+          );
+        }
       }
       const review: Review = {
         id: `review-${crypto.randomUUID()}`,
@@ -137,7 +211,7 @@ export const createReview = createServerFn({ method: "POST" })
         rating: data.rating,
         title: data.title,
         content: data.content,
-        screenshotUrls: data.screenshotUrls,
+        screenshotUrls,
         ...(data.projectRef ? { projectRef: data.projectRef } : {}),
         featured: false,
         // Publishes instantly so the writer sees it right away for everyone.
@@ -146,6 +220,10 @@ export const createReview = createServerFn({ method: "POST" })
         updatedAt: now,
       };
       store.reviews.push(review);
+      if (ipHash) {
+        const ips = store.reviewIps ?? (store.reviewIps = []);
+        if (!ips.includes(ipHash)) ips.push(ipHash);
+      }
       return toPublicReview(review);
     });
   });
@@ -170,7 +248,13 @@ export const updateReview = createServerFn({ method: "POST" })
     return mutate((store) => {
       const review = store.reviews.find((r) => r.id === data.id);
       if (!review) throw new Error("Review not found");
-      Object.assign(review, data.updates, { updatedAt: new Date().toISOString() });
+      const updates = { ...data.updates };
+      if (updates.screenshotUrls) {
+        updates.screenshotUrls = updates.screenshotUrls
+          .map((u) => safeExternalUrl(u))
+          .filter((u): u is string => !!u);
+      }
+      Object.assign(review, updates, { updatedAt: new Date().toISOString() });
       return review;
     });
   });
@@ -220,6 +304,8 @@ export const deleteReview = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ success: true }> => {
     await mutate((store) => {
       store.reviews = store.reviews.filter((r) => r.id !== data.id);
+      // NOTE: the submitter's IP hash stays in store.reviewIps, so a deleted
+      // spammer can't immediately resubmit from the same network.
     });
     return { success: true };
   });

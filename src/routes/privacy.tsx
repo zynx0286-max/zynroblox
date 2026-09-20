@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
+import { LegalBody } from "@/components/LegalBody";
 import { SITE_URL } from "@/data/works";
+import { getPublicSettings } from "@/lib/public-data";
 
 const TITLE = "Privacy Policy | ZYN";
 const DESC =
@@ -21,10 +23,13 @@ export const Route = createFileRoute("/privacy")({
     ],
     links: [{ rel: "canonical", href: `${SITE_URL}/privacy` }],
   }),
+  loader: async () => ({ settings: await getPublicSettings() }),
   component: PrivacyPage,
 });
 
 function PrivacyPage() {
+  const { settings } = Route.useLoaderData();
+  const privacy = settings.privacy;
   return (
     <div className="min-h-screen bg-background">
       <SiteNav />
@@ -44,79 +49,20 @@ function PrivacyPage() {
             </p>
             <h1 className="mt-4 font-display text-3xl font-bold sm:text-5xl">Privacy policy</h1>
             <p className="mt-4 text-sm text-muted-foreground">
-              Last updated: September 2026. Short version: this site collects the minimum needed to
-              reply to you, and nothing else.
+              Last updated: {privacy.updated}. {privacy.intro}
             </p>
 
             <div className="glass-card mt-8 space-y-6 rounded-2xl p-6 text-sm leading-relaxed text-muted-foreground sm:p-8">
-              <section>
-                <h2 className="font-display text-base font-semibold text-foreground">
-                  What is collected
-                </h2>
-                <p className="mt-2">
-                  Contacting ZYN opens Gmail or Discord — your message goes directly through those
-                  services, and this site itself stores nothing about it. If you write a review,
-                  what you submit (name, rating, title, content, optional project) is stored so it
-                  can be displayed publicly; your email address is kept private and never shown.
-                  On-page events (like button clicks) are only kept in memory in your browser, and
-                  no third-party analytics, advertising, or cross-site trackers run on this site.
-                </p>
-              </section>
-              <section>
-                <h2 className="font-display text-base font-semibold text-foreground">
-                  Cookies & local storage
-                </h2>
-                <p className="mt-2">
-                  No tracking or advertising cookies are set. Two functional exceptions: (1) your
-                  cookie-banner choice is remembered in your browser&apos;s local storage, and (2)
-                  the password-protected admin area uses a single strictly-necessary session cookie
-                  (<code>zyn_session</code>) for the site owner only. Declining the banner changes
-                  nothing about how the site works — there is nothing extra to opt out of.
-                </p>
-              </section>
-              <section>
-                <h2 className="font-display text-base font-semibold text-foreground">
-                  Where it goes
-                </h2>
-                <p className="mt-2">
-                  Published reviews are stored privately and shown publicly (minus your email) so
-                  ZYN can display them. They are never sold, shared, or used for marketing. Outbound
-                  links and contact channels (Gmail, Discord, Roblox) are covered by those
-                  services&apos; own privacy policies.
-                </p>
-              </section>
-              <section>
-                <h2 className="font-display text-base font-semibold text-foreground">
-                  Your rights
-                </h2>
-                <p className="mt-2">
-                  Want a review you wrote viewed, corrected or deleted? Message @acczyn on Discord
-                  or email zynx0286@gmail.com and it will be handled directly. Under laws like the
-                  GDPR (EU/UK) and CCPA/CPRA (California) you can request access, correction,
-                  deletion, and — since nothing is sold or shared — there is no sale or sharing of
-                  personal information to opt out of.
-                </p>
-              </section>
-              <section>
-                <h2 className="font-display text-base font-semibold text-foreground">Children</h2>
-                <p className="mt-2">
-                  This site is aimed at game developers, not children. The contact form is intended
-                  for users aged 13 and over — if you are under 13, please have a parent or guardian
-                  contact ZYN on your behalf. Messages known to be from children under 13 are
-                  deleted on discovery.
-                </p>
-              </section>
-              <section>
-                <h2 className="font-display text-base font-semibold text-foreground">
-                  Retention & changes
-                </h2>
-                <p className="mt-2">
-                  Published reviews are kept so they can be displayed, and deleted on request or
-                  when no longer needed. If this policy changes materially, the &quot;Last
-                  updated&quot; date above will change with it — check back occasionally. Continued
-                  use of the site after a change means you accept the updated policy.
-                </p>
-              </section>
+              {privacy.sections.map((s) => (
+                <section key={s.heading}>
+                  <h2 className="font-display text-base font-semibold text-foreground">
+                    {s.heading}
+                  </h2>
+                  <p className="mt-2">
+                    <LegalBody body={s.body} />
+                  </p>
+                </section>
+              ))}
             </div>
           </div>
         </section>

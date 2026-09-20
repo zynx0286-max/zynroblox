@@ -7,8 +7,6 @@ import { WorkCard } from "@/components/WorkCard";
 import { Reveal } from "@/components/Reveal";
 import { CATEGORIES, SITE_URL } from "@/data/works";
 import { getPublicWorks } from "@/lib/public-data";
-import { getLiveGameStats } from "@/lib/live-stats.functions";
-import { ccuBySlug, sortByCcu } from "@/lib/reach";
 
 const PAGE_TITLE = "Roblox Work Archive — QA Testing, SFX & Community | ZYN";
 const PAGE_DESC =
@@ -17,13 +15,10 @@ const PAGE_DESC =
 export type WorkSearch = { q?: string; cat?: string };
 
 export const Route = createFileRoute("/work/")({
-  // Most live players (CCU) first; falls back to visits/members order.
+  // Admin-arranged order (store sortOrder) is authoritative here — the
+  // archive mirrors exactly what the owner ordered in the admin panel.
   loader: async () => {
-    const [works, live] = await Promise.all([
-      getPublicWorks(),
-      getLiveGameStats().catch(() => null),
-    ]);
-    return { works: sortByCcu(works, ccuBySlug(live)) };
+    return { works: await getPublicWorks() };
   },
   validateSearch: (search: Record<string, unknown>): WorkSearch => {
     const out: WorkSearch = {};
@@ -93,16 +88,16 @@ function WorkPage() {
     const needle = q.trim().toLowerCase();
     // Loader order (CCU first) is preserved — filter only.
     return works.filter((w) => {
-        const matchesCategory = cat === "All Work" || w.category === cat;
-        const matchesQuery =
-          needle.length === 0 ||
-          w.title.toLowerCase().includes(needle) ||
-          w.role.toLowerCase().includes(needle) ||
-          w.category.toLowerCase().includes(needle) ||
-          w.description.toLowerCase().includes(needle) ||
-          w.tags.some((t) => t.toLowerCase().includes(needle));
-        return matchesCategory && matchesQuery;
-      });
+      const matchesCategory = cat === "All Work" || w.category === cat;
+      const matchesQuery =
+        needle.length === 0 ||
+        w.title.toLowerCase().includes(needle) ||
+        w.role.toLowerCase().includes(needle) ||
+        w.category.toLowerCase().includes(needle) ||
+        w.description.toLowerCase().includes(needle) ||
+        w.tags.some((t) => t.toLowerCase().includes(needle));
+      return matchesCategory && matchesQuery;
+    });
   }, [q, cat, works]);
 
   const filters: string[] = ["All Work", ...CATEGORIES];

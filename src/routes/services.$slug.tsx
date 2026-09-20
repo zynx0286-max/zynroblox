@@ -7,15 +7,13 @@ import { Reveal } from "@/components/Reveal";
 import { track } from "@/lib/analytics";
 import { SITE_URL } from "@/data/works";
 import { getUseCase, USE_CASES } from "@/data/services";
-import { getPublicWorks } from "@/lib/public-data";
-
-const DISCORD = "https://discord.com/users/acczyn";
+import { getPublicWorks, getPublicSettings } from "@/lib/public-data";
 
 export const Route = createFileRoute("/services/$slug")({
   loader: async ({ params }) => {
     const useCase = getUseCase(params.slug);
     if (!useCase) throw notFound();
-    const works = await getPublicWorks();
+    const [works, settings] = await Promise.all([getPublicWorks(), getPublicSettings()]);
     const related = works
       .filter(
         (w) =>
@@ -23,7 +21,7 @@ export const Route = createFileRoute("/services/$slug")({
           w.tags.some((t) => useCase.matchTags.includes(t)),
       )
       .slice(0, 3);
-    return { useCase, related };
+    return { useCase, related, discordUrl: settings.contact.discordUrl };
   },
   head: ({ params, loaderData }) => {
     const useCase = loaderData?.useCase ?? getUseCase(params.slug);
@@ -67,7 +65,7 @@ export const Route = createFileRoute("/services/$slug")({
 });
 
 function ServicePage() {
-  const { useCase, related } = Route.useLoaderData();
+  const { useCase, related, discordUrl } = Route.useLoaderData();
   const others = USE_CASES.filter((u) => u.slug !== useCase.slug);
 
   return (
@@ -96,7 +94,7 @@ function ServicePage() {
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <a
-                href={DISCORD}
+                href={discordUrl}
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => track("cta_click", { cta: "service_discord", tier: useCase.title })}
@@ -107,9 +105,10 @@ function ServicePage() {
               </a>
               <Link
                 to="/pricing"
+                hash={useCase.pricingAnchor}
                 className="glass-card inline-flex items-center gap-2 rounded-full px-7 py-4 font-display text-sm font-semibold transition-colors hover:bg-secondary/50"
               >
-                {useCase.priceNote}
+                See full prices
                 <ArrowRight className="size-4" />
               </Link>
             </div>

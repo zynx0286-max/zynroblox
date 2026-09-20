@@ -1,8 +1,14 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /admin
+Disallow: /auth
+Disallow: /uploads/
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin
+Disallow: /auth
+Disallow: /uploads/
 
 User-agent: Twitterbot
 Allow: /
@@ -12,5 +18,8 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /auth
+Disallow: /uploads/
 
-Sitemap: https://zyn-roblox-portfolio.zynx0286.workers.dev/sitemap.xml
+Sitemap: https://roblox.zynx0286.workers.dev/sitemap.xml

@@ -19,6 +19,7 @@ import {
   adminListTestimonials,
   createTestimonial,
   deleteTestimonial,
+  reorderTestimonial,
   updateTestimonial,
   type Testimonial,
   type TestimonialInput,
@@ -52,6 +53,7 @@ export function TestimonialsAdmin() {
   const create = useServerFn(createTestimonial);
   const update = useServerFn(updateTestimonial);
   const remove = useServerFn(deleteTestimonial);
+  const reorder = useServerFn(reorderTestimonial);
 
   const [editing, setEditing] = useState<{ id: string | null; values: TestimonialInput } | null>(
     null,
@@ -92,14 +94,11 @@ export function TestimonialsAdmin() {
     onError,
   });
 
+  // Direction-based swap on the server — no client list lookup (the old
+  // `!` assertion crashed when the list changed mid-flight) and no sortOrder
+  // collisions when two rows share a number.
   const moveMutation = useMutation({
-    mutationFn: (v: { id: string; sortOrder: number }) =>
-      update({
-        data: {
-          ...toInput({ ...(query.data ?? []).find((t) => t.id === v.id)!, sortOrder: v.sortOrder }),
-          id: v.id,
-        },
-      }),
+    mutationFn: (v: { id: string; direction: "up" | "down" }) => reorder({ data: v }),
     onSuccess: invalidate,
     onError,
   });
@@ -339,16 +338,14 @@ export function TestimonialsAdmin() {
               <button
                 aria-label="Move up"
                 disabled={i === 0}
-                onClick={() =>
-                  moveMutation.mutate({ id: t.id, sortOrder: Math.max(0, t.sortOrder - 1) })
-                }
+                onClick={() => moveMutation.mutate({ id: t.id, direction: "up" })}
                 className="rounded-full border border-border p-2 disabled:opacity-40"
               >
                 <ArrowUp className="size-3.5" />
               </button>
               <button
                 aria-label="Move down"
-                onClick={() => moveMutation.mutate({ id: t.id, sortOrder: t.sortOrder + 1 })}
+                onClick={() => moveMutation.mutate({ id: t.id, direction: "down" })}
                 className="rounded-full border border-border p-2"
               >
                 <ArrowDown className="size-3.5" />

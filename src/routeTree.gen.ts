@@ -21,6 +21,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ServicesIndexRouteImport } from './routes/services.index'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
+import { Route as UploadsIdRouteImport } from './routes/uploads.$id'
 import { Route as WorkIndexRouteImport } from './routes/work.index'
 import { Route as WorkSlugRouteImport } from './routes/work.$slug'
 
@@ -83,6 +84,11 @@ const ServicesSlugRoute = ServicesSlugRouteImport.update({
   path: '/services/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UploadsIdRoute = UploadsIdRouteImport.update({
+  id: '/uploads/$id',
+  path: '/uploads/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorkIndexRoute = WorkIndexRouteImport.update({
   id: '/work/',
   path: '/work/',
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/services/$slug': typeof ServicesSlugRoute
+  '/uploads/$id': typeof UploadsIdRoute
   '/work/$slug': typeof WorkSlugRoute
   '/services/': typeof ServicesIndexRoute
   '/work/': typeof WorkIndexRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/services/$slug': typeof ServicesSlugRoute
+  '/uploads/$id': typeof UploadsIdRoute
   '/work/$slug': typeof WorkSlugRoute
   '/services': typeof ServicesIndexRoute
   '/work': typeof WorkIndexRoute
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/services/$slug': typeof ServicesSlugRoute
+  '/uploads/$id': typeof UploadsIdRoute
   '/work/$slug': typeof WorkSlugRoute
   '/services/': typeof ServicesIndexRoute
   '/work/': typeof WorkIndexRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/admin'
     | '/services/$slug'
+    | '/uploads/$id'
     | '/work/$slug'
     | '/services/'
     | '/work/'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/admin'
     | '/services/$slug'
+    | '/uploads/$id'
     | '/work/$slug'
     | '/services'
     | '/work'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_authenticated/admin'
     | '/services/$slug'
+    | '/uploads/$id'
     | '/work/$slug'
     | '/services/'
     | '/work/'
@@ -201,6 +213,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   ServicesSlugRoute: typeof ServicesSlugRoute
+  UploadsIdRoute: typeof UploadsIdRoute
   WorkSlugRoute: typeof WorkSlugRoute
   ServicesIndexRoute: typeof ServicesIndexRoute
   WorkIndexRoute: typeof WorkIndexRoute
@@ -292,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/uploads/$id': {
+      id: '/uploads/$id'
+      path: '/uploads/$id'
+      fullPath: '/uploads/$id'
+      preLoaderRoute: typeof UploadsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/work/': {
       id: '/work/'
       path: '/work'
@@ -331,6 +351,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   ServicesSlugRoute: ServicesSlugRoute,
+  UploadsIdRoute: UploadsIdRoute,
   WorkSlugRoute: WorkSlugRoute,
   ServicesIndexRoute: ServicesIndexRoute,
   WorkIndexRoute: WorkIndexRoute,

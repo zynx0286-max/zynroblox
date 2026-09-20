@@ -22,12 +22,15 @@ const SECTIONS: { key: SectionKey; label: string }[] = [
   { key: "featured", label: "Featured game" },
   { key: "about", label: "About" },
   { key: "workPreview", label: "Work preview" },
+  { key: "pricing", label: "Pricing" },
   { key: "stats", label: "Stats" },
   { key: "skills", label: "Skills" },
   { key: "process", label: "How I work" },
   { key: "faq", label: "FAQ" },
   { key: "testimonials", label: "Testimonials" },
   { key: "contact", label: "Contact" },
+  { key: "terms", label: "Terms" },
+  { key: "privacy", label: "Privacy" },
 ];
 
 const field =
@@ -46,6 +49,8 @@ export function ContentAdmin() {
   const [draft, setDraft] = useState<SiteSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  // Sections with edits not yet saved to the server — drives the • marker.
+  const [dirty, setDirty] = useState<Set<SectionKey>>(new Set());
 
   const query = useQuery({
     queryKey: ["site-settings"],
@@ -67,6 +72,11 @@ export function ContentAdmin() {
     onSuccess: () => {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+      setDirty((d) => {
+        const next = new Set(d);
+        next.delete(active);
+        return next;
+      });
       void qc.invalidateQueries({ queryKey: ["site-settings"] });
       void qc.invalidateQueries({ queryKey: ["site-settings-public"] });
       // Public pages read via route loaders — refetch them so edits show live.
@@ -80,6 +90,7 @@ export function ContentAdmin() {
 
   const set = <K extends SectionKey>(key: K, value: SiteSettings[K]) => {
     setDraft((d) => ({ ...(d ?? query.data ?? DEFAULT_SETTINGS), [key]: value }));
+    setDirty((d) => (d.has(key) ? d : new Set(d).add(key)));
   };
 
   return (
@@ -96,6 +107,14 @@ export function ContentAdmin() {
             }`}
           >
             {s.label}
+            {dirty.has(s.key) ? (
+              <span
+                aria-label="Unsaved changes"
+                className={`ml-1.5 inline-block size-1.5 rounded-full align-middle ${
+                  active === s.key ? "bg-primary-foreground" : "bg-primary"
+                }`}
+              />
+            ) : null}
           </button>
         ))}
       </nav>
@@ -117,7 +136,7 @@ export function ContentAdmin() {
             ) : (
               <SaveIcon />
             )}
-            {saved ? "Saved" : "Save section"}
+            {saved ? "Saved" : dirty.has(active) ? "Save section •" : "Save section"}
           </button>
         </div>
         {error ? (
@@ -147,12 +166,19 @@ export function ContentAdmin() {
           {active === "featured" ? <FeaturedEditor settings={settings} set={set} /> : null}
           {active === "about" ? <AboutEditor settings={settings} set={set} /> : null}
           {active === "workPreview" ? <WorkPreviewEditor settings={settings} set={set} /> : null}
+          {active === "pricing" ? <PricingEditor settings={settings} set={set} /> : null}
           {active === "stats" ? <StatsEditor settings={settings} set={set} /> : null}
           {active === "skills" ? <SkillsEditor settings={settings} set={set} /> : null}
           {active === "process" ? <ProcessEditor settings={settings} set={set} /> : null}
-{active === "faq" ? <FaqEditor settings={settings} set={set} /> : null}
+          {active === "faq" ? <FaqEditor settings={settings} set={set} /> : null}
           {active === "testimonials" ? <TestimonialsEditor settings={settings} set={set} /> : null}
-        {active === "contact" ? <ContactEditor settings={settings} set={set} /> : null}
+          {active === "contact" ? <ContactEditor settings={settings} set={set} /> : null}
+          {active === "terms" ? (
+            <LegalEditor sectionKey="terms" settings={settings} set={set} />
+          ) : null}
+          {active === "privacy" ? (
+            <LegalEditor sectionKey="privacy" settings={settings} set={set} />
+          ) : null}
         </div>
       </div>
     </div>
@@ -342,11 +368,12 @@ function HeroEditor({
         <span className={label}>Title prefix</span>
         <TextField value={h.titlePrefix} onChange={(v) => set("hero", { ...h, titlePrefix: v })} />
       </div>
-      <div>
-        <span className={label}>Title highlight</span>
-        <TextField
-          value={h.titleHighlight}
-          onChange={(v) => set("hero", { ...h, titleHighlight: v })}
+      <div className="sm:col-span-2">
+        <StringList
+          label="Rotating roles (highlighted headline text)"
+          values={h.roles}
+          onChange={(v) => set("hero", { ...h, roles: v.filter((r) => r.trim()) })}
+          placeholder="SFX Artist"
         />
       </div>
       <div>
@@ -555,6 +582,168 @@ function WorkPreviewEditor({
       <div>
         <span className={label}>CTA label</span>
         <TextField value={w.ctaLabel} onChange={(v) => set("workPreview", { ...w, ctaLabel: v })} />
+      </div>
+    </div>
+  );
+}
+
+function PricingEditor({
+  settings,
+  set,
+}: {
+  settings: SiteSettings;
+  set: <K extends SectionKey>(k: K, v: SiteSettings[K]) => void;
+}) {
+  const p = settings.pricing;
+  const setTier = (i: number, patch: Partial<SiteSettings["pricing"]["tiers"][number]>) =>
+    set("pricing", {
+      ...p,
+      tiers: p.tiers.map((t, j) => (j === i ? { ...t, ...patch } : t)),
+    });
+  return (
+    <div className="grid gap-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <span className={label}>Heading</span>
+          <TextField value={p.heading} onChange={(v) => set("pricing", { ...p, heading: v })} />
+        </div>
+        <div>
+          <span className={label}>Intro copy</span>
+          <TextField value={p.sub} onChange={(v) => set("pricing", { ...p, sub: v })} />
+        </div>
+        <div>
+          <span className={label}>Rev-share note</span>
+          <TextField
+            value={p.revShareNote}
+            onChange={(v) => set("pricing", { ...p, revShareNote: v })}
+          />
+        </div>
+        <div>
+          <span className={label}>Availability note</span>
+          <TextField
+            value={p.availabilityNote}
+            onChange={(v) => set("pricing", { ...p, availabilityNote: v })}
+          />
+        </div>
+        <div>
+          <span className={label}>Reply-time note</span>
+          <TextField value={p.replyNote} onChange={(v) => set("pricing", { ...p, replyNote: v })} />
+        </div>
+        <div>
+          <span className={label}>Bundle heading</span>
+          <TextField
+            value={p.bundleHeading}
+            onChange={(v) => set("pricing", { ...p, bundleHeading: v })}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <span className={label}>Bundle body</span>
+          <TextField
+            rows={2}
+            value={p.bundleBody}
+            onChange={(v) => set("pricing", { ...p, bundleBody: v })}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {p.tiers.map((t, i) => (
+          <div key={i} className="rounded-2xl border border-border bg-secondary/20 p-4">
+            <div className="flex items-center justify-between">
+              <p className="font-display text-sm font-semibold">{t.name || `Tier ${i + 1}`}</p>
+              <button
+                type="button"
+                onClick={() => set("pricing", { ...p, tiers: p.tiers.filter((_, j) => j !== i) })}
+                className="rounded-full border border-destructive/50 p-2 text-destructive"
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div>
+                <span className={label}>Name</span>
+                <input
+                  className={field}
+                  value={t.name}
+                  onChange={(e) => setTier(i, { name: e.target.value })}
+                />
+              </div>
+              <div>
+                <span className={label}>Price (Robux)</span>
+                <input
+                  className={field}
+                  value={t.price}
+                  onChange={(e) => setTier(i, { price: e.target.value })}
+                />
+              </div>
+              <div>
+                <span className={label}>Gift-card price</span>
+                <input
+                  className={field}
+                  value={t.gift}
+                  onChange={(e) => setTier(i, { gift: e.target.value })}
+                />
+              </div>
+              <div>
+                <span className={label}>Unit (per sound / per week…)</span>
+                <input
+                  className={field}
+                  value={t.unit}
+                  onChange={(e) => setTier(i, { unit: e.target.value })}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <span className={label}>Blurb</span>
+                <input
+                  className={field}
+                  value={t.blurb}
+                  onChange={(e) => setTier(i, { blurb: e.target.value })}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <StringList
+                  label="Included points"
+                  values={t.points}
+                  onChange={(v) => setTier(i, { points: v })}
+                />
+              </div>
+              <div>
+                <span className={label}>Tag (e.g. Most requested · 2 slots left)</span>
+                <input
+                  className={field}
+                  value={t.tag ?? ""}
+                  onChange={(e) => setTier(i, { tag: e.target.value })}
+                />
+              </div>
+              <div className="flex items-end gap-2 pb-1">
+                <input
+                  id={`tier-highlight-${i}`}
+                  type="checkbox"
+                  checked={Boolean(t.highlight)}
+                  onChange={(e) => setTier(i, { highlight: e.target.checked })}
+                />
+                <label htmlFor={`tier-highlight-${i}`} className="text-sm text-muted-foreground">
+                  Highlight card
+                </label>
+              </div>
+            </div>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() =>
+            set("pricing", {
+              ...p,
+              tiers: [
+                ...p.tiers,
+                { name: "", price: "", gift: "", unit: "", blurb: "", points: [] },
+              ],
+            })
+          }
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 font-display text-xs"
+        >
+          <Plus className="size-3.5" /> Add tier
+        </button>
       </div>
     </div>
   );
@@ -880,7 +1069,9 @@ function TestimonialsEditor({
                   onChange={(e) =>
                     set("testimonials", {
                       ...t,
-                      items: t.items.map((x, j) => (j === i ? { ...x, author: e.target.value } : x)),
+                      items: t.items.map((x, j) =>
+                        j === i ? { ...x, author: e.target.value } : x,
+                      ),
                     })
                   }
                 />
@@ -921,9 +1112,7 @@ function TestimonialsEditor({
                   onChange={(e) =>
                     set("testimonials", {
                       ...t,
-                      items: t.items.map((x, j) =>
-                        j === i ? { ...x, image: e.target.value } : x,
-                      ),
+                      items: t.items.map((x, j) => (j === i ? { ...x, image: e.target.value } : x)),
                     })
                   }
                 />
@@ -942,6 +1131,102 @@ function TestimonialsEditor({
           className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 font-display text-xs"
         >
           <Plus className="size-3.5" /> Add testimonial
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function LegalEditor({
+  sectionKey,
+  settings,
+  set,
+}: {
+  sectionKey: "terms" | "privacy";
+  settings: SiteSettings;
+  set: <K extends SectionKey>(k: K, v: SiteSettings[K]) => void;
+}) {
+  const l = settings[sectionKey];
+  return (
+    <div className="grid gap-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <span className={label}>Last updated</span>
+          <TextField
+            value={l.updated}
+            onChange={(v) => set(sectionKey, { ...l, updated: v })}
+            placeholder="September 2026"
+          />
+        </div>
+      </div>
+      <div>
+        <span className={label}>Intro (under the title)</span>
+        <TextField rows={2} value={l.intro} onChange={(v) => set(sectionKey, { ...l, intro: v })} />
+      </div>
+      <p className="rounded-xl border border-border bg-secondary/20 px-3.5 py-2.5 text-xs leading-relaxed text-muted-foreground">
+        Tip: links use the format [label](https://example.com) — e.g. [Roblox Community
+        Standards](https://create.roblox.com/docs/marketplace/marketplace-policy).
+      </p>
+      <div className="space-y-4">
+        {l.sections.map((s, i) => (
+          <div key={i} className="rounded-2xl border border-border bg-secondary/20 p-4">
+            <div className="flex items-center justify-between">
+              <p className="font-display text-sm font-semibold">
+                {s.heading || `Section ${i + 1}`}
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  set(sectionKey, { ...l, sections: l.sections.filter((_, j) => j !== i) })
+                }
+                className="rounded-full border border-destructive/50 p-2 text-destructive"
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            </div>
+            <div className="mt-3 grid gap-3">
+              <div>
+                <span className={label}>Heading</span>
+                <input
+                  className={field}
+                  value={s.heading}
+                  onChange={(e) =>
+                    set(sectionKey, {
+                      ...l,
+                      sections: l.sections.map((x, j) =>
+                        j === i ? { ...x, heading: e.target.value } : x,
+                      ),
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <span className={label}>Body</span>
+                <textarea
+                  rows={5}
+                  className={`${field} resize-none`}
+                  value={s.body}
+                  onChange={(e) =>
+                    set(sectionKey, {
+                      ...l,
+                      sections: l.sections.map((x, j) =>
+                        j === i ? { ...x, body: e.target.value } : x,
+                      ),
+                    })
+                  }
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() =>
+            set(sectionKey, { ...l, sections: [...l.sections, { heading: "", body: "" }] })
+          }
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 font-display text-xs"
+        >
+          <Plus className="size-3.5" /> Add section
         </button>
       </div>
     </div>

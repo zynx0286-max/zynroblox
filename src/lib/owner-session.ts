@@ -2,6 +2,8 @@
 // and issues a signed, httpOnly cookie; every admin server function validates
 // it via `requireOwner`. Uses only Web-standard APIs so it runs in browsers,
 // Node and serverless runtimes with no native dependencies.
+
+import { getRequestHeader } from "@tanstack/react-start/server";
 //
 // SECURITY: the password comes ONLY from the `ADMIN_PASSWORD` env var /
 // secret. There is deliberately no default — if it isn't configured, login
@@ -40,6 +42,11 @@ async function readSecret(name: string): Promise<string> {
   return "";
 }
 
+/** The configured review-IP hash secret, or "" when not set. */
+export async function getReviewHashSecret(): Promise<string> {
+  return readSecret("REVIEW_HASH_SECRET");
+}
+
 /** The configured admin password, or "" when none is set (login disabled). */
 export async function getAdminPassword(): Promise<string> {
   return readSecret("ADMIN_PASSWORD");
@@ -49,7 +56,19 @@ export async function isAdminPasswordConfigured(): Promise<boolean> {
   return (await getAdminPassword()).length > 0;
 }
 
-function isProduction(): boolean {
+/**
+ * True when the incoming request is HTTPS (directly or via a trusted proxy
+ * header). Workers have no meaningful NODE_ENV, so `secure` must be derived
+ * from the request itself — otherwise the cookie would be sent insecurely on
+ * dev (correct) but the flag could never be relied on in production.
+ */
+export function isSecureRequest(): boolean {
+  try {
+    const proto = getRequestHeader("x-forwarded-proto");
+    if (proto) return proto.split(",")[0]?.trim() === "https";
+  } catch {
+    // No active request (e.g. during a build) — fall back to NODE_ENV.
+  }
   return typeof process !== "undefined" && process.env?.["NODE_ENV"] === "production";
 }
 
@@ -60,9 +79,12 @@ const BASE_COOKIE_OPTIONS = {
   maxAge: TTL / 1000,
 } as const;
 
-/** Cookie options with `secure` enabled in production (HTTPS-only). */
+/**
+ * Cookie options with `secure` enabled whenever the current request arrived
+ * over HTTPS (always true on the production Workers deployment).
+ */
 export function getCookieOptions() {
-  return { ...BASE_COOKIE_OPTIONS, secure: isProduction() };
+  return { ...BASE_COOKIE_OPTIONS, secure: isSecureRequest() };
 }
 
 function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {

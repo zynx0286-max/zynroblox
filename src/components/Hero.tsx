@@ -1,13 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, MessageCircle, Headphones } from "lucide-react";
+import { ArrowRight, MessageCircle, Play } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 import { track } from "@/lib/analytics";
 import type { HeroSettings } from "@/lib/site-settings";
 import { AnimatedCounter } from "./AnimatedCounter";
 import { LiveStats } from "./LiveStats";
 import { TextType } from "./bits/TextType";
-
-const ROTATING_ROLES = ["SFX Artist", "QA Tester", "Community Manager", "Sound Designer"];
 
 export function Hero({
   settings,
@@ -58,14 +56,14 @@ export function Hero({
         </p>
 
         {/* Fixed two-line headline: the rotating role always gets its own
-            line, so the longest role ("Community Manager") can never push the
+            line, so the longest role ("Sound Designer") can never push the
             suffix onto a third line. The highlight hugs the text exactly —
             no reserved width, no trailing gap. */}
         <h1 className="mt-5 font-display text-[2rem] leading-[1.15] font-bold sm:mt-6 sm:text-6xl sm:leading-[1.1]">
           <span className="block">
             {settings.titlePrefix}{" "}
             <TextType
-              text={ROTATING_ROLES}
+              text={settings.roles?.length ? settings.roles : ["SFX Artist", "QA Tester"]}
               className="inline-block bg-primary px-2 whitespace-nowrap text-primary-foreground"
               typingSpeed={70}
               deletingSpeed={32}
@@ -85,7 +83,7 @@ export function Hero({
             onClick={() => track("cta_click", { cta: "see_my_works" })}
             className="group inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-primary px-6 py-4 font-display text-base font-bold tracking-wide text-primary-foreground shadow-[var(--shadow-glow)] transition-transform duration-300 hover:scale-[1.03] active:scale-[0.98] sm:w-auto sm:gap-3 sm:px-10 sm:py-5 sm:text-xl"
           >
-            <Headphones className="size-5 sm:size-6" />
+            <Play className="size-5 fill-current sm:size-6" />
             {settings.ctaLabel}
             <ArrowRight className="size-5 transition-transform group-hover:translate-x-1 sm:size-6" />
           </Link>
@@ -122,7 +120,7 @@ export function Hero({
         </nav>
 
         <p className="mt-4 text-[0.7rem] text-muted-foreground sm:text-xs">
-          <AnimatedCounter value={workCount} duration={1500} className="font-semibold" />{" "}
+          <AnimatedCounter value={workCount} duration={1500} ssrStart className="font-semibold" />{" "}
           {settings.ctaNote}
         </p>
 

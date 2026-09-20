@@ -34,8 +34,7 @@ export function LiveStats({ initial }: { initial?: LiveGameStats | null }) {
   // The feed only counts as resolved when it actually carries game data — an
   // empty games list with zeroed totals means the Roblox API failed, not that
   // the games genuinely have 0 visits.
-  const resolved =
-    data !== undefined && (data.games.length > 0 || data.totalVisits > 0);
+  const resolved = data !== undefined && (data.games.length > 0 || data.totalVisits > 0);
   useEffect(() => {
     if (resolved) {
       setGraceExpired(false);
@@ -54,9 +53,9 @@ export function LiveStats({ initial }: { initial?: LiveGameStats | null }) {
   // "error" appears only after a full minute with no usable data. A genuine 0
   // (e.g. nobody online in the dead of night) renders as 0 once resolved.
   const settled = resolved || query.isError || graceExpired;
-  const renderCount = (value: number, duration: number) => {
+  const renderCount = (value: number, duration: number, ssrStart = false) => {
     if (resolved) {
-      return <AnimatedCounter value={value} duration={duration} />;
+      return <AnimatedCounter value={value} duration={duration} ssrStart={ssrStart} />;
     }
     if (settled) {
       return <span className="text-destructive">error</span>;
@@ -71,42 +70,44 @@ export function LiveStats({ initial }: { initial?: LiveGameStats | null }) {
           live ? "opacity-100" : "opacity-60"
         } transition-opacity duration-500`}
       >
-      <div className="glass-card relative overflow-hidden rounded-2xl px-3 py-4 sm:px-4 sm:py-5">
-        <div className="flex items-center justify-between">
-          <span className="inline-flex items-center gap-1.5 text-[0.6rem] tracking-[0.15em] text-muted-foreground uppercase sm:text-[0.65rem]">
-            <Activity className="size-3 text-primary" />
-            Players online
-          </span>
-          {live ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[0.55rem] font-semibold tracking-widest text-emerald-400 uppercase">
-              <span className="relative flex size-1.5">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-70" />
-                <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
+        <div className="glass-card relative overflow-hidden rounded-2xl px-3 py-4 sm:px-4 sm:py-5">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 text-[0.6rem] tracking-[0.15em] text-muted-foreground uppercase sm:text-[0.65rem]">
+              <Activity className="size-3 text-primary" />
+              Players online
+            </span>
+            {live ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[0.55rem] font-semibold tracking-widest text-emerald-400 uppercase">
+                <span className="relative flex size-1.5">
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-70" />
+                  <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
+                </span>
+                Live
               </span>
-              Live
-            </span>
-          ) : null}
+            ) : null}
+          </div>
+          <p className="mt-2 font-display text-2xl font-bold text-primary sm:text-3xl">
+            {/* ssrStart: crawlers/no-JS see the real numbers in the HTML; the
+              count-up animation still plays for browsers. */}
+            {renderCount(totalPlaying, 800, true)}
+          </p>
         </div>
-        <p className="mt-2 font-display text-2xl font-bold text-primary sm:text-3xl">
-          {renderCount(totalPlaying, 800)}
-        </p>
-      </div>
 
-      <div className="glass-card relative overflow-hidden rounded-2xl px-3 py-4 sm:px-4 sm:py-5">
-        <div className="flex items-center justify-between">
-          <span className="inline-flex items-center gap-1.5 text-[0.6rem] tracking-[0.15em] text-muted-foreground uppercase sm:text-[0.65rem]">
-            <Users className="size-3 text-primary" />
-            Total visits
-          </span>
-          {live ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[0.55rem] font-semibold tracking-widest text-emerald-400 uppercase">
-              Live
+        <div className="glass-card relative overflow-hidden rounded-2xl px-3 py-4 sm:px-4 sm:py-5">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 text-[0.6rem] tracking-[0.15em] text-muted-foreground uppercase sm:text-[0.65rem]">
+              <Users className="size-3 text-primary" />
+              Total visits
             </span>
-          ) : null}
-        </div>
-        <p className="mt-2 font-display text-2xl font-bold sm:text-3xl">
-          {renderCount(totalVisits, 1200)}
-        </p>
+            {live ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[0.55rem] font-semibold tracking-widest text-emerald-400 uppercase">
+                Live
+              </span>
+            ) : null}
+          </div>
+          <p className="mt-2 font-display text-2xl font-bold sm:text-3xl">
+            {renderCount(totalVisits, 1200, true)}
+          </p>
         </div>
       </div>
       <p className="mt-3 text-center text-xs text-muted-foreground sm:text-sm">
