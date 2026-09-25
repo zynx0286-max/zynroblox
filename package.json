@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "start": "vite dev --port 8080 --open",
     "preview": "vite dev --port 8080 --open",
-    "deploy": "npm run build && wrangler deploy",
+    "deploy": "npm run build && npx wrangler deploy",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
