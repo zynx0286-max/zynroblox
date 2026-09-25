@@ -7,16 +7,18 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, Suspense, lazy, type ReactNode } from "react";
+import { Suspense, lazy, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
+import { SITE_URL } from "@/data/works";
 import { BackToTop } from "../components/BackToTop";
 import { CookieConsent } from "../components/CookieConsent";
 
 // Simple white dot cursor — a tiny component, no three.js, no canvas.
 // (The old GhostCursor shader trail was removed for low-end performance.)
-const DotCursorLazy = lazy(() => import("../components/DotCursor").then((m) => ({ default: m.DotCursor })));
+const DotCursorLazy = lazy(() =>
+  import("../components/DotCursor").then((m) => ({ default: m.DotCursor })),
+);
 
 function NotFoundComponent() {
   return (
@@ -43,9 +45,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -102,8 +101,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { name: "author", content: "ZYN" },
       { property: "og:type", content: "website" },
-      { property: "og:image", content: "/favicon.png" },
+      { property: "og:image", content: "/og.png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "/og.png" },
     ],
     links: [
       {
@@ -124,6 +126,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.png", type: "image/png" },
       { rel: "shortcut icon", href: "/favicon.ico" },
       { rel: "apple-touch-icon", href: "/favicon.png" },
+    ],
+    scripts: [
+      // Site-wide Person schema (richer Google results on every page).
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Person",
+          name: "ZYN",
+          url: SITE_URL,
+          jobTitle: "Roblox SFX Artist & Sound Designer",
+          description:
+            "Professional Roblox SFX artist creating original ability, impact, ambience and UI sound. Also offering QA testing, community management and game research.",
+          knowsAbout: ["Roblox sound design", "Game SFX", "QA testing", "Community management"],
+          sameAs: ["https://discord.com/users/acczyn"],
+        }),
+      },
     ],
   }),
 
