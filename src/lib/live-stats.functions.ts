@@ -193,6 +193,7 @@ async function fetchStats(
 }
 
 async function computeStats(): Promise<LiveGameStats> {
+  console.warn("[live-stats] compute start");
   const works = await getPublicWorks();
   const byPlace = new Map<number, { slug: string; title: string }>();
   for (const w of works) {
