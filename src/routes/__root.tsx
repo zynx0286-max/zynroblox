@@ -11,6 +11,8 @@ import { Suspense, lazy, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { SITE_URL } from "@/data/works";
+import { getPublicSettings } from "@/lib/public-data";
+import { ContactSettingsProvider } from "@/components/ContactSettingsProvider";
 import { BackToTop } from "../components/BackToTop";
 import { CookieConsent } from "../components/CookieConsent";
 
@@ -89,8 +91,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+}>()({
+  loader: async () => {
+    // Site-wide editable contact links (Discord URL, email) for nav, footer
+    // and the contact form. Falls back to defaults if the store is down.
+    const settings = await getPublicSettings();
+    return { contact: settings.contact };
+  },
+  head: ({ loaderData }) => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
@@ -140,7 +150,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           description:
             "Professional Roblox SFX artist creating original ability, impact, ambience and UI sound. Also offering QA testing, community management and game research.",
           knowsAbout: ["Roblox sound design", "Game SFX", "QA testing", "Community management"],
-          sameAs: ["https://discord.com/users/acczyn"],
+          sameAs: [loaderData?.contact?.discordUrl ?? "https://discord.com/users/acczyn"],
         }),
       },
     ],
@@ -173,17 +183,20 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { contact } = Route.useLoaderData();
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Lightweight dot cursor (renders nothing on touch / reduced-motion). */}
-      <Suspense fallback={null}>
-        <DotCursorLazy />
-      </Suspense>
-      <BackToTop />
-      <CookieConsent />
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <ContactSettingsProvider contact={contact}>
+        {/* Lightweight dot cursor (renders nothing on touch / reduced-motion). */}
+        <Suspense fallback={null}>
+          <DotCursorLazy />
+        </Suspense>
+        <BackToTop />
+        <CookieConsent />
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Outlet />
+      </ContactSettingsProvider>
     </QueryClientProvider>
   );
 }

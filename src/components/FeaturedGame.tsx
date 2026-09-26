@@ -4,8 +4,9 @@ import type { Work } from "@/data/works";
 import type { FeaturedSettings } from "@/lib/site-settings";
 
 export function FeaturedGame({ works, settings }: { works: Work[]; settings: FeaturedSettings }) {
-  // Show Clean All The Leaves as featured (highest priority)
-  const featured = works.find((w) => w.slug === "clean-all-the-leaves") ?? works.find((w) => w.featured);
+  // The admin panel's "Featured" checkbox decides. (The old hardcoded slug
+  // overrode it, so ticking Featured on another game did nothing publicly.)
+  const featured = works.find((w) => w.featured) ?? works[0];
   if (!featured) return null;
 
   return (

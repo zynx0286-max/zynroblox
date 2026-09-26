@@ -1,10 +1,12 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { RobloxMark } from "./RobloxMark";
 import { goToHomeSection } from "@/lib/scroll";
+import { useContactSettings } from "./ContactSettingsProvider";
 
 export function SiteFooter() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { discordUrl } = useContactSettings();
 
   const sectionLink = (hash: string, label: string) => (
     <Link
@@ -20,7 +22,10 @@ export function SiteFooter() {
     </Link>
   );
 
-  const pageLink = (to: "/" | "/work" | "/services" | "/pricing" | "/reviews" | "/privacy" | "/terms" | "/security", label: string) => (
+  const pageLink = (
+    to: "/" | "/work" | "/services" | "/pricing" | "/reviews" | "/privacy" | "/terms" | "/security",
+    label: string,
+  ) => (
     <Link
       to={to}
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
@@ -68,7 +73,7 @@ export function SiteFooter() {
           <p className="text-xs text-muted-foreground">
             Discord:{" "}
             <a
-              href="https://discord.com/users/acczyn"
+              href={discordUrl}
               target="_blank"
               rel="noreferrer"
               className="text-foreground/80 hover:text-foreground hover:underline"

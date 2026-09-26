@@ -8,6 +8,7 @@ import { WorkMedia } from "@/components/WorkMedia";
 import { Reveal } from "@/components/Reveal";
 import { track } from "@/lib/analytics";
 import { getPublicWorks, getPublicMedia } from "@/lib/public-data";
+import { useContactSettings } from "@/components/ContactSettingsProvider";
 import { resolveAsset } from "@/lib/assets";
 import { SITE_URL, type Work } from "@/data/works";
 
@@ -98,6 +99,7 @@ function WorkNotFound() {
 
 function WorkDetail() {
   const { work, works, media } = Route.useLoaderData();
+  const { discordUrl } = useContactSettings();
   const related = works
     .filter((w) => w.slug !== work.slug && w.category === work.category)
     .slice(0, 3);
@@ -156,7 +158,7 @@ function WorkDetail() {
                     </a>
                   ) : null}
                   <a
-                    href="https://discord.com/users/acczyn"
+                    href={discordUrl}
                     target="_blank"
                     rel="noreferrer"
                     onClick={() => track("discord_click", { from: `work:${work.slug}` })}

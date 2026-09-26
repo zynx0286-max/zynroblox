@@ -2,6 +2,8 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { RobloxMark } from "./RobloxMark";
+import { useContactSettings } from "./ContactSettingsProvider";
+import { track } from "@/lib/analytics";
 
 type NavLink = { label: string; to: "/" | "/work" | "/services" | "/pricing" | "/reviews" };
 
@@ -20,6 +22,7 @@ export function SiteNav() {
   const [scrolled, setScrolled] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const location = useLocation();
+  const { discordUrl } = useContactSettings();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -87,9 +90,10 @@ export function SiteNav() {
 
         <div className="flex items-center gap-2">
           <a
-            href="https://discord.com/users/acczyn"
+            href={discordUrl}
             target="_blank"
             rel="noreferrer"
+            onClick={() => track("discord_click", { from: "nav" })}
             className="hidden rounded-full bg-primary px-5 py-2 font-display text-sm font-semibold text-primary-foreground transition-transform hover:scale-[1.03] sm:inline-block"
           >
             Hire Me
@@ -121,9 +125,10 @@ export function SiteNav() {
             </Link>
           ))}
           <a
-            href="https://discord.com/users/acczyn"
+            href={discordUrl}
             target="_blank"
             rel="noreferrer"
+            onClick={() => track("discord_click", { from: "nav_mobile" })}
             className="mt-2 rounded-full bg-primary px-4 py-3 text-center font-display text-sm font-semibold text-primary-foreground"
           >
             Hire Me

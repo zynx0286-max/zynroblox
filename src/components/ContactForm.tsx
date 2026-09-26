@@ -2,6 +2,7 @@ import { useState } from "react";
 import { MessageCircle, Mail, ExternalLink } from "lucide-react";
 import { contactSchema } from "@/lib/contact.functions";
 import { track } from "@/lib/analytics";
+import { useContactSettings } from "./ContactSettingsProvider";
 
 const projectTypes = ["SFX Design", "QA Testing", "Community Management", "Game Research", "Other"];
 
@@ -9,23 +10,25 @@ type FieldKey = "name" | "email" | "projectType" | "message";
 type Errors = Partial<Record<FieldKey, string>>;
 
 const MESSAGE_MAX = 1200;
-const GMAIL_EMAIL = "zynx0286@gmail.com";
-const DISCORD_URL = "https://discord.com/users/acczyn";
 
-const buildGmailUrl = (values: {
-  projectType: string;
-  message: string;
-  name: string;
-  email: string;
-}) => {
+const buildGmailUrl = (
+  values: {
+    projectType: string;
+    message: string;
+    name: string;
+    email: string;
+  },
+  contactEmail: string,
+) => {
   const subject = encodeURIComponent(`Portfolio Contact: ${values.projectType} - ${values.name}`);
   const body = encodeURIComponent(
     `Name: ${values.name}\nEmail: ${values.email}\nProject Type: ${values.projectType}\n\nMessage:\n${values.message}`,
   );
-  return `https://mail.google.com/mail/?view=cm&fs=1&to=${GMAIL_EMAIL}&su=${subject}&body=${body}`;
+  return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(contactEmail)}&su=${subject}&body=${body}`;
 };
 
 export function ContactForm() {
+  const { discordUrl, email } = useContactSettings();
   const [values, setValues] = useState({
     name: "",
     email: "",
@@ -74,7 +77,7 @@ export function ContactForm() {
       return;
     }
     setErrors({});
-    window.open(buildGmailUrl(values), "_blank", "noopener,noreferrer");
+    window.open(buildGmailUrl(values, email), "_blank", "noopener,noreferrer");
     track("contact_gmail_opened", { projectType: values.projectType });
   };
 
@@ -197,7 +200,7 @@ export function ContactForm() {
         </button>
 
         <a
-          href={DISCORD_URL}
+          href={discordUrl}
           target="_blank"
           rel="noreferrer"
           onClick={() => track("discord_click", { from: "contact" })}
@@ -211,10 +214,10 @@ export function ContactForm() {
       <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
         <span>Direct email:</span>
         <a
-          href={`mailto:${GMAIL_EMAIL}`}
+          href={`mailto:${email}`}
           className="inline-flex items-center gap-1 text-primary hover:underline font-mono"
         >
-          {GMAIL_EMAIL}
+          {email}
           <ExternalLink className="size-3" />
         </a>
       </div>
