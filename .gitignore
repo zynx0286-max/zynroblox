@@ -18,6 +18,8 @@ dist-ssr
 
 # Runtime data (self-hosted store) — re-seeded from the static catalog
 data/
+# …but the SEEDED catalog lives in src/data/ and must be committed.
+!src/data/
 
 # Environment — secrets live in .env.local (dev) or platform env vars (prod).
 # .env is ignored too: it has contained real keys before and must never be
