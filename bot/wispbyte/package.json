@@ -1,0 +1,16 @@
+{
+  "name": "zyn-portfolio-bot",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "description": "ZYN portfolio Discord DM bot — checked-in Wispbyte bundle",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "discord.js": "^14.27.0"
+  }
+}

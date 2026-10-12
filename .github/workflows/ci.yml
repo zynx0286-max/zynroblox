@@ -1,0 +1,62 @@
+# Runs on every push and pull request: typecheck, unit tests, lint, build.
+#
+# The tests that matter most here are the store concurrency ones
+# (src/lib/store-cas.test.ts). They guard a silent data-loss bug — one Worker
+# isolate reverting another's edit — which by definition does not show up in
+# review or in a manual smoke test. It only shows up when the rules change.
+#
+# `npm run build` is included because two of the riskier integrations only
+# fail at build time: the Nitro task wired to the Cloudflare cron trigger, and
+# the server-function return types (which must stay serializable).
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A new push to the same branch makes the in-flight run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, test, lint, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 24 matches the local toolchain and is what `npm test` relies on:
+      # Node strips TypeScript types natively, so the suite needs no runner
+      # dependency. Older versions can't import the .ts test files at all.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Lint
+        # Blocking. The baseline was cleaned up: the 65 errors were almost
+        # entirely CRLF-vs-LF noise caused by git autocrlf on Windows, fixed
+        # with `endOfLine: "auto"` in .prettierrc rather than by rewriting
+        # every file's line endings. The remaining 10 messages are
+        # react-refresh dev-HMR hints (shadcn/ui files exporting a component
+        # alongside its variants constant) and are warnings, so they report
+        # without failing the build.
+        run: npx eslint .
+
+      - name: Build
+        run: npm run build
