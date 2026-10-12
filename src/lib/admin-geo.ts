@@ -98,11 +98,15 @@ export const checkAdminLocation: () => Promise<GeoDecision> = createServerOnlyFn
     const country = typeof cf.country === "string" ? cf.country.toUpperCase() : "";
     const lat = typeof cf.latitude === "string" ? Number(cf.latitude) : cf.latitude;
     const lon = typeof cf.longitude === "string" ? Number(cf.longitude) : cf.longitude;
-    const regionCode =
-      typeof cf.regionCode === "string" ? cf.regionCode.toUpperCase() : "";
+    const regionCode = typeof cf.regionCode === "string" ? cf.regionCode.toUpperCase() : "";
 
     // Precise path: distance from Franklin Township, NJ.
-    if (typeof lat === "number" && Number.isFinite(lat) && typeof lon === "number" && Number.isFinite(lon)) {
+    if (
+      typeof lat === "number" &&
+      Number.isFinite(lat) &&
+      typeof lon === "number" &&
+      Number.isFinite(lon)
+    ) {
       const miles = haversineMiles(HOME.lat, HOME.lon, lat, lon);
       const radius = getRadiusMiles();
       if (miles <= radius) {

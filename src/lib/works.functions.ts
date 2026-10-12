@@ -1,7 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireOwner } from "@/lib/require-owner";
-import { loadStore, mutate } from "@/lib/store";
+import { loadStore, mutate, appendActivity, getActivity } from "@/lib/store";
+import type { ActivityEntry } from "@/lib/store";
+import { getBotHeartbeat, getBotLastLiveness } from "@/lib/bot-heartbeat";
+import { formatLastSeen, healthIsDegraded, type BotHeartbeat } from "@/lib/bot-heartbeat-rules";
+import { livenessDigestLine } from "@/lib/bot-liveness-rules";
+import { diffWorks, findDuplicateGroups, mergeWorks, preferredSurvivor } from "@/lib/store-cas";
+import { fetchRobloxMetadata, placeIdOf, planRefresh } from "@/lib/roblox-refresh";
 import type { Work } from "@/data/works";
 import { safeExternalUrl } from "@/lib/url";
 
@@ -149,4 +155,236 @@ export const reorderWork = createServerFn({ method: "POST" })
       neighbor.sortOrder = tmp;
     });
     return { ok: true as const };
+  });
+
+// ---------------------------------------------------------------------------
+// Duplicate detection & merging
+//
+// The bot can end up with two entries for one game when Roblox metadata was
+// rate-limited on the first DM (it creates a placeholder so the link isn't
+// lost) and the game was already in the portfolio. These functions surface
+// that and fold the two entries together using the same field-by-field rules
+// as scripts/works-admin.mjs — both import from lib/store-cas, so the CLI,
+// the admin panel and the tests can never disagree about what a merge does.
+// ---------------------------------------------------------------------------
+
+export type DuplicateGroup = {
+  placeId: string;
+  /** Slug of the entry that should survive (the most complete one). */
+  keepSlug: string;
+  /** Slugs that would be folded into it. */
+  dropSlugs: string[];
+  works: Array<{ id: string; slug: string; title: string; href?: string }>;
+};
+
+/** Groups entries that point at the same Roblox place. */
+export const findDuplicateWorks = createServerFn({ method: "GET" })
+  .middleware([requireOwner])
+  .handler(async (): Promise<DuplicateGroup[]> => {
+    const works = (await loadStore()).works;
+    const groups = findDuplicateGroups(works);
+    return groups.map((group) => {
+      const survivor = preferredSurvivor(group.works);
+      return {
+        placeId: group.placeId,
+        keepSlug: survivor.slug,
+        dropSlugs: group.works.filter((w) => w.slug !== survivor.slug).map((w) => w.slug),
+        works: group.works.map((w) => ({
+          id: w.id,
+          slug: w.slug,
+          title: w.title,
+          ...(w.href ? { href: w.href } : {}),
+        })),
+      };
+    });
+  });
+
+/**
+ * Folds every entry listed in `dropSlugs` into `keepSlug`, keeping the richest
+ * value of each field. The survivor keeps its own slug and id, so its public
+ * URL and any admin edits survive; the dropped pages stop resolving, which is
+ * why the admin panel confirms before calling this.
+ */
+export const mergeWorksFn = createServerFn({ method: "POST" })
+  .middleware([requireOwner])
+  .validator((data: unknown) =>
+    z
+      .object({
+        keepSlug: z.string().min(1).max(80),
+        dropSlugs: z.array(z.string().min(1).max(80)).min(1).max(20),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { keepSlug, dropSlugs } = data;
+    if (dropSlugs.includes(keepSlug)) throw new Error("Cannot merge an entry into itself");
+    await mutate((store) => {
+      const keep = store.works.find((w) => w.slug === keepSlug);
+      if (!keep) throw new Error("The entry to keep no longer exists");
+      for (const slug of dropSlugs) {
+        if (slug === keepSlug) continue;
+        const drop = store.works.find((w) => w.slug === slug);
+        if (!drop) continue; // already gone — not an error, just nothing to do
+        Object.assign(
+          keep,
+          mergeWorks(
+            keep as unknown as Record<string, unknown>,
+            drop as unknown as Record<string, unknown>,
+          ) as DbWork,
+        );
+        store.works = store.works.filter((w) => w.slug !== slug);
+      }
+    });
+    // Best-effort: recorded after the merge lands, and never able to fail it.
+    await appendActivity([
+      {
+        at: new Date().toISOString(),
+        kind: "entry.merged",
+        summary: `${dropSlugs.length} duplicate(s) → ${keepSlug}`,
+        slug: keepSlug,
+        detail: { merged: dropSlugs.length },
+      },
+    ]).catch(() => {});
+    return { ok: true as const, keepSlug, removed: dropSlugs };
+  });
+
+/** Fields a merge would change on the surviving entry (dry-run preview). */
+export const previewWorkMerge = createServerFn({ method: "POST" })
+  .middleware([requireOwner])
+  .validator((data: unknown) =>
+    z
+      .object({
+        keepSlug: z.string().min(1).max(80),
+        dropSlugs: z.array(z.string().min(1).max(80)).min(1).max(20),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { keepSlug, dropSlugs } = data;
+    const works = (await loadStore()).works;
+    const keep = works.find((w) => w.slug === keepSlug);
+    if (!keep) throw new Error("The entry to keep no longer exists");
+    let merged = keep as unknown as Record<string, unknown>;
+    for (const slug of dropSlugs) {
+      const drop = works.find((w) => w.slug === slug);
+      if (!drop || slug === keepSlug) continue;
+      merged = mergeWorks(merged, drop as unknown as Record<string, unknown>);
+    }
+    // diffWorks returns `unknown` values, which can't cross the server-fn
+    // boundary — they're rendered as text anyway, so stringify here.
+    const changes = diffWorks(keep as unknown as Record<string, unknown>, merged).map((c) => ({
+      field: c.field,
+      from: preview(c.dropped),
+      to: preview(c.kept),
+    }));
+    return {
+      keepSlug,
+      dropSlugs: dropSlugs.filter((s) => s !== keepSlug && works.some((w) => w.slug === s)),
+      changes,
+    };
+  });
+
+/** Short, readable rendering of a field value for the merge preview. */
+function preview(value: unknown): string {
+  if (typeof value === "string") return value.length > 80 ? `${value.slice(0, 79)}…` : value;
+  if (value === undefined || value === null) return "—";
+  const json = JSON.stringify(value);
+  return json.length > 80 ? `${json.slice(0, 79)}…` : json;
+}
+
+// ---------------------------------------------------------------------------
+// Roblox metadata refresh (also runs nightly from the Cloudflare cron task)
+// ---------------------------------------------------------------------------
+
+/**
+ * Re-checks entries against Roblox and fills in anything missing. Curated
+ * values are never overwritten — differences are only reported. See
+ * lib/roblox-refresh.ts for the exact rules.
+ */
+export const refreshRobloxMetadataFn = createServerFn({ method: "POST" })
+  .middleware([requireOwner])
+  .handler(async () => {
+    const store = await loadStore();
+    const metaBySlug = await fetchRobloxMetadata(store.works, store.universeIds);
+    const report = planRefresh(store.works, metaBySlug);
+
+    if (report.filled.length > 0) {
+      await mutate((s) => {
+        for (const change of report.filled) {
+          const work = s.works.find((w) => w.slug === change.slug);
+          if (work) Object.assign(work, { [change.field]: change.to });
+        }
+        // Remember newly resolved universe ids so the next refresh (and the
+        // live visit counter) don't have to look them up again.
+        for (const [slug, meta] of metaBySlug) {
+          if (!meta?.universeId) continue;
+          const work = s.works.find((w) => w.slug === slug);
+          const placeId = placeIdOf(work?.href);
+          if (placeId) s.universeIds[placeId] = meta.universeId;
+        }
+      });
+    }
+    return report;
+  });
+
+/**
+ * The activity log, newest first — what the bot added, what was merged, and
+ * what every nightly refresh run found. Stored in its own row (see store.ts)
+ * so it never bloats the CMS document, and surfaced here so a refresh result is
+ * readable days later instead of only in a build log.
+ */
+export const listRecentActivity = createServerFn({ method: "GET" })
+  .middleware([requireOwner])
+  .handler(async (): Promise<ActivityEntry[]> => {
+    const entries = await getActivity();
+    return entries.slice(-100).reverse();
+  });
+
+/** Owner-only bot health snapshot: what the admin Maintenance card renders. */
+export type BotHealthSnapshot = {
+  /** "moments ago"-style last-seen label, or null when nothing has pinged. */
+  lastSeenLabel: string | null;
+  degraded: boolean;
+  /** Telemetry from the latest ping (absent on legacy rows). */
+  heartbeat: {
+    status?: string | undefined;
+    pingMs?: number | undefined;
+    reconnects?: number | undefined;
+    dmErrors?: number | undefined;
+  } | null;
+  /** The liveness watch's last evaluation (side + when things went wrong). */
+  state: {
+    side: "fresh" | "down";
+    degradedSince?: number | null;
+    downSince?: number | null;
+  } | null;
+  /** The same line the weekly digest would show, or null when all-clear. */
+  digestLine: string | null;
+};
+
+export const botHealthFn = createServerFn({ method: "GET" })
+  .middleware([requireOwner])
+  .handler(async (): Promise<BotHealthSnapshot> => {
+    const nowMs = Date.now();
+    const [heartbeat, state] = await Promise.all([getBotHeartbeat(), getBotLastLiveness()]);
+    return {
+      lastSeenLabel: heartbeat ? formatLastSeen(heartbeat, nowMs) : null,
+      degraded: healthIsDegraded(heartbeat),
+      heartbeat: heartbeat
+        ? {
+            status: heartbeat.status,
+            pingMs: heartbeat.pingMs,
+            reconnects: heartbeat.reconnects,
+            dmErrors: heartbeat.dmErrors,
+          }
+        : null,
+      state: state
+        ? {
+            side: state.side,
+            degradedSince: state.degradedSince ?? null,
+            downSince: state.downSince ?? null,
+          }
+        : null,
+      digestLine: livenessDigestLine(state, nowMs),
+    };
   });

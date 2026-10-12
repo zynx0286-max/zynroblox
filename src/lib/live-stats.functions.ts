@@ -100,7 +100,9 @@ async function resolveUniverses(placeIds: number[]): Promise<Map<number, number>
             },
           );
           if (!res.ok) {
-            console.warn(`[live-stats] universe lookup ${placeId} attempt ${attempt + 1}: HTTP ${res.status}`);
+            console.warn(
+              `[live-stats] universe lookup ${placeId} attempt ${attempt + 1}: HTTP ${res.status}`,
+            );
             await discardBody(res);
             continue;
           }
@@ -114,7 +116,10 @@ async function resolveUniverses(placeIds: number[]): Promise<Map<number, number>
           }
           id = typeof body.universeId === "number" ? body.universeId : null;
         } catch (error) {
-          console.warn(`[live-stats] universe lookup ${placeId} attempt ${attempt + 1} threw:`, error);
+          console.warn(
+            `[live-stats] universe lookup ${placeId} attempt ${attempt + 1} threw:`,
+            error,
+          );
         }
       }
       if (id !== null) {
@@ -154,10 +159,13 @@ async function fetchStats(
     for (let attempt = 0; attempt < BATCH_ATTEMPTS; attempt++) {
       if (attempt > 0) await sleep(600 * 2 ** (attempt - 1) + Math.random() * 300);
       try {
-        const res = await fetch(`https://games.roblox.com/v1/games?universeIds=${chunk.join(",")}`, {
-          headers: { accept: "application/json" },
-          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-        });
+        const res = await fetch(
+          `https://games.roblox.com/v1/games?universeIds=${chunk.join(",")}`,
+          {
+            headers: { accept: "application/json" },
+            signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+          },
+        );
         if (!res.ok) {
           console.warn(`[live-stats] batch fetch attempt ${attempt + 1}: HTTP ${res.status}`);
           await discardBody(res);

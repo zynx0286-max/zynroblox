@@ -36,6 +36,7 @@ import {
   type WorkMedia,
 } from "@/lib/site.functions";
 import { pickAndUpload, deleteUpload } from "@/lib/uploads";
+import { WorksMaintenance } from "@/components/admin/WorksMaintenance";
 
 const empty: WorkInput = {
   slug: "",
@@ -405,6 +406,10 @@ export function WorksAdmin() {
           </div>
         ))}
       </div>
+
+      {/* Duplicate folding + Roblox metadata refresh live below the list so the
+          day-to-day editing flow above stays uncluttered. */}
+      <WorksMaintenance />
     </>
   );
 }

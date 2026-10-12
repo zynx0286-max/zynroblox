@@ -53,12 +53,5 @@ export function DotCursor() {
     };
   }, []);
 
-  return (
-    <div
-      ref={ref}
-      aria-hidden
-      className="zyn-dot-cursor"
-      style={{ opacity: 0 }}
-    />
-  );
+  return <div ref={ref} aria-hidden className="zyn-dot-cursor" style={{ opacity: 0 }} />;
 }

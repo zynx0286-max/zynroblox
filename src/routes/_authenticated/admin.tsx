@@ -34,10 +34,22 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 type Tab = "works" | "testimonials" | "reviews" | "content";
 
-type StoreStatus = { backend: "kv" | "file" | "memory"; works: number; persisted: boolean };
+type StoreStatus = {
+  backend: "supabase" | "kv" | "file" | "memory";
+  works: number;
+  persisted: boolean;
+};
 
 function StoreStatusBadge({ status }: { status: StoreStatus | undefined }) {
   if (!status) return null;
+  if (status.backend === "supabase") {
+    return (
+      <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
+        <span className="size-1.5 rounded-full bg-emerald-400" />
+        Saving to Supabase (Postgres) + KV mirror
+      </p>
+    );
+  }
   if (status.backend === "kv") {
     return (
       <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
@@ -57,7 +69,7 @@ function StoreStatusBadge({ status }: { status: StoreStatus | undefined }) {
   return (
     <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-400">
       <span className="size-1.5 animate-pulse rounded-full bg-red-400" />
-      NOT SAVING — memory only, changes will be lost. Configure the STORE KV binding.
+      NOT SAVING — memory only, changes will be lost. Configure Supabase or the STORE KV binding.
     </p>
   );
 }

@@ -19,6 +19,8 @@ import { Route as SecurityRouteImport } from './routes/security'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as ApiBotHeartbeatRouteImport } from './routes/api/bot-heartbeat'
+import { Route as ApiDiscordIngestRouteImport } from './routes/api/discord-ingest'
 import { Route as ServicesIndexRouteImport } from './routes/services.index'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
 import { Route as UploadsIdRouteImport } from './routes/uploads.$id'
@@ -74,6 +76,16 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiBotHeartbeatRoute = ApiBotHeartbeatRouteImport.update({
+  id: '/api/bot-heartbeat',
+  path: '/api/bot-heartbeat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDiscordIngestRoute = ApiDiscordIngestRouteImport.update({
+  id: '/api/discord-ingest',
+  path: '/api/discord-ingest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ServicesIndexRoute = ServicesIndexRouteImport.update({
   id: '/services/',
   path: '/services/',
@@ -110,6 +122,8 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/api/bot-heartbeat': typeof ApiBotHeartbeatRoute
+  '/api/discord-ingest': typeof ApiDiscordIngestRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/uploads/$id': typeof UploadsIdRoute
   '/work/$slug': typeof WorkSlugRoute
@@ -126,6 +140,8 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/api/bot-heartbeat': typeof ApiBotHeartbeatRoute
+  '/api/discord-ingest': typeof ApiDiscordIngestRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/uploads/$id': typeof UploadsIdRoute
   '/work/$slug': typeof WorkSlugRoute
@@ -144,6 +160,8 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/api/bot-heartbeat': typeof ApiBotHeartbeatRoute
+  '/api/discord-ingest': typeof ApiDiscordIngestRoute
   '/services/$slug': typeof ServicesSlugRoute
   '/uploads/$id': typeof UploadsIdRoute
   '/work/$slug': typeof WorkSlugRoute
@@ -162,6 +180,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/admin'
+    | '/api/bot-heartbeat'
+    | '/api/discord-ingest'
     | '/services/$slug'
     | '/uploads/$id'
     | '/work/$slug'
@@ -178,6 +198,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/admin'
+    | '/api/bot-heartbeat'
+    | '/api/discord-ingest'
     | '/services/$slug'
     | '/uploads/$id'
     | '/work/$slug'
@@ -195,6 +217,8 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/_authenticated/admin'
+    | '/api/bot-heartbeat'
+    | '/api/discord-ingest'
     | '/services/$slug'
     | '/uploads/$id'
     | '/work/$slug'
@@ -212,6 +236,8 @@ export interface RootRouteChildren {
   SecurityRoute: typeof SecurityRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
+  ApiBotHeartbeatRoute: typeof ApiBotHeartbeatRoute
+  ApiDiscordIngestRoute: typeof ApiDiscordIngestRoute
   ServicesSlugRoute: typeof ServicesSlugRoute
   UploadsIdRoute: typeof UploadsIdRoute
   WorkSlugRoute: typeof WorkSlugRoute
@@ -291,6 +317,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/bot-heartbeat': {
+      id: '/api/bot-heartbeat'
+      path: '/api/bot-heartbeat'
+      fullPath: '/api/bot-heartbeat'
+      preLoaderRoute: typeof ApiBotHeartbeatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/discord-ingest': {
+      id: '/api/discord-ingest'
+      path: '/api/discord-ingest'
+      fullPath: '/api/discord-ingest'
+      preLoaderRoute: typeof ApiDiscordIngestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/services/': {
       id: '/services/'
       path: '/services'
@@ -350,6 +390,8 @@ const rootRouteChildren: RootRouteChildren = {
   SecurityRoute: SecurityRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
+  ApiBotHeartbeatRoute: ApiBotHeartbeatRoute,
+  ApiDiscordIngestRoute: ApiDiscordIngestRoute,
   ServicesSlugRoute: ServicesSlugRoute,
   UploadsIdRoute: UploadsIdRoute,
   WorkSlugRoute: WorkSlugRoute,

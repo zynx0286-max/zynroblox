@@ -3,7 +3,16 @@ import { SITE_URL } from "@/data/works";
 import { USE_CASES } from "@/data/services";
 import { getPublicWorks } from "@/lib/public-data";
 
-const staticPaths = ["/", "/work", "/services", "/pricing", "/reviews", "/privacy", "/terms", "/security"];
+const staticPaths = [
+  "/",
+  "/work",
+  "/services",
+  "/pricing",
+  "/reviews",
+  "/privacy",
+  "/terms",
+  "/security",
+];
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
