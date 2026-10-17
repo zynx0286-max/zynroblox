@@ -15,6 +15,7 @@
     "bot:pack": "node bot/pack.mjs",
     "test": "node --test src/lib/*.test.ts bot/*.test.mjs",
     "test:smoke": "node scripts/test-ingest.mjs",
+    "test:liveness": "node scripts/test-liveness-smoke.mjs",
     "lint": "eslint .",
     "format": "prettier --write ."
   },

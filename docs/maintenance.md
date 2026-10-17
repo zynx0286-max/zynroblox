@@ -178,6 +178,53 @@ pings fine but reports repeated reconnects or failed DM replies) get their own
 transition above; the weekly digest and `npm run bot:doctor` also carry the
 current status so the information survives between alerts
 
+### Proving the alerts fire locally
+
+The state machine is fully unit-tested (`src/lib/bot-liveness.test.ts`), but
+that can't prove the DM half — the Discord API, the bot token and the notify
+wiring live outside the tests. To prove the _real_ cron task fires a _real_ DM
+without waiting for the bot to actually die:
+
+```bash
+node scripts/test-liveness-smoke.mjs               # read-only: current heartbeat + liveness state
+node scripts/test-liveness-smoke.mjs --tick-down   # stage the down→alert→recovery cycle end-to-end
+```
+
+`--tick-down` does exactly what the hourly cron does, on demand:
+
+1. patches the built worker so `POST /__scheduled?cron=29+*+*+*+*` runs the
+   real `runCronTasks` path (guarded by `NITRO_TEST_SCHEDULED=1`; the patch and
+   the route both vanish on the next `npm run build`),
+2. runs `wrangler dev` against the same config the deploy ships,
+3. stages a stale heartbeat in `zyn-bot-heartbeat-v1` (CAS write), reflecting
+   the original value right after,
+4. runs one tick → expects `[liveness] alert-down sent=true` in the log and a
+   🚨 DM; restores the fresh heartbeat and runs a second tick → expects the ✅
+   recovery DM,
+5. tears everything down: dev server stopped, generated `.dev.vars` removed,
+   heartbeat and liveness `flaps` counter restored so a smoke can never chain
+   into a false crash-loop page.
+
+Things that must be true for `--tick-down` to work:
+
+- **Secrets in `.env.local` / `.env`** — the smoke builds (and deletes) the
+  dev server's secret file from whatever it finds there. Production Workers
+  secrets alone are not readable locally, so they can't be used. Never commit
+  them either way.
+- **GOTCHA: `.dev.vars` placement.** `wrangler dev` looks for `.dev.vars`
+  **next to the `--config` file** (`.output/server/wrangler.json`), not in the
+  repo root. A repo-root copy leaves every secret empty and the run ends with
+  `[notify][probe] no token` / `sent=false` — this cost a debugging session
+  once, which is why the script handles it.
+- **Cooldowns are honored.** If a recent blackouts is already inside the 6h
+  flap window, repeated smokes just increment the (restored) flap counter —
+  they cannot page a fake crash-loop. A smoke while the bot is genuinely down
+  refuses to run: a real alert is already due and the state belongs to it.
+
+Verified end-to-end (2026-10): the down alert (`1561045105509531698`, “🚨
+Hosted bot is DOWN”) and the recovery (`1561062482720596149`, “✅ Bot is back
+online”) both landed as real DMs through the real cron task path.
+
 ### The bot going dark
 
 If the bot process dies (host restart, crash, gateway stall), DMs to it go
