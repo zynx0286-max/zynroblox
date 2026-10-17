@@ -216,7 +216,7 @@ Things that must be true for `--tick-down` to work:
   repo root. A repo-root copy leaves every secret empty and the run ends with
   `[notify][probe] no token` / `sent=false` — this cost a debugging session
   once, which is why the script handles it.
-- **Cooldowns are honored.** If a recent blackouts is already inside the 6h
+- **Cooldowns are honored.** If a recent blackout is already inside the 6h
   flap window, repeated smokes just increment the (restored) flap counter —
   they cannot page a fake crash-loop. A smoke while the bot is genuinely down
   refuses to run: a real alert is already due and the state belongs to it.
