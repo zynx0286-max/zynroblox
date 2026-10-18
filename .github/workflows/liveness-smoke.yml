@@ -1,0 +1,105 @@
+# Liveness-alert smoke on a GitHub-hosted runner — the alert-proofing pipeline
+# without anyone's laptop.
+#
+# WHAT THIS RUNS
+#   scripts/test-liveness-smoke.mjs: builds the Worker exactly the way a deploy
+#   ships it (`npm run build`), then drives the REAL cron task
+#   (`portfolio:bot-liveness`) through the test-only /__scheduled route under
+#   an ephemeral `wrangler dev` — that local dev server on the runner IS the
+#   staging deployment. It stages realistic heartbeats / degradation telemetry
+#   in the store over CAS, asserts the `[liveness] … sent=true` lines while
+#   REAL DMs go out to the owner, and restores everything in teardown.
+#   scripts/kill-smoke-orphans.mjs sweeps the dev-server ports afterwards
+#   (it also runs inside the smoke's own teardown — this step makes the
+#   guarantee visible and covers a failed run mid-way).
+#
+# It reads/writes the PRODUCTION store rows (staged, then restored — the same
+# behavior every laptop run had) and sends real DMs; that is the whole point:
+# proving the exact pipeline the owner's DMs depend on.
+#
+# REQUIRED REPO SECRETS (same values as .env.local — add via Repo → Settings →
+# Secrets and variables → Actions; never commit them):
+#   SUPABASE_URL
+#   SUPABASE_SERVICE_KEY
+#   DISCORD_BOT_TOKEN
+#   DISCORD_ANNOUNCE_WEBHOOK_URL   (optional; only proves the webhook transport)
+#
+# SAFETY: the smoke refuses to run when the state belongs to a real incident
+# (heartbeat stale, watch side=down, flap counter near the page threshold, a
+# degraded note still owed) — so a scheduled run fails LOUD (red ✗) exactly
+# when a real outage is in progress. Read that as "the proof pipeline is
+# blocked", not as a second problem: the watch itself is already paging by DM.
+# Every row the smoke touches is restored field-for-field in teardown, whether
+# the run passes or fails.
+#
+# NOTE: scheduled workflows only fire from the default branch, and GitHub's
+# scheduler drifts up to ~30 minutes — the cron deliberately sits at :43,
+# avoiding the real hourly watch tick at :29, with plenty of margin.
+
+name: Liveness smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Which staged cycle to run
+        type: choice
+        default: tick-down
+        options:
+          - tick-down # stale heartbeat → 🚨 down DM → ✅ recovery DM
+          - simulate-degraded # struggling telemetry → ⚠️ DM → 💤 DM → 🔁 crash-loop DM
+          - report # read-only status report, no DMs
+  schedule:
+    # Mondays 03:43 UTC — before the workday; :43 stays clear of the real
+    # hourly watch tick at :29 so staged state can never race it.
+    - cron: "43 3 * * 1"
+
+# Never let two runs stage the shared store rows at once. Queue rather than
+# cancel: an in-flight run killed mid-cycle can skip its teardown.
+concurrency:
+  group: liveness-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: Liveness smoke (staging via wrangler dev)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # The smoke's secret loader checks process.env first, so the runner needs
+    # no .env file — secrets arrive directly as env vars. Values are never
+    # printed by the script.
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+      DISCORD_ANNOUNCE_WEBHOOK_URL: ${{ secrets.DISCORD_ANNOUNCE_WEBHOOK_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 24 matches CI and the local toolchain: `npm test` imports .ts files,
+      # and the smoke needs the same runtime.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the deployable Worker
+        run: npm run build
+
+      - name: Run the liveness smoke
+        run: |
+          MODE="${{ inputs.mode }}"
+          [ -z "$MODE" ] && MODE="tick-down"   # scheduled runs have no inputs
+          node scripts/test-liveness-smoke.mjs "$MODE"
+
+      # Also part of the smoke's teardown; standalone here it guarantees the
+      # port is free even if an earlier step left something listening, and
+      # keeps the orphan cleaner itself covered by CI.
+      - name: Sweep wrangler orphans
+        if: always()
+        run: node scripts/kill-smoke-orphans.mjs
