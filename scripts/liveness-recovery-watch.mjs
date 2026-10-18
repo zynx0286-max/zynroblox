@@ -19,12 +19,28 @@
 // Read-only while waiting; the command it runs owns its own staging/restore.
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { HEARTBEAT_KEY, LIVENESS_STATE_KEY, readAuxRow } from "./lib/supabase-aux.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+// The watcher owns its own log: on Windows, Node BUFFERS stdout that is
+// redirected to a file, so poll lines piped through Start-Process would sit
+// in an unflushed buffer for hours and the watch would look dead while
+// perfectly alive. appendFileSync per line is synchronous and visible live.
+const LOG_PATH = path.join(ROOT, ".liveness-watch.log");
+
+/** Console for interactive runs, plus an immediate append for detached ones. */
+function logLine(msg) {
+  console.log(msg);
+  try {
+    appendFileSync(LOG_PATH, `${msg}\n`, "utf8");
+  } catch {
+    // logging must never break the watch
+  }
+}
 
 // Mirrors the smoke's refusal boundaries (kept in sync there): a fresh-but-degraded
 // bot or a flap counter at the page threshold must NOT hand the smoke a fight
@@ -67,8 +83,33 @@ if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(cfg.url) || !cfg.serviceKey) {
   process.exit(2);
 }
 
+// Single instance: two concurrent watchers would both see the same recovery
+// and fire the staged DMs twice. The lock records our pid; a leftover lock
+// from a dead watcher is stolen after checking the pid is really gone.
+const LOCK_PATH = path.join(ROOT, ".liveness-watch.lock");
+let existingPid = null;
+try {
+  existingPid = Number(readFileSync(LOCK_PATH, "utf8").trim());
+} catch {
+  // no lock yet
+}
+if (existingPid && existingPid > 0) {
+  try {
+    process.kill(existingPid, 0);
+    console.error(`✖ a recovery watcher is already running (pid ${existingPid}) — exiting`);
+    process.exit(0);
+  } catch {
+    // the pid is dead — stale lock, steal it below
+  }
+}
+writeFileSync(LOCK_PATH, String(process.pid), "utf8");
+
 const ts = (ms) => new Date(ms).toISOString().replace("T", " ").slice(11, 19) + "Z";
 const startedAt = Date.now();
+
+logLine(
+  `[watch] ${ts(Date.now())} recovery watcher started (pid ${process.pid}, then: ${THEN.join(" ") || "(none)"})`,
+);
 
 async function state() {
   const hb = await readAuxRow(cfg, HEARTBEAT_KEY).catch(() => null);
@@ -89,7 +130,7 @@ while (Date.now() - startedAt < TIMEOUT_MS) {
   const fresh = ageMin !== null && ageMin < DOWN_AFTER_MS / 60_000;
 
   // One status line per poll — keeps the log diagnosable even when idle.
-  console.log(
+  logLine(
     `[watch] ${ts(Date.now())} heartbeat ${fresh ? `fresh (${Math.round(ageMin)} min)` : ageMin === null ? "no row" : `stale (${Math.round(ageMin)} min)`}, watch side=${lv?.side ?? "none"}, resets/DMerrs=${reconnects}/${dmErrors}`,
   );
 
@@ -102,21 +143,35 @@ while (Date.now() - startedAt < TIMEOUT_MS) {
     (dmErrors ?? 0) === 0;
 
   if (ready) {
-    console.log(
+    logLine(
       `[watch] ${ts(Date.now())} heartbeat fresh (${Math.round(ageMin)} min), watch side=fresh — running the smoke`,
     );
+    // Capture and relay through the log: detached runs carry no inheritable
+    // stdout, and this way the smoke's evidence lives in the same file the
+    // watcher's poll lines occupy.
     let exit = 1;
     try {
-      execFileSync(process.execPath, ["scripts/test-liveness-smoke.mjs", ...THEN], {
+      const out = execFileSync(process.execPath, ["scripts/test-liveness-smoke.mjs", ...THEN], {
         cwd: ROOT,
-        stdio: "inherit",
+        encoding: "utf8",
         timeout: 15 * 60_000,
       });
+      for (const line of (out ?? "").trimEnd().split("\n").filter(Boolean)) logLine(`  ${line}`);
       exit = 0;
     } catch (err) {
       exit = typeof err.status === "number" ? err.status : 1;
+      for (const line of String(err.stdout ?? "")
+        .trimEnd()
+        .split("\n")
+        .filter(Boolean))
+        logLine(`  ${line}`);
+      for (const line of String(err.stderr ?? "")
+        .trimEnd()
+        .split("\n")
+        .filter(Boolean))
+        logLine(`  ✖ ${line}`);
     }
-    console.log(`[watch] ${ts(Date.now())} smoke finished with exit ${exit}`);
+    logLine(`[watch] ${ts(Date.now())} smoke finished with exit ${exit}`);
     process.exit(exit);
   }
 
@@ -124,7 +179,7 @@ while (Date.now() - startedAt < TIMEOUT_MS) {
   // pinging again (fresh) but the watch still says down after 90+ min, the
   // hourly cron is not doing its job — worth a look, not another blind wait.
   if (fresh === true && lv?.side === "down" && lv?.at && Date.now() - lv.at > 90 * 60_000) {
-    console.log(
+    logLine(
       `[watch] ${ts(Date.now())} heartbeat is fresh but the watch stayed down since ${ts(lv.at)} — the hourly cron may be stuck; not running anything.`,
     );
     process.exit(3);
@@ -133,7 +188,7 @@ while (Date.now() - startedAt < TIMEOUT_MS) {
   await new Promise((r) => setTimeout(r, POLL_MS));
 }
 
-console.log(
+logLine(
   `[watch] ${ts(Date.now())} gave up after ${TIMEOUT_MS / 3600_000}h — heartbeat never recovered (still ${ageMin === null ? "no row" : `${Math.round(ageMin)} min stale`}).`,
 );
 process.exit(4);

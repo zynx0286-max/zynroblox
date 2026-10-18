@@ -33,6 +33,10 @@ data/
 .wrangler/
 .dev.vars
 
+# Recovery watcher runtime state (its .log variants are covered by *.log above)
+.liveness-watch.lock
+.liveness-watch.pid
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
