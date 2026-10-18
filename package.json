@@ -13,7 +13,7 @@
     "bot": "node bot/index.mjs",
     "bot:doctor": "node bot/doctor.mjs",
     "bot:pack": "node bot/pack.mjs",
-    "test": "node --test src/lib/*.test.ts bot/*.test.mjs",
+    "test": "node --test src/lib/*.test.ts bot/*.test.mjs scripts/lib/*.test.mjs",
     "test:smoke": "node scripts/test-ingest.mjs",
     "test:liveness": "node scripts/test-liveness-smoke.mjs",
     "lint": "eslint .",

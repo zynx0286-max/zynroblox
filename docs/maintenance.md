@@ -186,8 +186,9 @@ wiring live outside the tests. To prove the _real_ cron task fires a _real_ DM
 without waiting for the bot to actually die:
 
 ```bash
-node scripts/test-liveness-smoke.mjs               # read-only: current heartbeat + liveness state
-node scripts/test-liveness-smoke.mjs --tick-down   # stage the down→alert→recovery cycle end-to-end
+node scripts/test-liveness-smoke.mjs                # read-only: current heartbeat + liveness state
+node scripts/test-liveness-smoke.mjs --tick-down    # stage the down→alert→recovery cycle end-to-end
+node scripts/test-liveness-smoke.mjs --simulate-degraded   # degraded → settle → crash-loop, end-to-end
 ```
 
 `--tick-down` does exactly what the hourly cron does, on demand:
@@ -204,6 +205,22 @@ node scripts/test-liveness-smoke.mjs --tick-down   # stage the down→alert→re
 5. tears everything down: dev server stopped, generated `.dev.vars` removed,
    heartbeat and liveness `flaps` counter restored so a smoke can never chain
    into a false crash-loop page.
+
+Both modes (and `npm run bot:doctor`) also self-heal one artifact of earlier
+simulations: a heartbeat row whose `status` still says `down-sim` (row merges
+keep the label around until the bot's gateway re-reports one). The repair
+drops only that label — the last-seen time and the watch state are never
+touched by the report, so a genuinely stale heartbeat still reads STALE.
+
+`--simulate-degraded` stages telemetry instead of staleness, so the
+non-outage alerts get the same end-to-end proof: a fresh heartbeat with
+`reconnects: 4, dmErrors: 2` → the yellow ⚠️ "up but struggling" DM; the
+original clean heartbeat restored → the "it settled down" DM; then the watch
+state staged with `flaps: 3` and a ~45-min "dark" window → the one red 🔁
+crash-loop page that replaces suppressed recovery drips. It refuses to run
+when reality owns the state (heartbeat stale, gateway genuinely degraded,
+liveness side=down, a degraded note still owed, or flaps at the page
+threshold).
 
 Things that must be true for `--tick-down` to work:
 
@@ -224,6 +241,31 @@ Things that must be true for `--tick-down` to work:
 Verified end-to-end (2026-10): the down alert (`1561045105509531698`, “🚨
 Hosted bot is DOWN”) and the recovery (`1561062482720596149`, “✅ Bot is back
 online”) both landed as real DMs through the real cron task path.
+
+### Running the smoke from CI
+
+The same proof runs on a GitHub-hosted runner — no laptop required. The
+workflow lives in `.github/workflows/liveness-smoke.yml`:
+
+- **`workflow_dispatch`** (Actions → Liveness smoke → Run workflow) with a
+  mode dropdown: `tick-down`, `simulate-degraded`, or a read-only `report`.
+- **Scheduled**: Mondays 03:43 UTC. The `:43` minute deliberately avoids the
+  real hourly watch tick at `:29`, and the runner's ephemeral `wrangler dev`
+  server _is_ the staging deployment the smoke drives.
+
+Before it will run, add the same secrets `.env.local` holds to the repo
+(Settings → Secrets and variables → Actions): `SUPABASE_URL`,
+`DISCORD_BOT_TOKEN`, `DISCORD_ANNOUNCE_WEBHOOK_URL` (optional), and
+`SUPABASE_SERVICE_KEY` — the same service key and token, never committed.
+
+Scheduled runs fail **loud** when the state belongs to a real outage (the
+smoke refuses to touch it) — treat such a red run as confirmation that the
+watch already has a real incident in hand, not as a second problem. The
+orphan cleaner runs a standalone step on every run (`if: always()`), and
+since CI is Linux it got a portable Linux half in
+`scripts/kill-smoke-orphans.mjs` (`ss` for listeners, a `/proc` parent walk,
+SIGKILL on the whole subtree — SIGTERM would just lose wrangler's supervisor
+respawn race).
 
 ### The bot going dark
 
