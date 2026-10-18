@@ -1,5 +1,7 @@
-// Preflight checks for the Discord DM bot. Read-only: nothing is stored,
-// nothing is sent to Discord beyond two authenticated "who am I" reads.
+// Preflight checks for the Discord DM bot. Read-only except for one deliberate
+// write: a leftover simulation status label ("down-sim"-style) on the remote
+// heartbeat row is dropped (check 6). Nothing else is stored, nothing is sent
+// to Discord beyond two authenticated "who am I" reads.
 //
 //   node bot/doctor.mjs
 //
@@ -17,6 +19,13 @@
 //                               DISCORD_BOT_SECRET disagrees between the two
 //                               sides, so you learn it NOW, not via "bot
 //                               replies ❌ 401" weeks later.
+//   5. Bot last seen (remote)   GET /api/bot-heartbeat — the running bot pings
+//                               the Worker every 5 min; staleness names a dead
+//                               bot between "crash-free" and "answering DMs".
+//   6. Simulation-label cleanup drops a leftover "down-sim" heartbeat status
+//                               (the merged residue of earlier liveness
+//                               simulations). Needs SUPABASE_URL +
+//                               SUPABASE_SERVICE_KEY in the same env files.
 //
 // Exit 0 = all clear (the bot will run and ingest will accept it). Any other
 // exit code: the printed ✗ line says exactly what to fix.
@@ -25,6 +34,12 @@ import { readFileSync } from "node:fs";
 import { createHmac } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import {
+  HEARTBEAT_KEY,
+  casWriteAuxRow,
+  isSimulationStatus,
+  readAuxRow,
+} from "../scripts/lib/supabase-aux.mjs";
 
 // bot/doctor.mjs → project root. fileURLToPath, not URL.pathname: on Windows
 // a file: URL pathname is "/C:/Users/…" — readFileSync turns it into
@@ -226,6 +241,41 @@ async function main() {
     }
   } catch (error) {
     fail("Bot last seen (remote)", `${SITE} unreachable: ${error.message}`);
+  }
+
+  // 6. Clear leftover simulation status labels (best-effort) -------------------
+  // Earlier down→alert→recovery simulations wrote a heartbeat status like
+  // "down-sim"; because each ping MERGES over the stored fields, the label
+  // sticks until the bot's own gateway reports a status, and every report
+  // (this doctor, the smoke, the /api/bot-heartbeat readout) keeps saying
+  // "down-sim" on an otherwise healthy row. Doctor is read-only by contract
+  // — this single write is the deliberate exception: it drops ONLY the label
+  // (never lastSeenAt, never the liveness row), the bot's next ping rewrites
+  // the real status, and a conflict is reported, not retried.
+  const SUPABASE_URL = (process.env.SUPABASE_URL ?? "").replace(/\/+$/, "");
+  const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY ?? "";
+  if (/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL) && SUPABASE_SERVICE_KEY) {
+    try {
+      const cfg = { url: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_KEY };
+      const hb = await readAuxRow(cfg, HEARTBEAT_KEY);
+      if (hb?.doc && isSimulationStatus(hb.doc.status)) {
+        const { status: _dropped, ...cleaned } = hb.doc;
+        const applied = await casWriteAuxRow(cfg, HEARTBEAT_KEY, cleaned, hb.version);
+        if (applied) {
+          ok(
+            "Heartbeat status label",
+            `cleared leftover simulation label "${hb.doc.status}" — the bot's next ping rewrites the real one`,
+          );
+        } else {
+          console.log(
+            `- Heartbeat status label — simulation residue "${hb.doc.status}" is still there (write conflicted; rerun to retry)`,
+          );
+        }
+      }
+    } catch (error) {
+      // Best-effort by contract: a failed cleanup never fails the doctor.
+      console.log(`- Heartbeat status label — cleanup skipped (${error.message})`);
+    }
   }
 
   console.log("");

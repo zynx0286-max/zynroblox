@@ -144,6 +144,15 @@ Degraded-but-alive (reconnects all day, DMs erroring) is a warning line, not
 a failure — a bot that reconnects constantly is about to be one that doesn't
 reconnect at all.
 
+One cleanup rides along: an earlier local simulation of the down→alert
+scenario once wrote a `down-sim`-style status label, and because each ping
+merges over the stored fields, that label stuck in every readout until the
+bot's own gateway re-reported. `npm run bot:doctor` (and
+`node scripts/test-liveness-smoke.mjs`) now detect any such simulation
+residue on the heartbeat row and clear it — touching only the label, never
+the last-seen time or the watch state, so a real outage is still reported
+as-is; the bot's next ping rewrites a genuine status.
+
 Staleness is reported, never acted on by the bot itself: the Worker runs an
 hourly watch (`portfolio:bot-liveness`) that DMs you exactly when the answer
 turns bad — one alert when the heartbeat goes stale, laddered re-alerts if the
