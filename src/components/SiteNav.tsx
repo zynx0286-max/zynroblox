@@ -5,12 +5,16 @@ import { RobloxMark } from "./RobloxMark";
 import { useContactSettings } from "./ContactSettingsProvider";
 import { track } from "@/lib/analytics";
 
-type NavLink = { label: string; to: "/" | "/work" | "/services" | "/pricing" | "/reviews" };
+type NavLink = {
+  label: string;
+  to: "/" | "/sfx" | "/work" | "/services" | "/pricing" | "/reviews";
+};
 
 // Top nav only lists standalone pages. The logo goes home, and About /
 // Testimonials / Contact live on the home page (linked from the footer and
 // from buttons on the home page itself).
 const links: NavLink[] = [
+  { label: "SFX Work", to: "/sfx" },
   { label: "Work", to: "/work" },
   { label: "Services", to: "/services" },
   { label: "Pricing", to: "/pricing" },
@@ -59,6 +63,7 @@ export function SiteNav() {
           {links.map((l, i) => {
             // Pill highlight only on the matching page — nowhere else.
             const isActive =
+              (l.to === "/sfx" && location.pathname.startsWith("/sfx")) ||
               (l.to === "/work" && location.pathname.startsWith("/work")) ||
               (l.to === "/services" && location.pathname.startsWith("/services")) ||
               (l.to === "/pricing" && location.pathname.startsWith("/pricing")) ||

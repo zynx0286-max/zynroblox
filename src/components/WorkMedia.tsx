@@ -1,7 +1,8 @@
-import { FileAudio, Film, Image as ImageIcon } from "lucide-react";
+import { Film, Image as ImageIcon } from "lucide-react";
 import type { WorkMedia as WorkMediaType } from "@/lib/site.functions";
+import { ProtectedAudio } from "@/components/ProtectedAudio";
+import { SfxProtectionNotice } from "@/components/SfxProtectionNotice";
 import { safeExternalUrl } from "@/lib/url";
-import { cn } from "@/lib/utils";
 
 export function WorkMedia({ media }: { media: WorkMediaType[] }) {
   if (media.length === 0) return null;
@@ -58,26 +59,11 @@ export function WorkMedia({ media }: { media: WorkMediaType[] }) {
 
       {audio.length ? (
         <div className="mt-8 space-y-3">
+          {/* Above the players on purpose: packs run to 100+ samples, so a
+              notice after the list would sit ~13,000px down and never be read. */}
+          <SfxProtectionNotice compact />
           {audio.map((m) => (
-            <div
-              key={m.id}
-              className="glass flex flex-col gap-2 rounded-2xl p-4 sm:flex-row sm:items-center"
-            >
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                  <FileAudio className="size-5" />
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate font-display text-sm font-semibold">
-                    {m.caption || "Audio clip"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">SFX / audio preview</p>
-                </div>
-              </div>
-              <audio controls preload="metadata" className={cn("h-11 w-full sm:w-72")} src={m.url}>
-                Your browser doesn&apos;t support audio.
-              </audio>
-            </div>
+            <ProtectedAudio key={m.id} media={m} />
           ))}
         </div>
       ) : null}

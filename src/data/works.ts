@@ -570,6 +570,52 @@ export const works: Work[] = [
     image: cleanYourAsmr,
     popularity: 190,
   },
+  // Thumbnail is hotlinked from Roblox's CDN (768×432 game thumbnail — it
+  // does expire/rotate; works-admin.mjs refresh-roblox-metadata refreshes it).
+  // Thumbnail is hotlinked from Roblox's CDN (768×432 game thumbnail — it
+  // does expire/rotate; works-admin.mjs refresh-roblox-metadata refreshes it).
+  {
+    slug: "arcadia",
+    title: "[🚀] Arcadia [BETA]",
+    category: "QA Testing",
+    role: "QA Tester",
+    description:
+      "QA tester for Arcadia — an open-beta sci-fi game by Leviathan.Studios. Tested shop/reward flows and progression systems through the beta, with bug reports and feedback to the community.",
+    tags: ["Beta QA", "Gameplay Testing"],
+    href: "https://www.roblox.com/games/99999125865963/Arcadia",
+    linkLabel: "View on Roblox",
+    image:
+      "https://tr.rbxcdn.com/180DAY-dac1fbdb7560b5b9b8f92d824d6c9fa5/768/432/Image/Png/noFilter",
+    popularity: 85,
+  },
+  {
+    slug: "dead-channel",
+    title: "Dead Channel [PROLOGUE]",
+    category: "QA Testing",
+    role: "QA Tester",
+    description:
+      "QA tester for Dead Channel — an FNAF-style analog horror game by CarterLegacy set in 1987 Halloway, Pennsylvania. Tested radio-tune interactions, night loops and jumpscare timing.",
+    tags: ["Horror QA", "Gameplay Testing"],
+    href: "https://www.roblox.com/games/129923153010783/Dead-Channel",
+    linkLabel: "View on Roblox",
+    image:
+      "https://tr.rbxcdn.com/180DAY-980ef4b4b4639b6cfe29a484e537e847/768/432/GameMediaItem4/Png/noFilter",
+    popularity: 90,
+  },
+  {
+    slug: "egg-heist",
+    title: "Egg Heist! 🥚 Steal Eggs & Escape the Boss",
+    category: "QA Testing",
+    role: "QA Tester",
+    description:
+      "QA tester for Egg Heist — a zone-stealing simulator by SkayzJR. Tested steal/hatch loops, pet income and speed progression, rebirths and boss chase rounds.",
+    tags: ["Gameplay Testing", "Progression QA"],
+    href: "https://www.roblox.com/games/101592269681422/Egg-Heist-Steal-Eggs-Escape-the-Boss",
+    linkLabel: "View on Roblox",
+    image:
+      "https://tr.rbxcdn.com/180DAY-ec7ef34b22f87f061a0372962a8529c0/768/432/Image/Png/noFilter",
+    popularity: 95,
+  },
   {
     slug: "amazark-client-acquisition",
     title: "Amazark Corporation",
@@ -608,6 +654,91 @@ export const works: Work[] = [
     linkLabel: "Join Discord",
     image: animeChroniclesIcon,
     popularity: 40,
+  },
+
+  // ---------- SFX showcase packs ----------
+  // The audio samples for these live in the self-hosted store as /uploads blobs
+  // (scripts/sfx-import.mjs); this catalog entry only guarantees the work page
+  // exists even if the store is ever reseeded.
+  {
+    slug: "sfx-weapons-guns",
+    title: "Weapons & Guns SFX",
+    category: "SFX / Audio",
+    role: "SFX Artist",
+    description:
+      "Original weapons pack — AKS-74U, AK-47, shotgun, sniper, pistol and magnum. Rifle fire, reloads and magazine handling built layered for punchy, game-ready delivery.",
+    tags: ["SFX Pack", "Weapons", "6 Samples"],
+    popularity: 60,
+  },
+  {
+    slug: "sfx-combat-impacts",
+    title: "Combat & Impact SFX",
+    category: "SFX / Audio",
+    role: "SFX Artist",
+    description:
+      "Combat impact pack — explosions, grenade hits, heavy punches, bone cracks, forcefield hits and axe swings. Layered for satisfying hit feedback in any weapon or melee loop.",
+    tags: ["SFX Pack", "Impacts", "6 Samples"],
+    popularity: 55,
+  },
+  {
+    slug: "sfx-ui-notifications",
+    title: "UI & Notification SFX",
+    category: "SFX / Audio",
+    role: "SFX Artist",
+    description:
+      "UI and notification pack — button clicks, confirms, errors, money pickups and big-win stingers. Designed to keep menus responsive without getting grating over long sessions.",
+    tags: ["SFX Pack", "UI Audio", "5 Samples"],
+    popularity: 50,
+  },
+  {
+    slug: "sfx-ambience",
+    title: "Ambience & Background SFX",
+    category: "SFX / Audio",
+    role: "SFX Artist",
+    description:
+      "Ambience pack — room beds, city street loops, lobby hum, fire crackle and quiet loading loops. Seams loop cleanly so maps stay alive without noticeable repetition.",
+    tags: ["SFX Pack", "Ambience", "5 Samples"],
+    popularity: 45,
+  },
+  {
+    slug: "sfx-abilities",
+    title: "Ability & Magic SFX",
+    category: "SFX / Audio",
+    role: "SFX Artist",
+    description:
+      "Ability and magic pack — casts, lasers, portal loops, teleports and power-ups. Pitch-stacked with whoosh tails so every skill activation reads instantly.",
+    tags: ["SFX Pack", "Abilities", "5 Samples"],
+    popularity: 40,
+  },
+  {
+    slug: "sfx-movement",
+    title: "Movement & Footsteps SFX",
+    category: "SFX / Audio",
+    role: "SFX Artist",
+    description:
+      "Movement pack — jumps, hover-tank engines and surface-matched footsteps on carpet, grass and foley. Built to randomize cleanly so footsteps never sound machine-gunned.",
+    tags: ["SFX Pack", "Movement", "6 Samples"],
+    popularity: 35,
+  },
+  {
+    slug: "sfx-music-stingers",
+    title: "Music & Stingers SFX",
+    category: "SFX / Audio",
+    role: "SFX Artist",
+    description:
+      "Music and stinger pack — intro jingles, boss themes, victory stingers and hoax intros. Short-form music cuts timed to hit clean on round starts and wins.",
+    tags: ["SFX Pack", "Stingers", "5 Samples"],
+    popularity: 30,
+  },
+  {
+    slug: "sfx-creatures",
+    title: "Creature Voices SFX",
+    category: "SFX / Audio",
+    role: "SFX Artist",
+    description:
+      'Creature voice pack — screams, voice lines and taunts including the iconic "you always come back screaming". Processed for character without losing intelligibility.',
+    tags: ["SFX Pack", "Creatures", "6 Samples"],
+    popularity: 25,
   },
 ];
 

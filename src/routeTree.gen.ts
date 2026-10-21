@@ -16,6 +16,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as SecurityRouteImport } from './routes/security'
+import { Route as SfxRouteImport } from './routes/sfx'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -59,6 +60,11 @@ const ReviewsRoute = ReviewsRouteImport.update({
 const SecurityRoute = SecurityRouteImport.update({
   id: '/security',
   path: '/security',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SfxRoute = SfxRouteImport.update({
+  id: '/sfx',
+  path: '/sfx',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/reviews': typeof ReviewsRoute
   '/security': typeof SecurityRoute
+  '/sfx': typeof SfxRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reviews': typeof ReviewsRoute
   '/security': typeof SecurityRoute
+  '/sfx': typeof SfxRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/reviews': typeof ReviewsRoute
   '/security': typeof SecurityRoute
+  '/sfx': typeof SfxRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reviews'
     | '/security'
+    | '/sfx'
     | '/sitemap.xml'
     | '/terms'
     | '/admin'
@@ -195,6 +205,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reviews'
     | '/security'
+    | '/sfx'
     | '/sitemap.xml'
     | '/terms'
     | '/admin'
@@ -214,6 +225,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reviews'
     | '/security'
+    | '/sfx'
     | '/sitemap.xml'
     | '/terms'
     | '/_authenticated/admin'
@@ -234,6 +246,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ReviewsRoute: typeof ReviewsRoute
   SecurityRoute: typeof SecurityRoute
+  SfxRoute: typeof SfxRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   ApiBotHeartbeatRoute: typeof ApiBotHeartbeatRoute
@@ -294,6 +307,13 @@ declare module '@tanstack/react-router' {
       path: '/security'
       fullPath: '/security'
       preLoaderRoute: typeof SecurityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sfx': {
+      id: '/sfx'
+      path: '/sfx'
+      fullPath: '/sfx'
+      preLoaderRoute: typeof SfxRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -388,6 +408,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ReviewsRoute: ReviewsRoute,
   SecurityRoute: SecurityRoute,
+  SfxRoute: SfxRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   ApiBotHeartbeatRoute: ApiBotHeartbeatRoute,

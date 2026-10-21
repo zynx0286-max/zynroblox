@@ -23,7 +23,16 @@ export function SiteFooter() {
   );
 
   const pageLink = (
-    to: "/" | "/work" | "/services" | "/pricing" | "/reviews" | "/privacy" | "/terms" | "/security",
+    to:
+      | "/"
+      | "/sfx"
+      | "/work"
+      | "/services"
+      | "/pricing"
+      | "/reviews"
+      | "/privacy"
+      | "/terms"
+      | "/security",
     label: string,
   ) => (
     <Link
@@ -52,6 +61,7 @@ export function SiteFooter() {
         <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 font-display text-sm text-muted-foreground">
           {pageLink("/", "Home")}
           {sectionLink("about", "About")}
+          {pageLink("/sfx", "SFX Work")}
           {pageLink("/work", "Work")}
           {pageLink("/services", "Services")}
           {pageLink("/pricing", "Pricing")}

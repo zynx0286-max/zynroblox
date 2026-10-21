@@ -5,6 +5,7 @@ import { getPublicWorks } from "@/lib/public-data";
 
 const staticPaths = [
   "/",
+  "/sfx",
   "/work",
   "/services",
   "/pricing",

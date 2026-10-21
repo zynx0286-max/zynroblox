@@ -37,6 +37,10 @@ data/
 .liveness-watch.lock
 .liveness-watch.pid
 
+# SFX bulk import scratch (extracted zip files + progress log)
+.sfx-import-tmp/
+.sfx-import.log
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
