@@ -10,16 +10,28 @@ import { diffWorks, findDuplicateGroups, mergeWorks, preferredSurvivor } from "@
 import { fetchRobloxMetadata, placeIdOf, planRefresh } from "@/lib/roblox-refresh";
 import type { Work } from "@/data/works";
 import { safeExternalUrl } from "@/lib/url";
+import { isOwnerRequest } from "@/lib/request-owner";
+import { filterVisibleWorks, WORK_STATUSES, type WorkStatus } from "@/lib/work-visibility";
 
-export type DbWork = Work & { id: string; sortOrder: number };
+export type DbWork = Work & { id: string; sortOrder: number; status: WorkStatus };
 
 function sorted(works: DbWork[]): DbWork[] {
   return [...works].sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
-/** Public: every project, ordered for display. */
+/**
+ * Public: every project, ordered for display. Drafts are filtered out unless
+ * the caller is the signed-in owner, so the owner can preview an unfinished
+ * entry on the real page while visitors get a 404 for it.
+ *
+ * The same server function answers both cases: the owner cookie rides along on
+ * the loader's request (SSR and client navigation), and `filterVisibleWorks`
+ * decides. Anything that must be public no matter who asks (the sitemap) uses
+ * `getPublishedWorks` instead.
+ */
 export const listWorks = createServerFn({ method: "GET" }).handler(async (): Promise<DbWork[]> => {
-  return sorted((await loadStore()).works);
+  const works = sorted((await loadStore()).works);
+  return filterVisibleWorks(works, await isOwnerRequest());
 });
 
 // `z.string().url()` accepts `javascript:` URLs — every work link/image ends
@@ -45,6 +57,7 @@ export const workInput = z.object({
   linkLabel: z.string().max(60).default(""),
   imageUrl: httpsUrlOrEmpty,
   featured: z.boolean().default(false),
+  status: z.enum(WORK_STATUSES).default("published"),
   sortOrder: z.number().int().min(0).max(9999).default(0),
 });
 
@@ -67,6 +80,7 @@ function toWork(data: WorkInput, id: string): DbWork {
     ...(data.linkLabel ? { linkLabel: data.linkLabel } : {}),
     ...(image ? { image } : {}),
     featured: data.featured,
+    status: data.status,
     sortOrder: data.sortOrder,
   };
 }

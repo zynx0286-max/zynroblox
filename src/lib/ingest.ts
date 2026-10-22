@@ -397,6 +397,9 @@ async function ingestLink(
         linkLabel: link.kind === "roblox" ? "Play on Roblox" : "Join Discord",
         ...(meta.imageHref ? { image: meta.imageHref } : {}),
         featured: false,
+        // A link the owner deliberately sent the bot goes live; anything
+        // unfinished is marked draft by hand in the admin panel.
+        status: "published",
         sortOrder: nextSortOrder(store.works),
       };
       store.works.push(work);

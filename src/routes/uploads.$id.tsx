@@ -1,47 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getCookie } from "@tanstack/react-start/server";
 import { getUploadBlob } from "@/lib/store";
-import { COOKIE_NAME, verifySessionToken } from "@/lib/owner-session";
+import { hasOwnerSession } from "@/lib/request-owner";
+import { uploadAccess } from "@/lib/upload-access";
 
 // Serves self-hosted uploads by id: GET /uploads/<uuid>. Each upload lives in
 // its own storage key (KV on Workers, data/uploads/*.json locally), so this
-// route streams the stored bytes back as a normal static-looking URL. Browser
-// caching keeps repeat views cheap; only known-safe content types are served.
+// route streams the stored bytes back as a normal static-looking URL.
 //
-// Access gate: modern browsers send `Sec-Fetch-Dest` with every subresource.
-// In-page playback arrives as `audio`/`video`, images as `image`, and
-// same-origin fetches as `empty` — all allowed. A bare URL typed into the
-// address bar (`document`) or wrapped in someone else's iframe is the
-// "open in a tab → right-click → Save audio as…" flow, so those are turned
-// away — UNLESS the request carries a valid owner session. That exception is
-// what keeps the admin panel's own workflows intact: the owner can still open
-// an uploaded file directly to inspect it at full size, while the same URL in
-// an anonymous visitor's tab is refused.
+// Two gates, both skipped for a request carrying a valid owner session:
 //
-// "Private" admin media is only as private as its UUID: uploads are stored by
-// id and served by id with no per-file ACL, and the store has no draft state
-// (every work in it is public), so an upload that is not referenced anywhere
-// is still reachable by anyone who learns its URL. The `X-Robots-Tag: noindex`
-// below stops crawlers from indexing such URLs when they leak; anything that
-// must be truly private needs a reference check (media/work/testimonial rows)
-// rather than this gate.
+// 1. DRAFT STATE (upload-access.ts): a file is public only while something
+//    public references it — a published work's thumbnail or media, a
+//    testimonial avatar, a site setting. Files attached only to a DRAFT work,
+//    or not attached at all yet, answer 403 to anonymous visitors. Publishing
+//    the work is what makes them public; there is no per-file ACL to manage.
+//
+// 2. DIRECT-OPEN (Sec-Fetch-Dest): modern browsers send it with every
+//    subresource. In-page playback arrives as `audio`/`video`, images as
+//    `image`, same-origin fetches as `empty` — all allowed. A bare URL typed
+//    into the address bar (`document`) or wrapped in someone else's iframe is
+//    the "open in a tab → right-click → Save audio as…" flow, so those are
+//    turned away even for public files. The owner exception keeps the admin
+//    panel's own workflows intact: the owner can still open an upload directly
+//    to inspect it at full size.
 const BLOCKED_DESTS = new Set(["document", "iframe"]);
-
-/** True when the request already carries a signed owner session cookie. */
-async function isOwner(request: Request): Promise<boolean> {
-  const header = request.headers.get("cookie") ?? "";
-  const match = new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`).exec(header);
-  const token = match?.[1] ? decodeURIComponent(match[1]) : null;
-  if (token) return verifySessionToken(token);
-  // Some runtimes expose cookies through the framework instead of the raw
-  // header; fall back to it before declaring the visitor anonymous.
-  try {
-    const fallback = getCookie(COOKIE_NAME) ?? null;
-    return fallback ? await verifySessionToken(fallback) : false;
-  } catch {
-    return false;
-  }
-}
 
 /** The "protected" page shown to blocked direct-open attempts. */
 function protectedResponse(reason: string): Response {
@@ -51,9 +33,7 @@ function protectedResponse(reason: string): Response {
 .card{max-width:28rem;padding:2rem;text-align:center}
 h1{font-size:1.1rem;margin:0 0 .75rem}p{color:#9ca3af;font-size:.9rem;line-height:1.5;margin:0}</style></head>
 <body><div class="card"><h1>Protected preview</h1>
-<p>This sample belongs to ZYN and is streamed as a protected preview only.
-To use it in a project get in touch at the Work Archive — reusing without
-permission is a DMCA takedown and a Roblox asset-theft report.</p></div></body></html>`,
+<p>${reason === "draft" ? "This file belongs to a project that isn't public yet. Sign in to the admin panel to view it." : "This sample belongs to ZYN and is streamed as a protected preview only.\nTo use it in a project get in touch at the Work Archive — reusing without\npermission is a DMCA takedown and a Roblox asset-theft report."}</p></div></body></html>`,
     {
       status: 403,
       headers: {
@@ -71,17 +51,29 @@ export const Route = createFileRoute("/uploads/$id")({
   server: {
     handlers: {
       GET: async ({ request, params }: { request: Request; params: { id: string } }) => {
-        const dest = request.headers.get("sec-fetch-dest")?.toLowerCase() ?? "";
-        if (BLOCKED_DESTS.has(dest) && !(await isOwner(request))) {
-          console.warn(`[uploads] blocked ${dest} fetch for /uploads/${params.id}`);
-          return protectedResponse(dest);
-        }
-
         const clean = (params.id ?? "").replace(/[^a-zA-Z0-9-]/g, "");
         if (!clean) return new Response("Not found", { status: 404 });
 
+        // 404 before touching the store: unknown ids shouldn't pay for a lookup.
         const blob = await getUploadBlob(clean);
         if (!blob) return new Response("Not found", { status: 404 });
+
+        const dest = request.headers.get("sec-fetch-dest")?.toLowerCase() ?? "";
+        const owner = await hasOwnerSession(request);
+        const draftOnly = (await uploadAccess(clean)) === "owner";
+
+        if (!owner) {
+          if (draftOnly) {
+            console.warn(
+              `[uploads] blocked anonymous ${dest || "unknown"} fetch for draft ${clean}`,
+            );
+            return protectedResponse("draft");
+          }
+          if (BLOCKED_DESTS.has(dest)) {
+            console.warn(`[uploads] blocked ${dest} fetch for /uploads/${clean}`);
+            return protectedResponse(dest);
+          }
+        }
 
         const safeMime = /^(image|audio|video)\//.test(blob.mime)
           ? blob.mime
@@ -92,7 +84,11 @@ export const Route = createFileRoute("/uploads/$id")({
           headers: {
             "Content-Type": safeMime,
             "Content-Length": String(bytes.byteLength),
-            "Cache-Control": "public, max-age=31536000, immutable",
+            // A draft-only file must never be cached by a shared cache: the
+            // next request may be anonymous. Public files stay immutable.
+            "Cache-Control": draftOnly
+              ? "private, no-store"
+              : "public, max-age=31536000, immutable",
             // Keep the player's forward/rewind UI, not a download affordance.
             "Content-Disposition": "inline",
             "X-Content-Type-Options": "nosniff",

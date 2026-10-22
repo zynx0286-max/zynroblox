@@ -45,6 +45,9 @@ export const Route = createFileRoute("/work/$slug")({
         { property: "og:type", content: "article" },
         { property: "og:url", content: url },
         { name: "twitter:card", content: "summary_large_image" },
+        // A draft is only reachable with the owner's session, but keep it out
+        // of any index that might see it through a shared URL anyway.
+        ...(work.status === "draft" ? [{ name: "robots", content: "noindex, nofollow" }] : []),
         ...(image
           ? [
               { property: "og:image", content: image },

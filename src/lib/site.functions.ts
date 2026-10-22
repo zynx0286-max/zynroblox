@@ -3,6 +3,8 @@ import { z } from "zod";
 import { requireOwner } from "@/lib/require-owner";
 import { getStoreBackendStatus, loadStore, mutate } from "@/lib/store";
 import { safeExternalUrl } from "@/lib/url";
+import { isOwnerRequest } from "@/lib/request-owner";
+import { isDraft } from "@/lib/work-visibility";
 
 // ---------------------------------------------------------------------------
 // Testimonials
@@ -234,9 +236,20 @@ export type WorkMedia = {
   sortOrder: number;
 };
 
+/**
+ * Public: media attachments, ordered for display. Attachments of a draft work
+ * travel with it — hidden from visitors, visible to the signed-in owner — so a
+ * draft's audio/video can't be reached through a published page either.
+ */
 export const listWorkMedia = createServerFn({ method: "GET" }).handler(
   async (): Promise<WorkMedia[]> => {
-    return [...(await loadStore()).media].sort((a, b) => a.sortOrder - b.sortOrder);
+    const store = await loadStore();
+    const draftIds = new Set(store.works.filter(isDraft).map((w) => w.id));
+    // Skip the session check entirely when nothing is drafted.
+    const hide = draftIds.size > 0 && !(await isOwnerRequest()) ? draftIds : null;
+    return store.media
+      .filter((m) => !hide?.has(m.workId))
+      .sort((a, b) => a.sortOrder - b.sortOrder);
   },
 );
 

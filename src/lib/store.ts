@@ -9,6 +9,7 @@ import {
 } from "@/lib/store-cas";
 import type { StoreRow as StoreRowType } from "@/lib/store-cas";
 import { readSecret } from "@/lib/read-secret";
+import { normalizeWorkStatus } from "@/lib/work-visibility";
 import type { Work } from "@/data/works";
 import type { DbWork } from "@/lib/works.functions";
 import type { SettingsValue, Testimonial, WorkMedia } from "@/lib/site.functions";
@@ -82,6 +83,9 @@ function seed(): StoreShape {
           ...w,
           id: `work-${w.slug}`,
           sortOrder: i * 10,
+          // Catalog entries ship as published; drafts only ever come from the
+          // admin panel.
+          status: "published",
         }) as DbWork,
     ),
     testimonials: [],
@@ -608,16 +612,27 @@ function normalize(raw: StoreShape): StoreShape {
 }
 
 /**
+ * Rows written before drafts existed have no `status`. Coerce them (and any
+ * garbage value) to "published" so an upgrade never empties the portfolio.
+ * Applied on every load, so the field can't stay missing in memory.
+ */
+function withWorkStatus(work: DbWork): DbWork {
+  return { ...work, status: normalizeWorkStatus(work.status) };
+}
+
+/**
  * Unions persisted works with the static catalog by slug. Stored entries win
  * (so admin CMS edits are never clobbered), but new catalog entries added in
  * later deploys are appended instead of being invisible until the key is
  * wiped. Order follows the static catalog, admin-only extras go last.
  */
 function mergeStaticWorks(stored: DbWork[], seeded: DbWork[]): DbWork[] {
-  const bySlug = new Map(stored.map((w) => [w.slug, w]));
-  const merged = seeded.map((s) => bySlug.get(s.slug) ?? s);
-  const seededSlugs = new Set(seeded.map((s) => s.slug));
-  for (const w of stored) {
+  const storedWorks = stored.map(withWorkStatus);
+  const seededWorks = seeded.map(withWorkStatus);
+  const bySlug = new Map(storedWorks.map((w) => [w.slug, w]));
+  const merged = seededWorks.map((s) => bySlug.get(s.slug) ?? s);
+  const seededSlugs = new Set(seededWorks.map((s) => s.slug));
+  for (const w of storedWorks) {
     if (!seededSlugs.has(w.slug)) merged.push(w);
   }
   return merged;

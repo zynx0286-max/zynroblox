@@ -9,6 +9,7 @@ import {
 import { listReviews, type PublicReview } from "@/lib/reviews.functions";
 import { mergeSettings, DEFAULT_SETTINGS, type SiteSettings } from "@/lib/site-settings";
 import { works as staticWorks } from "@/data/works";
+import { isDraft } from "@/lib/work-visibility";
 
 async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   try {
@@ -35,7 +36,21 @@ export async function getPublicWorks(): Promise<DbWork[]> {
       return img && !w.image ? { ...w, image: img } : w;
     });
   }
-  return staticWorks.map((w, i) => ({ ...w, id: `static-${i}`, sortOrder: i }));
+  return staticWorks.map((w, i) => ({
+    ...w,
+    id: `static-${i}`,
+    sortOrder: i,
+    status: "published" as const,
+  }));
+}
+
+/**
+ * Works that are public no matter who asks — the sitemap's source of truth.
+ * `getPublicWorks` includes drafts for a signed-in owner (so they can preview
+ * them on the real pages), which must never reach a crawler-facing document.
+ */
+export async function getPublishedWorks(): Promise<DbWork[]> {
+  return (await getPublicWorks()).filter((w) => !isDraft(w));
 }
 
 export async function getPublicTestimonials(): Promise<Testimonial[]> {

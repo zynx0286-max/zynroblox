@@ -49,6 +49,7 @@ const empty: WorkInput = {
   linkLabel: "",
   imageUrl: "",
   featured: false,
+  status: "published",
   sortOrder: 0,
 };
 
@@ -63,6 +64,7 @@ const toInput = (w: DbWork): WorkInput => ({
   linkLabel: w.linkLabel ?? "",
   imageUrl: w.image ?? "",
   featured: Boolean(w.featured),
+  status: w.status,
   sortOrder: w.sortOrder,
 });
 
@@ -304,6 +306,25 @@ export function WorksAdmin() {
               </label>
             </div>
             <div>
+              <span className={label}>Visibility</span>
+              <select
+                className={field}
+                value={editing.values.status}
+                onChange={(e) =>
+                  setEditing({
+                    ...editing,
+                    values: {
+                      ...editing.values,
+                      status: e.target.value === "draft" ? "draft" : "published",
+                    },
+                  })
+                }
+              >
+                <option value="published">Published — visible to everyone</option>
+                <option value="draft">Draft — only visible while signed in</option>
+              </select>
+            </div>
+            <div>
               <span className={label}>Sort order</span>
               <input
                 type="number"
@@ -356,7 +377,14 @@ export function WorksAdmin() {
                 <div className="size-14 rounded-xl bg-secondary/50" />
               )}
               <div className="min-w-40 flex-1">
-                <p className="font-display text-sm font-semibold">{w.title}</p>
+                <p className="font-display text-sm font-semibold">
+                  {w.title}
+                  {w.status === "draft" ? (
+                    <span className="ml-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 align-middle text-[0.6rem] tracking-wider text-amber-400 uppercase">
+                      Draft
+                    </span>
+                  ) : null}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {w.category} · {w.role || "—"} · #{w.sortOrder}
                 </p>

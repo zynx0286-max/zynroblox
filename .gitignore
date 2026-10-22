@@ -41,6 +41,9 @@ data/
 .sfx-import-tmp/
 .sfx-import.log
 
+# Freebuff tool metadata (device-local, never committed)
+.freebuff/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -226,6 +226,13 @@ export function mergeWorks<T extends Record<string, unknown>>(keep: T, drop: T):
   if (typeof keep["sortOrder"] === "number" || typeof drop["sortOrder"] === "number") {
     set("sortOrder", pickSortOrder(keep["sortOrder"], drop["sortOrder"]));
   }
+  // Never unpublish by merging: folding a draft into a live entry (or a live
+  // entry into a draft) keeps the survivor live. Only two drafts stay a draft,
+  // and two legacy rows (no status = published) need no field written at all
+  // — writing one would show up as a bogus "status" change in the dry run.
+  const isLive = (w: T) => w["status"] !== "draft";
+  const hasStatus = keep["status"] !== undefined || drop["status"] !== undefined;
+  if (hasStatus && (isLive(keep) || isLive(drop))) set("status", "published");
   return merged as T;
 }
 

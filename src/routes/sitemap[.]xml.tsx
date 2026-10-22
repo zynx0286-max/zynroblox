@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SITE_URL } from "@/data/works";
 import { USE_CASES } from "@/data/services";
-import { getPublicWorks } from "@/lib/public-data";
+import { getPublishedWorks } from "@/lib/public-data";
 
 const staticPaths = [
   "/",
@@ -19,7 +19,9 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
-        const works = await getPublicWorks();
+        // Published only: a draft must never be advertised to a crawler, even
+        // if the request happens to carry the owner's cookie.
+        const works = await getPublishedWorks();
         const urls = [
           ...staticPaths.map((p) => ({
             loc: `${SITE_URL}${p}`,

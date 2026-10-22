@@ -526,6 +526,33 @@ test("mergeWorks keeps the richest value of every field", () => {
   assert.equal(merged.id, "work-1", "survivor keeps its id");
 });
 
+test("merging never unpublishes a live entry", () => {
+  const published: Record<string, unknown> = { slug: "a", title: "A", status: "published" };
+  const draft: Record<string, unknown> = { slug: "b", title: "Roblox game 1", status: "draft" };
+  const legacy: Record<string, unknown> = { slug: "a", title: "A" };
+  assert.equal(mergeWorks(published, draft)["status"], "published", "draft folded in stays live");
+  assert.equal(
+    mergeWorks(draft, published)["status"],
+    "published",
+    "live entry folded in stays live",
+  );
+  assert.equal(
+    mergeWorks(legacy, draft)["status"],
+    "published",
+    "legacy row (no status) is live and stays live",
+  );
+  assert.equal(
+    mergeWorks({ ...legacy, status: "draft" }, draft)["status"],
+    "draft",
+    "two drafts stay a draft",
+  );
+  assert.equal(
+    mergeWorks(legacy, { ...legacy, slug: "c" })["status"],
+    undefined,
+    "two legacy rows need no status written",
+  );
+});
+
 test("mergeWorks never mutates its inputs", () => {
   const keep = { slug: "a", title: "A", tags: ["x"] };
   const drop = { slug: "b", title: "B", tags: ["y"] };
