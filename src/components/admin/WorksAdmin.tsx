@@ -5,6 +5,8 @@ import { useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
+  Eye,
+  EyeOff,
   FileAudio,
   Film,
   Image as ImageIcon,
@@ -24,6 +26,7 @@ import {
   createWork,
   deleteWork,
   reorderWork,
+  setWorkStatus,
   updateWork,
   type DbWork,
   type WorkInput,
@@ -68,6 +71,14 @@ const toInput = (w: DbWork): WorkInput => ({
   sortOrder: w.sortOrder,
 });
 
+type WorkFilter = "all" | "published" | "draft";
+
+const FILTERS: Array<{ value: WorkFilter; label: string }> = [
+  { value: "all", label: "All" },
+  { value: "published", label: "Published" },
+  { value: "draft", label: "Drafts" },
+];
+
 export function WorksAdmin() {
   const qc = useQueryClient();
   const router = useRouter();
@@ -76,9 +87,11 @@ export function WorksAdmin() {
   const update = useServerFn(updateWork);
   const remove = useServerFn(deleteWork);
   const reorder = useServerFn(reorderWork);
+  const setStatus = useServerFn(setWorkStatus);
 
   const [editing, setEditing] = useState<{ id: string | null; values: WorkInput } | null>(null);
   const [mediaFor, setMediaFor] = useState<string | null>(null);
+  const [filter, setFilter] = useState<WorkFilter>("all");
   const [error, setError] = useState<string | null>(null);
 
   const worksQuery = useQuery({ queryKey: ["admin-works"], queryFn: () => list() });
@@ -120,7 +133,23 @@ export function WorksAdmin() {
     onError,
   });
 
+  // One click, no form: drafting and re-publishing are the two operations the
+  // list is actually used for once an entry is finished.
+  const statusMutation = useMutation({
+    mutationFn: (v: { id: string; status: "published" | "draft" }) => setStatus({ data: v }),
+    onSuccess: invalidate,
+    onError,
+  });
+
   const works = worksQuery.data ?? [];
+  const counts: Record<WorkFilter, number> = {
+    all: works.length,
+    published: works.filter((w) => w.status !== "draft").length,
+    draft: works.filter((w) => w.status === "draft").length,
+  };
+  const visibleWorks = works.filter((w) =>
+    filter === "all" ? true : filter === "draft" ? w.status === "draft" : w.status !== "draft",
+  );
   const field =
     "mt-1.5 w-full rounded-xl border border-border bg-background/40 px-3.5 py-2.5 text-sm outline-none focus:border-primary/60";
   const label = "font-display text-[0.68rem] tracking-wider text-muted-foreground uppercase";
@@ -356,11 +385,44 @@ export function WorksAdmin() {
         </form>
       ) : null}
 
-      <div className="mt-8 space-y-3">
+      <div className="mt-8 flex flex-wrap items-center gap-2">
+        {FILTERS.map((f) => {
+          const active = filter === f.value;
+          return (
+            <button
+              key={f.value}
+              type="button"
+              onClick={() => setFilter(f.value)}
+              aria-pressed={active}
+              className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 font-display text-xs transition-colors ${
+                active
+                  ? "border-primary/60 bg-primary/15 text-foreground"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {f.label}
+              <span className="rounded-full bg-secondary/50 px-2 py-0.5 text-[0.65rem]">
+                {counts[f.value]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 space-y-3">
         {worksQuery.isPending ? (
           <p className="text-sm text-muted-foreground">Loading works…</p>
         ) : null}
-        {works.map((w, i) => (
+        {visibleWorks.length === 0 && !worksQuery.isPending ? (
+          <p className="text-sm text-muted-foreground">
+            {filter === "draft"
+              ? "No drafts — everything is published."
+              : filter === "published"
+                ? "No published works yet. Publish a draft to make it visible."
+                : "No works yet — add the first one above."}
+          </p>
+        ) : null}
+        {visibleWorks.map((w) => (
           <div key={w.id}>
             <div className="glass-card flex flex-wrap items-center gap-3 rounded-2xl p-3 sm:p-4">
               {w.image ? (
@@ -391,6 +453,28 @@ export function WorksAdmin() {
               </div>
               <div className="flex flex-wrap gap-1.5">
                 <button
+                  onClick={() =>
+                    statusMutation.mutate({
+                      id: w.id,
+                      status: w.status === "draft" ? "published" : "draft",
+                    })
+                  }
+                  disabled={statusMutation.isPending}
+                  title={
+                    w.status === "draft"
+                      ? "Publish — make this work visible to everyone"
+                      : "Unpublish — hide this work from visitors, keep it editable"
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-2 font-display text-xs disabled:opacity-50"
+                >
+                  {w.status === "draft" ? (
+                    <Eye className="size-3.5" />
+                  ) : (
+                    <EyeOff className="size-3.5" />
+                  )}
+                  {w.status === "draft" ? "Publish" : "Unpublish"}
+                </button>
+                <button
                   aria-label="Manage media"
                   onClick={() => setMediaFor(mediaFor === w.id ? null : w.id)}
                   className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-2 font-display text-xs"
@@ -399,7 +483,7 @@ export function WorksAdmin() {
                 </button>
                 <button
                   aria-label="Move up"
-                  disabled={i === 0}
+                  disabled={works[0]?.id === w.id}
                   onClick={() => moveMutation.mutate({ id: w.id, direction: "up" })}
                   className="rounded-full border border-border p-2 disabled:opacity-40"
                 >

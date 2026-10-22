@@ -126,6 +126,30 @@ export const updateWork = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/**
+ * Owner-only: flips a work between draft and published without touching any
+ * other field. The admin list uses it for one-click publish/unpublish, so the
+ * common case doesn't require opening the editor and re-saving every field.
+ */
+export const setWorkStatus = createServerFn({ method: "POST" })
+  .middleware([requireOwner])
+  .validator((data: unknown) =>
+    z
+      .object({
+        id: z.string().min(1).max(120),
+        status: z.enum(WORK_STATUSES),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    await mutate((store) => {
+      const work = store.works.find((w) => w.id === data.id);
+      if (!work) throw new Error("Project not found");
+      work.status = data.status;
+    });
+    return { ok: true as const, status: data.status };
+  });
+
 export const deleteWork = createServerFn({ method: "POST" })
   .middleware([requireOwner])
   .validator((data: unknown) => z.object({ id: z.string().min(1).max(120) }).parse(data))
