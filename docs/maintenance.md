@@ -82,9 +82,16 @@ so it never contends with — or bloats — an edit. Each record is
 | ------------------- | ------------------------------------------------------------------------- |
 | `entry.created`     | The DM bot, when Roblox answered with real metadata                       |
 | `entry.placeholder` | The DM bot, when it saved a link it couldn't resolve                      |
+| `entry.published`   | The admin panel, when a work is published (toggle or editor)              |
+| `entry.unpublished` | The admin panel, when a work is moved back to draft                       |
 | `entry.merged`      | Any merge, from the admin panel or the CLI                                |
 | `refresh.ran`       | The nightly job, with its `{checked, filled, review, unavailable}` counts |
 | `system`            | Reserved for manual notes                                                 |
+
+Publish/draft lines are the audit trail for the feed: they record which control
+(toggle or editor) moved a work, not why. The weekly digest counts them but
+keeps its summary focused on new entries, merges and refreshes, so routine
+visibility changes don't turn a quiet week into a notification.
 
 The log keeps the **most recent 400** records. Read it in the admin panel under
 Admin → Works → Maintenance → _Recent activity_, or over the REST API with the

@@ -12,6 +12,7 @@ import type { Work } from "@/data/works";
 import { safeExternalUrl } from "@/lib/url";
 import { isOwnerRequest } from "@/lib/request-owner";
 import { filterVisibleWorks, WORK_STATUSES, type WorkStatus } from "@/lib/work-visibility";
+import { statusActivity, type StatusChange } from "@/lib/work-activity";
 
 export type DbWork = Work & { id: string; sortOrder: number; status: WorkStatus };
 
@@ -111,18 +112,33 @@ export const createWork = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/**
+ * Best-effort audit line for a publish/draft change, whichever control made
+ * it (the editor's Visibility select or the list's one-click toggle). Losing a
+ * log line must never fail the change itself, so failures are swallowed.
+ */
+async function recordStatusChange(change: StatusChange): Promise<void> {
+  await appendActivity([statusActivity(change)]).catch(() => {});
+}
+
 export const updateWork = createServerFn({ method: "POST" })
   .middleware([requireOwner])
   .validator((data: unknown) => workInput.extend({ id: z.string().min(1).max(120) }).parse(data))
   .handler(async ({ data }) => {
     const { id, ...rest } = data;
-    await mutate((store) => {
+    const statusChange = await mutate((store) => {
       const idx = store.works.findIndex((w) => w.id === id);
       if (idx === -1) throw new Error("Project not found");
       const slugTaken = store.works.some((w) => w.id !== id && w.slug === rest.slug);
       if (slugTaken) throw new Error("A project with this slug already exists");
-      store.works[idx] = toWork(rest, id);
+      const before = store.works[idx];
+      const next = toWork(rest, id);
+      store.works[idx] = next;
+      return before && before.status !== next.status
+        ? { title: next.title, slug: next.slug, status: next.status, source: "editor" as const }
+        : null;
     });
+    if (statusChange) await recordStatusChange(statusChange);
     return { ok: true as const };
   });
 
@@ -142,11 +158,14 @@ export const setWorkStatus = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    await mutate((store) => {
+    const change = await mutate((store) => {
       const work = store.works.find((w) => w.id === data.id);
       if (!work) throw new Error("Project not found");
+      if (work.status === data.status) return null; // already there — nothing to log
       work.status = data.status;
+      return { title: work.title, slug: work.slug, status: data.status, source: "toggle" as const };
     });
+    if (change) await recordStatusChange(change);
     return { ok: true as const, status: data.status };
   });
 

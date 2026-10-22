@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { AlertTriangle, Bot, GitMerge, Loader2, RefreshCw, X } from "lucide-react";
 import { captureError } from "@/lib/sentry";
+import type { ActivityKind } from "@/lib/store";
 import {
   botHealthFn,
   findDuplicateWorks,
@@ -11,6 +12,24 @@ import {
   previewWorkMerge,
   refreshRobloxMetadataFn,
 } from "@/lib/works.functions";
+
+/** Badge tone per activity kind, kept out of JSX so the chain stays readable. */
+function activityTone(kind: ActivityKind): string {
+  switch (kind) {
+    case "entry.published":
+      return "bg-emerald-500/20 text-emerald-500";
+    case "entry.unpublished":
+      return "bg-amber-500/20 text-amber-600";
+    case "entry.placeholder":
+      return "bg-amber-500/20 text-amber-600";
+    case "entry.merged":
+      return "bg-violet-500/15 text-violet-500";
+    case "refresh.ran":
+      return "bg-blue-500/15 text-blue-500";
+    default:
+      return "bg-secondary/50 text-muted-foreground";
+  }
+}
 
 /**
  * Owner-only maintenance for the works list: fold duplicate entries together,
@@ -359,7 +378,8 @@ export function WorksMaintenance() {
         ) : null}
         {!activityQuery.isPending && activity.length === 0 ? (
           <p className="mt-3 text-xs text-muted-foreground">
-            Nothing logged yet. New entries, merges and nightly refresh runs appear here.
+            Nothing logged yet. New entries, publish/draft changes, merges and nightly refresh runs
+            appear here.
           </p>
         ) : null}
         <ul className="mt-3 space-y-1.5 text-xs">
@@ -369,13 +389,7 @@ export function WorksMaintenance() {
                 {new Date(a.at).toISOString().slice(5, 16).replace("T", " ")}
               </span>
               <span
-                className={`shrink-0 rounded px-1.5 py-0.5 font-display ${
-                  a.kind === "entry.placeholder"
-                    ? "bg-amber-500/20 text-amber-600"
-                    : a.kind === "refresh.ran"
-                      ? "bg-blue-500/15 text-blue-500"
-                      : "bg-secondary/50 text-muted-foreground"
-                }`}
+                className={`shrink-0 rounded px-1.5 py-0.5 font-display ${activityTone(a.kind)}`}
               >
                 {a.kind}
               </span>

@@ -963,7 +963,13 @@ export type { Work };
 const ACTIVITY_KEY = "zyn-activity-v1";
 
 export type ActivityKind =
-  "entry.created" | "entry.placeholder" | "entry.merged" | "refresh.ran" | "system";
+  | "entry.created"
+  | "entry.placeholder"
+  | "entry.published"
+  | "entry.unpublished"
+  | "entry.merged"
+  | "refresh.ran"
+  | "system";
 
 export type ActivityEntry = {
   /** ISO timestamp. */

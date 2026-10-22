@@ -28,6 +28,8 @@ export type Digest = {
 const emptyCounts = (): DigestCounts => ({
   "entry.created": 0,
   "entry.placeholder": 0,
+  "entry.published": 0,
+  "entry.unpublished": 0,
   "entry.merged": 0,
   "refresh.ran": 0,
   system: 0,

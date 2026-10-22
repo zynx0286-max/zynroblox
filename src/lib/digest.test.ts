@@ -111,15 +111,19 @@ test("counts cover every kind in the window", () => {
     [
       entry({ kind: "entry.created", at: ago(1) }),
       entry({ kind: "entry.placeholder", at: ago(2) }),
-      entry({ kind: "entry.merged", at: ago(3) }),
-      entry({ kind: "refresh.ran", at: ago(4) }),
-      entry({ kind: "system", at: ago(5) }),
+      entry({ kind: "entry.published", at: ago(3) }),
+      entry({ kind: "entry.unpublished", at: ago(4) }),
+      entry({ kind: "entry.merged", at: ago(5) }),
+      entry({ kind: "refresh.ran", at: ago(6) }),
+      entry({ kind: "system", at: ago(7) }),
     ],
     NOW,
     7,
   );
   assert.equal(digest.counts["entry.created"], 1);
   assert.equal(digest.counts["entry.placeholder"], 1);
+  assert.equal(digest.counts["entry.published"], 1);
+  assert.equal(digest.counts["entry.unpublished"], 1);
   assert.equal(digest.counts["entry.merged"], 1);
   assert.equal(digest.counts["refresh.ran"], 1);
   assert.equal(digest.counts.system, 1);
