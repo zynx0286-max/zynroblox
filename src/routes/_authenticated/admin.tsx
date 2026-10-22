@@ -62,7 +62,7 @@ function StoreStatusBadge({ status }: { status: StoreStatus | undefined }) {
     return (
       <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs text-amber-400">
         <span className="size-1.5 rounded-full bg-amber-400" />
-        Local file storage — set up KV or edits may be lost on redeploy
+        Saving to this machine's data/store.json — the live site uses Supabase + KV
       </p>
     );
   }
