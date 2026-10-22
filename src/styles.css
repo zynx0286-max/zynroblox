@@ -308,7 +308,6 @@
   }
 }
 
-
 /* Mobile overflow guard: floating decor uses negative offsets, so never let
    the page itself scroll horizontally. */
 html {
@@ -373,7 +372,9 @@ section[id] {
   animation: zyn-cursor-blink 1s steps(2, start) infinite;
 }
 @keyframes zyn-cursor-blink {
-  50% { opacity: 0; }
+  50% {
+    opacity: 0;
+  }
 }
 
 /* Eyebrow/badge text — static (the infinite shine sweep was removed: it kept
@@ -381,4 +382,3 @@ section[id] {
 .zyn-shine {
   color: var(--muted-foreground);
 }
-

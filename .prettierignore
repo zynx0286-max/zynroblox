@@ -6,3 +6,8 @@ pnpm-lock.yaml
 package-lock.json
 bun.lock
 routeTree.gen.ts
+
+# Tool-managed by Lovable. Formatting these locally creates sync conflicts
+# instead of useful diffs, so they are deliberately outside the check.
+.lovable/
+AGENTS.md

@@ -1,4 +1,5 @@
-# Runs on every push and pull request: typecheck, unit tests, lint, build.
+# Runs on every push and pull request: typecheck, unit tests, lint, format check,
+# build.
 #
 # The tests that matter most here are the store concurrency ones
 # (src/lib/store-cas.test.ts). They guard a silent data-loss bug — one Worker
@@ -24,7 +25,7 @@ concurrency:
 
 jobs:
   check:
-    name: Typecheck, test, lint, build
+    name: Typecheck, test, lint, format, build
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -57,6 +58,13 @@ jobs:
         # alongside its variants constant) and are warnings, so they report
         # without failing the build.
         run: npx eslint .
+
+      - name: Format check
+        # Blocking. Formatting drift used to hide in plain sight: a stray
+        # Prettier reflow sat modified in the working tree for days because no
+        # check looked at it. Tool-managed Lovable files (.lovable/, AGENTS.md)
+        # are excluded in .prettierignore, so this covers code the repo owns.
+        run: npx prettier --check .
 
       - name: Build
         run: npm run build
