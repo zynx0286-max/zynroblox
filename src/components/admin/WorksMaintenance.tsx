@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { AlertTriangle, Bot, GitMerge, Loader2, RefreshCw, X } from "lucide-react";
+import { AlertTriangle, Bot, GitMerge, Loader2, RefreshCw, Send, X } from "lucide-react";
 import { captureError } from "@/lib/sentry";
 import type { ActivityKind } from "@/lib/store";
 import {
@@ -12,7 +12,9 @@ import {
   previewDigest,
   previewWorkMerge,
   refreshRobloxMetadataFn,
+  sendTestDigest,
 } from "@/lib/works.functions";
+import type { TestDigestResult } from "@/lib/works.functions";
 
 /** Badge tone per activity kind, kept out of JSX so the chain stays readable. */
 function activityTone(kind: ActivityKind): string {
@@ -33,6 +35,31 @@ function activityTone(kind: ActivityKind): string {
 }
 
 /**
+ * Plain-English outcome for the digest test send. The transport reasons are
+ * deliberately vague (they end up in logs), so the panel is where they get
+ * translated into the thing to fix.
+ */
+function testDigestNotice(result: TestDigestResult): string {
+  if (result.sent) {
+    return result.willSend
+      ? "Sent to your Discord DMs — the same card the Monday cron would send."
+      : "Sent to your Discord DMs. This week is quiet, so the real cron would skip it.";
+  }
+  switch (result.reason) {
+    case "not configured":
+      return "Not sent — no Discord bot token is configured. Set DISCORD_BOT_TOKEN first.";
+    case "muted or no owner registered":
+      return "Not sent — notifications are muted, or the bot hasn't registered your Discord id yet. DM the bot once.";
+    case "no DM channel with the bot yet":
+      return "Not sent — the bot has no DM with you yet. Message it once, then try again.";
+    case "discord error":
+      return "Not sent — Discord rejected the message. Check the bot token and that the bot can DM you.";
+    default:
+      return `Not sent — ${result.reason}.`;
+  }
+}
+
+/**
  * Owner-only maintenance for the works list: fold duplicate entries together,
  * and fill in anything Roblox is missing.
  *
@@ -49,6 +76,7 @@ export function WorksMaintenance() {
   const recentActivity = useServerFn(listRecentActivity);
   const botHealth = useServerFn(botHealthFn);
   const digestPreview = useServerFn(previewDigest);
+  const sendDigestTest = useServerFn(sendTestDigest);
 
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -56,6 +84,7 @@ export function WorksMaintenance() {
   const [changes, setChanges] = useState<Array<{ field: string; from: string; to: string }> | null>(
     null,
   );
+  const [testResult, setTestResult] = useState<TestDigestResult | null>(null);
 
   const dupesQuery = useQuery({ queryKey: ["admin-work-dupes"], queryFn: () => findDupes() });
   const groups = dupesQuery.data ?? [];
@@ -109,6 +138,16 @@ export function WorksMaintenance() {
       done(
         `Merged ${result.removed.length} entr${result.removed.length === 1 ? "y" : "ies"} into "${result.keepSlug}".`,
       );
+    },
+    onError,
+  });
+
+  const testSendMutation = useMutation({
+    mutationFn: () => sendDigestTest(),
+    onSuccess: (result) => {
+      setError(null);
+      setNotice(null);
+      setTestResult(result);
     },
     onError,
   });
@@ -376,14 +415,43 @@ export function WorksMaintenance() {
       {/* The digest itself, built by the same code the cron runs, so what the
           owner reads here mid-week is the card that arrives on Monday. */}
       <div className="mt-6 border-t border-border pt-5">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-display text-sm font-semibold">Weekly digest preview</h3>
-          <span className="text-xs text-muted-foreground">
-            {digest
-              ? `Window ${digest.from.slice(0, 10)} → ${digest.to.slice(0, 10)}`
-              : "Last 7 days · sent Mondays 08:43 UTC"}
-          </span>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xs text-muted-foreground">
+              {digest
+                ? `Window ${digest.from.slice(0, 10)} → ${digest.to.slice(0, 10)}`
+                : "Last 7 days · sent Mondays 08:43 UTC"}
+            </span>
+            <button
+              onClick={() => {
+                setTestResult(null);
+                testSendMutation.mutate();
+              }}
+              disabled={testSendMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 font-display text-xs disabled:opacity-50"
+            >
+              {testSendMutation.isPending ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Send className="size-3.5" />
+              )}
+              Send test DM
+            </button>
+          </div>
         </div>
+
+        {testResult ? (
+          <p
+            className={`mt-3 rounded-xl border px-4 py-2.5 text-xs ${
+              testResult.sent
+                ? "border-border bg-secondary/30"
+                : "border-destructive/40 bg-destructive/10 text-destructive"
+            }`}
+          >
+            {testDigestNotice(testResult)}
+          </p>
+        ) : null}
 
         {digestQuery.isPending ? (
           <p className="mt-3 text-xs text-muted-foreground">Building the digest…</p>

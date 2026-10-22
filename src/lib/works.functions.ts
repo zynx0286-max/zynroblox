@@ -15,6 +15,7 @@ import { filterVisibleWorks, WORK_STATUSES, type WorkStatus } from "@/lib/work-v
 import { statusActivity, type StatusChange } from "@/lib/work-activity";
 import { buildDigest } from "@/lib/digest";
 import { buildDigestEmbed, type Embed } from "@/lib/notify-embeds";
+import { notifyOwnerDm } from "@/lib/discord-notify";
 import { SITE_URL } from "@/data/works";
 
 export type DbWork = Work & { id: string; sortOrder: number; status: WorkStatus };
@@ -401,6 +402,27 @@ export const listRecentActivity = createServerFn({ method: "GET" })
   });
 
 /**
+ * The digest for the window ending now, plus the card the cron would DM. One
+ * builder for the preview and the test send, so neither can show something the
+ * Monday task wouldn't.
+ */
+async function buildCurrentDigest() {
+  const now = new Date();
+  const entries = await getActivity();
+  const digest = buildDigest(entries, now, 7);
+  const [heartbeat, state] = await Promise.all([getBotHeartbeat(), getBotLastLiveness()]);
+  return {
+    entries,
+    digest,
+    embed: buildDigestEmbed(digest, SITE_URL, {
+      state,
+      nowMs: now.getTime(),
+      heartbeat,
+    }),
+  };
+}
+
+/**
  * Owner-only preview of the weekly digest. The panel renders the exact embed the
  * cron would DM, so a quiet week (or a missing field) is something the owner can
  * see mid-week instead of discovering it on Monday morning.
@@ -422,22 +444,41 @@ export type DigestPreview = {
 export const previewDigest = createServerFn({ method: "GET" })
   .middleware([requireOwner])
   .handler(async (): Promise<DigestPreview> => {
-    const now = new Date();
-    const entries = await getActivity();
-    const digest = buildDigest(entries, now, 7);
-    const [heartbeat, state] = await Promise.all([getBotHeartbeat(), getBotLastLiveness()]);
+    const { entries, digest, embed } = await buildCurrentDigest();
     const from = Date.parse(digest.from);
     return {
       from: digest.from,
       to: digest.to,
       willSend: !digest.quiet,
-      embed: buildDigestEmbed(digest, SITE_URL, {
-        state,
-        nowMs: now.getTime(),
-        heartbeat,
-      }),
+      embed,
       counts: ACTIVITY_KINDS.map((kind) => ({ kind, count: digest.counts[kind] ?? 0 })),
       older: entries.filter((entry) => Date.parse(entry.at) < from).length,
+    };
+  });
+
+/**
+ * Owner-only test send: DMs the current digest card to the owner right now, so
+ * the Discord path can be proven without waiting for Monday (or hoping the week
+ * was busy). It sends even on a quiet week — the point is testing the transport,
+ * which the panel then explains.
+ */
+export type TestDigestResult = {
+  sent: boolean;
+  /** Transport reason when it didn't go out: "not configured", "discord error", … */
+  reason: string;
+  /** Whether this week's real digest would have been sent by the cron. */
+  willSend: boolean;
+};
+
+export const sendTestDigest = createServerFn({ method: "POST" })
+  .middleware([requireOwner])
+  .handler(async (): Promise<TestDigestResult> => {
+    const { digest, embed } = await buildCurrentDigest();
+    const result = await notifyOwnerDm(embed);
+    return {
+      sent: result.sent,
+      reason: result.reason ?? "sent",
+      willSend: !digest.quiet,
     };
   });
 

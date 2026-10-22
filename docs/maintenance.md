@@ -104,6 +104,12 @@ uses — so a quiet week (badge: **SKIPPED**) or a card missing something is
 visible mid-week instead of after it goes out. It shows the window, the
 per-kind totals, and how many older records fall outside the last seven days.
 
+**Send test DM** posts that card to the owner's Discord right now, even on a
+quiet week — the point is to prove the transport works without waiting for
+Monday. Failures are translated in the panel: a missing `DISCORD_BOT_TOKEN`, a
+muted config, an unregistered owner id, or no DM with the bot yet each say what
+to fix, instead of surfacing Discord's status code.
+
 It exists to answer "what happened to my portfolio while I wasn't looking", so
 the weekly digest has something real to summarise. It is best-effort: if the
 log can't be written, the operation that triggered it still succeeds — losing a
