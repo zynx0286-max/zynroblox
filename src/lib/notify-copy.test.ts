@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { describeTestReason, lastTestLine, retryTestLabel } from "./notify-copy.ts";
+import { describeTestReason, lastTestLine, retryTestLabel, testReasonFix } from "./notify-copy.ts";
 
 const NOW = 1_760_000_000_000;
 const minutesAgo = (minutes: number) => NOW - minutes * 60_000;
@@ -22,6 +22,43 @@ test("every known transport reason names something the owner can fix", () => {
 
 test("an unknown reason is shown, not hidden", () => {
   assert.equal(describeTestReason("rate limited by discord"), "rate limited by discord");
+});
+
+test("muted and unregistered are distinct, because the fixes differ", () => {
+  assert.match(describeTestReason("muted"), /muted/);
+  assert.match(describeTestReason("no owner registered"), /DM the bot once/);
+  assert.notEqual(describeTestReason("muted"), describeTestReason("no owner registered"));
+});
+
+test("a reason with a known fix links straight to the instructions", () => {
+  assert.equal(testReasonFix("not configured")?.label, "Set up the bot token");
+  assert.equal(testReasonFix("muted")?.label, "How to unmute");
+  assert.equal(testReasonFix("no owner registered")?.label, "Register your Discord id");
+  assert.equal(testReasonFix("no DM channel with the bot yet")?.label, "Open the bot DM steps");
+  assert.equal(testReasonFix("discord error")?.label, "Discord troubleshooting");
+  assert.equal(testReasonFix("not configured")?.href.endsWith("#one-time-setup-5-minutes"), true);
+  assert.equal(testReasonFix("no owner registered")?.href.includes("discord-bot.md"), true);
+  assert.equal(
+    testReasonFix("no DM channel with the bot yet")?.href.includes("discord-bot.md"),
+    true,
+  );
+  assert.equal(testReasonFix("discord error")?.href.endsWith("#troubleshooting"), true);
+  assert.equal(testReasonFix("muted")?.href.endsWith("maintenance.md#notifications"), true);
+  for (const reason of ["not configured", "muted", "discord error"]) {
+    assert.equal(testReasonFix(reason)?.href.startsWith("https://github.com/"), true);
+  }
+});
+
+test("a legacy combined reason still gets a useful link", () => {
+  assert.equal(
+    testReasonFix("muted or no owner registered")?.href.endsWith("#one-time-setup-5-minutes"),
+    true,
+  );
+});
+
+test("an unknown or missing reason has no link rather than a wrong one", () => {
+  assert.equal(testReasonFix("rate limited by discord"), null);
+  assert.equal(testReasonFix(undefined), null);
 });
 
 test("a delivered test reads as delivered, with the relative time", () => {

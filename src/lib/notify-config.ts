@@ -137,9 +137,3 @@ export async function recordTestDigestOutcome(
     if (written?.status === "ok" || written?.status === "failed") return;
   }
 }
-
-/** True when notifications are configured AND not muted. */
-export async function notificationsActive(): Promise<boolean> {
-  const config = await getNotifyConfig();
-  return config.enabled !== false && Boolean(config.ownerDiscordId);
-}

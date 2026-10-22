@@ -16,7 +16,7 @@ import {
 } from "@/lib/works.functions";
 import type { TestDigestResult } from "@/lib/works.functions";
 import { cooldownSeconds, TEST_DIGEST_COOLDOWN_MS } from "@/lib/notify-throttle";
-import { describeTestReason, lastTestLine, retryTestLabel } from "@/lib/notify-copy";
+import { describeTestReason, lastTestLine, retryTestLabel, testReasonFix } from "@/lib/notify-copy";
 
 /** Badge tone per activity kind, kept out of JSX so the chain stays readable. */
 function activityTone(kind: ActivityKind): string {
@@ -34,6 +34,22 @@ function activityTone(kind: ActivityKind): string {
     default:
       return "bg-secondary/50 text-muted-foreground";
   }
+}
+
+/** The instructions for a failed send, when there is a page worth opening. */
+function FixHint({ reason }: { reason: string | undefined }) {
+  const fix = testReasonFix(reason);
+  if (!fix) return null;
+  return (
+    <a
+      href={fix.href}
+      target="_blank"
+      rel="noreferrer"
+      className="underline underline-offset-2 hover:text-foreground"
+    >
+      {fix.label} ↗
+    </a>
+  );
 }
 
 /** Plain-English outcome for a test send, right after the click. */
@@ -487,6 +503,12 @@ export function WorksMaintenance() {
             }`}
           >
             {testDigestNotice(testResult)}
+            {!testResult.sent ? (
+              <>
+                {" "}
+                <FixHint reason={testResult.reason} />
+              </>
+            ) : null}
           </p>
         ) : null}
 
@@ -570,6 +592,9 @@ export function WorksMaintenance() {
               ) : (
                 <span>No test DM sent yet.</span>
               )}
+              {digest.lastTest && !digest.lastTest.sent ? (
+                <FixHint reason={digest.lastTest.reason} />
+              ) : null}
               {/* Only a failure has something to retry. The same mutation and the
                   same server-enforced cooldown as the button above, so this is a
                   shortcut — not a way around the throttle. */}

@@ -21,7 +21,7 @@
 
 import { readSecret } from "./read-secret.ts";
 import { buildDigest } from "./digest.ts";
-import { getNotifyConfig, notificationsActive } from "./notify-config.ts";
+import { getNotifyConfig } from "./notify-config.ts";
 import { buildDigestEmbed, type Embed } from "./notify-embeds.ts";
 import type { ActivityEntry } from "./store.ts";
 
@@ -107,8 +107,11 @@ async function findOwnerDmChannel(token: string): Promise<string | null> {
 export async function notifyOwnerDm(embed: Embed): Promise<NotifyResult> {
   const token = await readSecret("DISCORD_BOT_TOKEN");
   if (!token) return ok;
-  if (!(await notificationsActive()))
-    return { sent: false, reason: "muted or no owner registered" };
+  // The two causes need different fixes, so report them separately instead of
+  // making the panel guess (and send the owner to the wrong instructions).
+  const config = await getNotifyConfig();
+  if (config.enabled === false) return { sent: false, reason: "muted" };
+  if (!config.ownerDiscordId) return { sent: false, reason: "no owner registered" };
   try {
     const channelId = await findOwnerDmChannel(token);
     // No DM yet: the owner has never messaged the bot, so there is nobody to

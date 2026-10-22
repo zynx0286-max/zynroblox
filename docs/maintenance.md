@@ -117,7 +117,10 @@ ages while the page stays open, and the cooldown countdown is restored from the
 stored claim time on load, so the panel never offers a click the server will
 refuse. When the last attempt failed, a Retry button sits next to that line: it
 runs the same send through the same server-enforced cooldown, and counts that
-cooldown down in its own label rather than sitting silently disabled.
+cooldown down in its own label rather than sitting silently disabled. Reasons with
+a known fix link straight to the instructions (bot setup, Discord
+troubleshooting, or the mute note), and "muted" is reported separately from "no
+owner registered" so the link points at the cause that actually applies.
 
 Sends are throttled to one per 30 seconds. The timestamp lives in the notify
 config row and is claimed with the same compare-and-swap the store uses, so two
@@ -152,7 +155,10 @@ registers itself** — there is no manual step, and a changed bot token or a new
 machine just picks it back up.
 
 To silence everything without revoking anything, set `enabled: false` in the
-`zyn-notify-v1` document. There is no admin-panel toggle for it yet.
+`zyn-notify-v1` document. There is no admin-panel toggle for it yet. To turn
+notifications back on, set `enabled: true` (or delete the key); the next test DM
+or scheduled digest goes through, and the maintenance panel's mute hint links
+back to this section.
 
 ### New-entry announcements
 

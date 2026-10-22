@@ -9,6 +9,17 @@
 import { relativeTime } from "./relative-time.ts";
 
 /**
+ * Where the fix instructions live. The repo is public, so the rendered docs are
+ * one click away from the panel that reports the problem — no copying error text
+ * into a search box and hoping.
+ */
+const DOCS_BASE = "https://github.com/zynx0286-max/zynroblox/blob/main/docs";
+const BOT_DOCS = `${DOCS_BASE}/discord-bot.md`;
+
+/** A link that takes the owner to the instructions for a failed send. */
+export type FixLink = { label: string; href: string };
+
+/**
  * The thing to fix behind a transport reason. Unknown reasons are shown as-is
  * rather than swallowed — a new reason should be visible, not invisible.
  */
@@ -16,6 +27,11 @@ export function describeTestReason(reason: string): string {
   switch (reason) {
     case "not configured":
       return "no Discord bot token is configured (set DISCORD_BOT_TOKEN first)";
+    case "muted":
+      return "proactive notifications are muted";
+    case "no owner registered":
+      return "the bot hasn't registered your Discord id yet (DM the bot once)";
+    // Kept for records written before the two causes were told apart.
     case "muted or no owner registered":
       return "notifications are muted or the bot hasn't registered your Discord id yet (DM the bot once)";
     case "no DM channel with the bot yet":
@@ -24,6 +40,33 @@ export function describeTestReason(reason: string): string {
       return "Discord rejected the message (check the bot token and that the bot can DM you)";
     default:
       return reason;
+  }
+}
+
+/**
+ * The instructions for a failed send, or null when there is nothing useful to
+ * link to. Reasons are matched exactly so a new one fails visible (no link)
+ * rather than silently pointing at the wrong page.
+ */
+export function testReasonFix(reason?: string): FixLink | null {
+  switch (reason) {
+    case "not configured":
+      return { label: "Set up the bot token", href: `${BOT_DOCS}#one-time-setup-5-minutes` };
+    case "muted":
+      return {
+        label: "How to unmute",
+        href: `${DOCS_BASE}/maintenance.md#notifications`,
+      };
+    case "no owner registered":
+      return { label: "Register your Discord id", href: `${BOT_DOCS}#one-time-setup-5-minutes` };
+    case "no DM channel with the bot yet":
+      return { label: "Open the bot DM steps", href: `${BOT_DOCS}#one-time-setup-5-minutes` };
+    case "muted or no owner registered":
+      return { label: "Notification setup", href: `${BOT_DOCS}#one-time-setup-5-minutes` };
+    case "discord error":
+      return { label: "Discord troubleshooting", href: `${BOT_DOCS}#troubleshooting` };
+    default:
+      return null;
   }
 }
 
