@@ -17,7 +17,7 @@ import { readSecret } from "../lib/read-secret";
 export default defineTask({
   meta: {
     name: "portfolio:digest",
-    description: "Weekly DM summarising new entries, merges and refresh results",
+    description: "Weekly DM summarising new entries, publish/draft changes, merges and refreshes",
   },
   async run() {
     const now = new Date();
@@ -34,6 +34,7 @@ export default defineTask({
           reason: "quiet",
           added: 0,
           needsAttention: 0,
+          visibility: 0,
           merges: 0,
           refreshes: 0,
           review: 0,
@@ -50,8 +51,9 @@ export default defineTask({
 
     console.log(
       `[digest] sent=${result.sent} added=${digest.completed.length + digest.needsAttention.length} ` +
-        `attention=${digest.needsAttention.length} merges=${digest.merges.length} ` +
-        `refreshes=${digest.refreshes.length} review=${digest.reviewSuggested.length}`,
+        `attention=${digest.needsAttention.length} visibility=${digest.visibility.length} ` +
+        `merges=${digest.merges.length} refreshes=${digest.refreshes.length} ` +
+        `review=${digest.reviewSuggested.length}`,
     );
 
     return {
@@ -60,6 +62,7 @@ export default defineTask({
         reason: result.reason ?? "unknown",
         added: digest.completed.length,
         needsAttention: digest.needsAttention.length,
+        visibility: digest.visibility.length,
         merges: digest.merges.length,
         refreshes: digest.refreshes.length,
         review: digest.reviewSuggested.length,

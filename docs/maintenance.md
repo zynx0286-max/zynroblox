@@ -89,13 +89,20 @@ so it never contends with — or bloats — an edit. Each record is
 | `system`            | Reserved for manual notes                                                 |
 
 Publish/draft lines are the audit trail for the feed: they record which control
-(toggle or editor) moved a work, not why. The weekly digest counts them but
-keeps its summary focused on new entries, merges and refreshes, so routine
-visibility changes don't turn a quiet week into a notification.
+(toggle or editor) moved a work, not why. They also appear in the weekly digest
+under _Published / drafted_, because a week whose only activity was pushing an
+entry live (or pulling it back) has something real to report — it must not read
+as "nothing happened".
 
 The log keeps the **most recent 400** records. Read it in the admin panel under
 Admin → Works → Maintenance → _Recent activity_, or over the REST API with the
 `listRecentActivity` server function.
+
+Right above that list, _Weekly digest preview_ renders the card the Monday cron
+would DM, built by the same `buildDigest` + `buildDigestEmbed` pair the task
+uses — so a quiet week (badge: **SKIPPED**) or a card missing something is
+visible mid-week instead of after it goes out. It shows the window, the
+per-kind totals, and how many older records fall outside the last seven days.
 
 It exists to answer "what happened to my portfolio while I wasn't looking", so
 the weekly digest has something real to summarise. It is best-effort: if the

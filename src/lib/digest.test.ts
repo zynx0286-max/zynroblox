@@ -97,6 +97,64 @@ test("a refresh run alone counts as activity, not a quiet week", () => {
   assert.match(digestHeadline(digest), /maintenance/);
 });
 
+test("a publish-only week is activity, not a quiet week", () => {
+  const digest = buildDigest(
+    [
+      entry({ kind: "entry.published", summary: "Published Bat A Lucky Block" }),
+      entry({ kind: "entry.unpublished", summary: "Moved to draft Roblox game 9" }),
+    ],
+    NOW,
+    7,
+  );
+  assert.equal(digest.quiet, false);
+  assert.equal(digest.visibility.length, 2);
+  assert.equal(digest.completed.length, 0, "publishes are not new entries");
+  assert.equal(digest.needsAttention.length, 0);
+  assert.match(digestHeadline(digest), /2 visibility changes/);
+});
+
+test("a single visibility change is phrased in the singular", () => {
+  const digest = buildDigest([entry({ kind: "entry.published", summary: "Published X" })], NOW, 7);
+  assert.match(digestHeadline(digest), /1 visibility change\b/);
+});
+
+test("the digest embed lists publish/draft changes next to new entries", () => {
+  const digest = buildDigest(
+    [
+      entry({ kind: "entry.created", summary: "New Game" }),
+      entry({ kind: "entry.published", summary: "Published Bat A Lucky Block" }),
+    ],
+    NOW,
+    7,
+  );
+  const embed = buildDigestEmbed(digest, SITE);
+  const field = (embed.fields ?? []).find((f) => f.name.includes("Published / drafted"));
+  assert.ok(field, "publish/draft changes need their own field");
+  assert.match(field.value, /Published Bat A Lucky Block/);
+  assert.match(digestHeadline(digest), /1 new entry/, "an added entry still leads the headline");
+});
+
+test("a visibility-only week still says maintenance when the bot also reported in", () => {
+  const digest = buildDigest(
+    [
+      entry({ kind: "entry.published", summary: "Published X" }),
+      entry({ kind: "refresh.ran", summary: "checked 29" }),
+    ],
+    NOW,
+    7,
+  );
+  assert.match(
+    digestHeadline(digest),
+    /maintenance/,
+    "refreshes make it a maintenance week, not a visibility one",
+  );
+});
+
+test("a quiet digest says what it actually looked for", () => {
+  const embed = buildDigestEmbed(buildDigest([], NOW, 7), SITE);
+  assert.match(embed.description ?? "", /visibility changes/);
+});
+
 test("entries with unparseable timestamps are skipped, not guessed at", () => {
   const digest = buildDigest(
     [entry({ kind: "entry.created", summary: "Broken", at: "not-a-date" })],

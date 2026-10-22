@@ -4,6 +4,8 @@
 // tests all derive from these, so what you read in Discord is exactly what the
 // tests assert.
 
+// Type-only: this module must stay importable without the store's runtime,
+// which the test runner and the admin panel both rely on.
 import type { ActivityEntry, ActivityKind } from "@/lib/store";
 
 export type DigestCounts = Record<ActivityKind, number>;
@@ -19,12 +21,17 @@ export type Digest = {
   needsAttention: ActivityEntry[];
   /** Curated fields the nightly refresh deliberately did not overwrite. */
   reviewSuggested: ActivityEntry[];
+  /** Works published or moved back to draft during the window. */
+  visibility: ActivityEntry[];
   merges: ActivityEntry[];
   refreshes: ActivityEntry[];
   /** True when there is nothing at all worth sending. */
   quiet: boolean;
 };
 
+// Spelled out rather than derived: the DigestCounts annotation makes the type
+// checker require exactly one key per ActivityKind, so a new kind cannot be
+// added without being counted here.
 const emptyCounts = (): DigestCounts => ({
   "entry.created": 0,
   "entry.placeholder": 0,
@@ -50,6 +57,7 @@ export function buildDigest(entries: ActivityEntry[], now: Date, days = 7): Dige
   const completed: ActivityEntry[] = [];
   const needsAttention: ActivityEntry[] = [];
   const reviewSuggested: ActivityEntry[] = [];
+  const visibility: ActivityEntry[] = [];
   const merges: ActivityEntry[] = [];
   const refreshes: ActivityEntry[] = [];
 
@@ -63,7 +71,9 @@ export function buildDigest(entries: ActivityEntry[], now: Date, days = 7): Dige
 
     if (entry.kind === "entry.created") completed.push(entry);
     else if (entry.kind === "entry.placeholder") needsAttention.push(entry);
-    else if (entry.kind === "entry.merged") merges.push(entry);
+    else if (entry.kind === "entry.published" || entry.kind === "entry.unpublished") {
+      visibility.push(entry);
+    } else if (entry.kind === "entry.merged") merges.push(entry);
     else if (entry.kind === "refresh.ran") refreshes.push(entry);
 
     // A refresh that found curated values differing from Roblox's is asking
@@ -77,6 +87,7 @@ export function buildDigest(entries: ActivityEntry[], now: Date, days = 7): Dige
   const quiet =
     completed.length === 0 &&
     needsAttention.length === 0 &&
+    visibility.length === 0 &&
     merges.length === 0 &&
     refreshes.length === 0;
 
@@ -87,6 +98,7 @@ export function buildDigest(entries: ActivityEntry[], now: Date, days = 7): Dige
     completed,
     needsAttention,
     reviewSuggested,
+    visibility,
     merges,
     refreshes,
     quiet,
@@ -112,6 +124,16 @@ export function joinNames(names: string[], max = MAX_LISTED): string {
 export function digestHeadline(digest: Digest): string {
   if (digest.quiet) return "📭 Nothing happened this week";
   const added = digest.completed.length + digest.needsAttention.length;
-  if (added === 0) return "🔧 Portfolio maintenance";
+  if (added === 0) {
+    // A week whose only activity is pushing entries live (or pulling them
+    // back) should say so, rather than reporting generic "maintenance".
+    const onlyVisibility = digest.merges.length === 0 && digest.refreshes.length === 0;
+    if (onlyVisibility && digest.visibility.length > 0) {
+      return digest.visibility.length === 1
+        ? "🔄 1 visibility change this week"
+        : `🔄 ${digest.visibility.length} visibility changes this week`;
+    }
+    return "🔧 Portfolio maintenance";
+  }
   return added === 1 ? "➕ 1 new entry this week" : `➕ ${added} new entries this week`;
 }

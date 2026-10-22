@@ -962,14 +962,21 @@ export type { Work };
 
 const ACTIVITY_KEY = "zyn-activity-v1";
 
-export type ActivityKind =
-  | "entry.created"
-  | "entry.placeholder"
-  | "entry.published"
-  | "entry.unpublished"
-  | "entry.merged"
-  | "refresh.ran"
-  | "system";
+/**
+ * Every kind the log can hold, in display order. Consumers enumerate this list
+ * instead of hard-coding the kinds a second time.
+ */
+export const ACTIVITY_KINDS = [
+  "entry.created",
+  "entry.placeholder",
+  "entry.published",
+  "entry.unpublished",
+  "entry.merged",
+  "refresh.ran",
+  "system",
+] as const;
+
+export type ActivityKind = (typeof ACTIVITY_KINDS)[number];
 
 export type ActivityEntry = {
   /** ISO timestamp. */

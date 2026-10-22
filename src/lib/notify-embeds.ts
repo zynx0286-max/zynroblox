@@ -58,6 +58,12 @@ export function buildDigestEmbed(
       value: joinNames(digest.needsAttention.map((e) => e.summary)),
     });
   }
+  if (digest.visibility.length > 0) {
+    fields.push({
+      name: "🔄 Published / drafted",
+      value: joinNames(digest.visibility.map((e) => e.summary)),
+    });
+  }
   if (digest.merges.length > 0) {
     fields.push({
       name: "Merged duplicates",
@@ -96,7 +102,7 @@ export function buildDigestEmbed(
     color: digest.quiet ? 0x6b7280 : digest.needsAttention.length > 0 ? 0xf97316 : 0x3b82f6,
     title: digestHeadline(digest),
     description: digest.quiet
-      ? `No new entries, merges or refresh results since ${digest.from.slice(0, 10)}.`
+      ? `No new entries, visibility changes, merges or refresh results since ${digest.from.slice(0, 10)}.`
       : `${siteUrl}`,
     fields,
     footer: { text: "Portfolio digest — manage entries in the admin panel" },

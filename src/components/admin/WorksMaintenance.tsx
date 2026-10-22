@@ -9,6 +9,7 @@ import {
   findDuplicateWorks,
   listRecentActivity,
   mergeWorksFn,
+  previewDigest,
   previewWorkMerge,
   refreshRobloxMetadataFn,
 } from "@/lib/works.functions";
@@ -47,6 +48,7 @@ export function WorksMaintenance() {
   const refresh = useServerFn(refreshRobloxMetadataFn);
   const recentActivity = useServerFn(listRecentActivity);
   const botHealth = useServerFn(botHealthFn);
+  const digestPreview = useServerFn(previewDigest);
 
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -67,6 +69,11 @@ export function WorksMaintenance() {
     queryFn: () => botHealth(),
   });
   const health = healthQuery.data ?? null;
+  const digestQuery = useQuery({
+    queryKey: ["admin-digest-preview"],
+    queryFn: () => digestPreview(),
+  });
+  const digest = digestQuery.data ?? null;
 
   const onError = (err: unknown) => {
     captureError(err, { area: "admin" });
@@ -80,6 +87,8 @@ export function WorksMaintenance() {
     void qc.invalidateQueries({ queryKey: ["admin-work-dupes"] });
     void qc.invalidateQueries({ queryKey: ["admin-works"] });
     void qc.invalidateQueries({ queryKey: ["works"] });
+    void qc.invalidateQueries({ queryKey: ["admin-activity"] });
+    void qc.invalidateQueries({ queryKey: ["admin-digest-preview"] });
   };
 
   // Show what the merge would change before committing to it: merging deletes
@@ -362,6 +371,89 @@ export function WorksMaintenance() {
             ) : null}
           </div>
         )}
+      </div>
+
+      {/* The digest itself, built by the same code the cron runs, so what the
+          owner reads here mid-week is the card that arrives on Monday. */}
+      <div className="mt-6 border-t border-border pt-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h3 className="font-display text-sm font-semibold">Weekly digest preview</h3>
+          <span className="text-xs text-muted-foreground">
+            {digest
+              ? `Window ${digest.from.slice(0, 10)} → ${digest.to.slice(0, 10)}`
+              : "Last 7 days · sent Mondays 08:43 UTC"}
+          </span>
+        </div>
+
+        {digestQuery.isPending ? (
+          <p className="mt-3 text-xs text-muted-foreground">Building the digest…</p>
+        ) : null}
+        {digestQuery.isError ? (
+          <p className="mt-3 text-xs text-destructive">
+            Couldn't build the digest preview — the activity log couldn't be read.
+          </p>
+        ) : null}
+
+        {digest ? (
+          <>
+            <p className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+              <span
+                className={`rounded px-1.5 py-0.5 font-display ${
+                  digest.willSend
+                    ? "bg-blue-500/15 text-blue-500"
+                    : "bg-secondary/60 text-muted-foreground"
+                }`}
+              >
+                {digest.willSend ? "WOULD SEND" : "SKIPPED"}
+              </span>
+              <span className="text-muted-foreground">
+                {digest.willSend
+                  ? "The Monday cron would DM this card."
+                  : "Nothing in the window, so the cron stays silent instead of sending an empty card."}
+              </span>
+            </p>
+
+            <div className="mt-3 rounded-xl border border-border bg-secondary/20 p-4">
+              <p className="font-display text-sm font-semibold">{digest.embed.title}</p>
+              {digest.embed.description ? (
+                <p className="mt-1 text-xs text-muted-foreground">{digest.embed.description}</p>
+              ) : null}
+              {(digest.embed.fields ?? []).map((field) => (
+                <div key={field.name} className="mt-3">
+                  <p className="text-[0.7rem] font-semibold tracking-wide text-muted-foreground uppercase">
+                    {field.name}
+                  </p>
+                  <p className="mt-0.5 text-xs">{field.value}</p>
+                </div>
+              ))}
+              {digest.embed.footer ? (
+                <p className="mt-3 border-t border-border pt-2 text-[0.65rem] text-muted-foreground">
+                  {digest.embed.footer.text}
+                </p>
+              ) : null}
+            </div>
+
+            <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              {digest.counts
+                .filter((c) => c.count > 0)
+                .map((c) => (
+                  <span key={c.kind}>
+                    {c.kind}: <span className="text-foreground">{c.count}</span>
+                  </span>
+                ))}
+              {digest.counts.every((c) => c.count === 0) ? (
+                <span>Nothing in the window.</span>
+              ) : null}
+            </p>
+
+            {digest.older > 0 ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {digest.older} older record{digest.older === 1 ? " is" : "s are"} outside the window
+                — the digest only reports the last 7 days.
+              </p>
+            ) : null}
+          </>
+        ) : null}
       </div>
 
       {/* The persisted activity log — the same records the weekly Discord
