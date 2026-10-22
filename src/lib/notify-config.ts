@@ -71,14 +71,22 @@ export async function setOwnerDiscordId(userId: string): Promise<void> {
   }
 }
 
-/** Mutes or unmutes proactive notifications, leaving the owner id intact. */
-export async function setNotificationsEnabled(enabled: boolean): Promise<void> {
+/**
+ * Mutes or unmutes proactive notifications, leaving the owner id intact.
+ *
+ * Returns false when the row could not be written: the panel toggle must be
+ * able to say "not saved" rather than flipping back silently, which would look
+ * like a successful save until the next reload.
+ */
+export async function setNotificationsEnabled(enabled: boolean): Promise<boolean> {
   for (let attempt = 0; attempt < 3; attempt++) {
     const row = await readAuxRow<NotifyConfig>(CONFIG_KEY).catch(() => null);
     const next: NotifyConfig = { ...(row?.doc ?? {}), enabled };
     const written = await writeAuxRow(CONFIG_KEY, next, row?.version ?? null).catch(() => null);
-    if (written?.status === "ok" || written?.status === "failed") return;
+    if (written?.status === "ok") return true;
+    if (written?.status === "failed") return false;
   }
+  return false;
 }
 
 /**

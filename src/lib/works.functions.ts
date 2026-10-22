@@ -16,7 +16,13 @@ import { statusActivity, type StatusChange } from "@/lib/work-activity";
 import { buildDigest } from "@/lib/digest";
 import { buildDigestEmbed, type Embed } from "@/lib/notify-embeds";
 import { notifyOwnerDm } from "@/lib/discord-notify";
-import { claimTestDigestSlot, getNotifyConfig, recordTestDigestOutcome } from "@/lib/notify-config";
+import {
+  claimTestDigestSlot,
+  getNotifyConfig,
+  recordTestDigestOutcome,
+  setNotificationsEnabled,
+} from "@/lib/notify-config";
+import { readSecret } from "@/lib/read-secret";
 import { SITE_URL } from "@/data/works";
 
 export type DbWork = Work & { id: string; sortOrder: number; status: WorkStatus };
@@ -423,6 +429,16 @@ async function buildCurrentDigest() {
   };
 }
 
+/** What the notification transport currently has to work with. */
+export type NotifyState = {
+  /** A bot token exists in the Worker environment. The value never leaves the server. */
+  tokenConfigured: boolean;
+  /** Proactive DMs are switched off in the notify config row. */
+  muted: boolean;
+  /** The bot has registered the owner's numeric Discord id (via a DM). */
+  ownerRegistered: boolean;
+};
+
 /**
  * Owner-only preview of the weekly digest. The panel renders the exact embed the
  * cron would DM, so a quiet week (or a missing field) is something the owner can
@@ -447,14 +463,17 @@ export type DigestPreview = {
    * cooldown after a reload instead of offering a button the server will refuse.
    */
   lastTestAttemptAt: string | null;
+  /** Readiness of the DM transport, for the status line above the preview. */
+  notifications: NotifyState;
 };
 
 export const previewDigest = createServerFn({ method: "GET" })
   .middleware([requireOwner])
   .handler(async (): Promise<DigestPreview> => {
-    const [{ entries, digest, embed }, config] = await Promise.all([
+    const [{ entries, digest, embed }, config, token] = await Promise.all([
       buildCurrentDigest(),
       getNotifyConfig(),
+      readSecret("DISCORD_BOT_TOKEN"),
     ]);
     const from = Date.parse(digest.from);
     const last = config.lastTestDigest;
@@ -478,6 +497,11 @@ export const previewDigest = createServerFn({ method: "GET" })
         typeof claimedAt === "number" && Number.isFinite(claimedAt)
           ? new Date(claimedAt).toISOString()
           : null,
+      notifications: {
+        tokenConfigured: Boolean(token),
+        muted: config.enabled === false,
+        ownerRegistered: Boolean(config.ownerDiscordId),
+      },
     };
   });
 
@@ -521,6 +545,24 @@ export const sendTestDigest = createServerFn({ method: "POST" })
       reason: result.reason ?? "sent",
       willSend: !digest.quiet,
     };
+  });
+
+/**
+ * Owner-only mute switch for proactive DMs. Stored in the notify config row, so
+ * it applies to the cron, the nightly refresh and the test send alike — not
+ * just this tab.
+ */
+export const setNotifyMuted = createServerFn({ method: "POST" })
+  .middleware([requireOwner])
+  .validator((data: unknown) => z.object({ muted: z.boolean() }).parse(data))
+  .handler(async ({ data }): Promise<{ muted: boolean }> => {
+    const saved = await setNotificationsEnabled(!data.muted);
+    if (!saved) {
+      throw new Error(
+        "Couldn't save the notification setting — the notify config row is unavailable",
+      );
+    }
+    return { muted: data.muted };
   });
 
 /** Owner-only bot health snapshot: what the admin Maintenance card renders. */

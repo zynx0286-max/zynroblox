@@ -110,6 +110,11 @@ Monday. Failures are translated in the panel: a missing `DISCORD_BOT_TOKEN`, a
 muted config, an unregistered owner id, or no DM with the bot yet each say what
 to fix, instead of surfacing Discord's status code.
 
+Above the preview, a notifications line reports the three things a DM needs
+before it can arrive: whether the bot token is set, whether the owner's Discord
+id is registered, and whether proactive DMs are muted. The switch on that line
+writes the same config the cron reads, so muting there silences Monday too.
+
 Below the card the panel keeps the trail: "Last test 4 minutes ago — delivered to
 your DMs", or the reason it didn't go out, stored in the notify config row rather
 than in the tab — so a reload doesn't forget that you already tried. The label
@@ -154,11 +159,13 @@ stores it in `zyn-notify-v1`. **So the first time you add a DM, the id
 registers itself** — there is no manual step, and a changed bot token or a new
 machine just picks it back up.
 
-To silence everything without revoking anything, set `enabled: false` in the
-`zyn-notify-v1` document. There is no admin-panel toggle for it yet. To turn
-notifications back on, set `enabled: true` (or delete the key); the next test DM
-or scheduled digest goes through, and the maintenance panel's mute hint links
-back to this section.
+To silence everything without revoking anything, use the **Notifications** switch
+in the admin digest card (it writes `enabled: false` to the `zyn-notify-v1`
+document). The same line shows whether the bot token is set and whether your
+Discord id has registered, so a missing setup is visible before a send fails.
+To turn notifications back on, switch it back or set `enabled: true`; the next
+test DM or scheduled digest goes through, and the maintenance panel's mute hint
+links back to this section.
 
 ### New-entry announcements
 

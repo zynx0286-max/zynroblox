@@ -13,8 +13,10 @@ import {
   previewWorkMerge,
   refreshRobloxMetadataFn,
   sendTestDigest,
+  setNotifyMuted,
 } from "@/lib/works.functions";
-import type { TestDigestResult } from "@/lib/works.functions";
+import type { DigestPreview, NotifyState, TestDigestResult } from "@/lib/works.functions";
+import { Switch } from "@/components/ui/switch";
 import { cooldownSeconds, TEST_DIGEST_COOLDOWN_MS } from "@/lib/notify-throttle";
 import { describeTestReason, lastTestLine, retryTestLabel, testReasonFix } from "@/lib/notify-copy";
 
@@ -52,6 +54,82 @@ function FixHint({ reason }: { reason: string | undefined }) {
   );
 }
 
+/** A one-word readiness signal with a colour, so the line scans in a glance. */
+function NotifyPill({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 ${
+        ok
+          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+          : "border-amber-500/30 bg-amber-500/10 text-amber-400"
+      }`}
+    >
+      <span className={`size-1.5 rounded-full ${ok ? "bg-emerald-400" : "bg-amber-400"}`} />
+      {label}
+    </span>
+  );
+}
+
+/**
+ * What the DM transport is missing, before a test send has to fail to reveal it.
+ * The switch writes the same notify config the cron reads, so muting here mutes
+ * Monday too — not just this tab.
+ */
+function NotifyStatusLine({
+  status,
+  pending,
+  error,
+  onMutedChange,
+}: {
+  status: NotifyState;
+  pending: boolean;
+  error: string | null;
+  onMutedChange: (muted: boolean) => void;
+}) {
+  const missing = !status.tokenConfigured
+    ? "not configured"
+    : !status.ownerRegistered
+      ? "no owner registered"
+      : null;
+  return (
+    <div className="mt-3 rounded-xl border border-border bg-secondary/20 px-3 py-2 text-xs">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <span className="font-display text-[0.7rem] font-semibold tracking-wide text-muted-foreground uppercase">
+          Notifications
+        </span>
+        <NotifyPill
+          ok={status.tokenConfigured}
+          label={status.tokenConfigured ? "Bot token set" : "Bot token missing"}
+        />
+        <NotifyPill
+          ok={status.ownerRegistered}
+          label={status.ownerRegistered ? "Discord id registered" : "Discord id missing"}
+        />
+        {missing ? <FixHint reason={missing} /> : null}
+        <label className="flex items-center gap-2 sm:ml-auto">
+          <Switch
+            checked={!status.muted}
+            onCheckedChange={(checked) => onMutedChange(!checked)}
+            disabled={pending}
+            aria-label={
+              status.muted ? "Unmute proactive notifications" : "Mute proactive notifications"
+            }
+          />
+          <span className="text-muted-foreground">
+            {pending ? "Saving…" : status.muted ? "Muted" : "On"}
+          </span>
+        </label>
+      </div>
+      {status.muted ? (
+        <p className="mt-1 text-muted-foreground">
+          Scheduled DMs and test sends are paused until this is switched back on.
+        </p>
+      ) : null}
+      {error ? <p className="mt-1 text-destructive">{error}</p> : null}
+    </div>
+  );
+}
+
 /** Plain-English outcome for a test send, right after the click. */
 function testDigestNotice(result: TestDigestResult): string {
   if (result.sent) {
@@ -83,6 +161,7 @@ export function WorksMaintenance() {
   const botHealth = useServerFn(botHealthFn);
   const digestPreview = useServerFn(previewDigest);
   const sendDigestTest = useServerFn(sendTestDigest);
+  const setMute = useServerFn(setNotifyMuted);
 
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -91,6 +170,7 @@ export function WorksMaintenance() {
     null,
   );
   const [testResult, setTestResult] = useState<TestDigestResult | null>(null);
+  const [notifyError, setNotifyError] = useState<string | null>(null);
   const [cooldownUntil, setCooldownUntil] = useState(0);
   // Re-render once a second while a cooldown runs so the countdown is honest.
   const [, setClock] = useState(0);
@@ -207,6 +287,24 @@ export function WorksMaintenance() {
     setTestResult(null);
     testSendMutation.mutate();
   };
+
+  const muteMutation = useMutation({
+    mutationFn: (muted: boolean) => setMute({ data: { muted } }),
+    onMutate: () => setNotifyError(null),
+    onSuccess: (result) => {
+      // Update the cached preview immediately so the switch doesn't snap back
+      // while the refetch runs; the server response is the source of truth.
+      qc.setQueryData<DigestPreview>(["admin-digest-preview"], (previous) =>
+        previous
+          ? { ...previous, notifications: { ...previous.notifications, muted: result.muted } }
+          : previous,
+      );
+      void qc.invalidateQueries({ queryKey: ["admin-digest-preview"] });
+    },
+    onError: (err) => {
+      setNotifyError(err instanceof Error ? err.message : "Couldn't save the notification setting");
+    },
+  });
 
   const refreshMutation = useMutation({
     mutationFn: () => refresh(),
@@ -539,6 +637,13 @@ export function WorksMaintenance() {
                   : "Nothing in the window, so the cron stays silent instead of sending an empty card."}
               </span>
             </p>
+
+            <NotifyStatusLine
+              status={digest.notifications}
+              pending={muteMutation.isPending}
+              error={notifyError}
+              onMutedChange={(muted) => muteMutation.mutate(muted)}
+            />
 
             <div className="mt-3 rounded-xl border border-border bg-secondary/20 p-4">
               <p className="font-display text-sm font-semibold">{digest.embed.title}</p>
