@@ -14,13 +14,24 @@
 import { readAuxRow, writeAuxRow } from "@/lib/store";
 import { cooldownRemainingMs, TEST_DIGEST_COOLDOWN_MS } from "./notify-throttle.ts";
 
+/** How the most recent test DM ended up, for the panel's history line. */
+export type LastTestDigest = {
+  /** Epoch milliseconds of the attempt. */
+  at: number;
+  sent: boolean;
+  /** Transport reason when it failed. */
+  reason?: string;
+};
+
 export type NotifyConfig = {
   /** Discord user id of the portfolio owner. */
   ownerDiscordId?: string;
   /** Set false to mute all proactive notifications. */
   enabled?: boolean;
-  /** When the admin last sent a test digest — throttles the panel's button. */
+  /** When the admin last claimed a test-send slot — throttles the button. */
   lastTestDigestAt?: number;
+  /** The outcome of the last test send, shown under the digest preview. */
+  lastTestDigest?: LastTestDigest;
 };
 
 const CONFIG_KEY = "zyn-notify-v1";
@@ -100,6 +111,31 @@ export async function claimTestDigestSlot(
     // cooldown check above decide, rather than sending a second DM.
   }
   return 0;
+}
+
+/**
+ * Records how a test DM ended up, so the panel can say "last test 4 minutes ago
+ * — sent" instead of forgetting the moment the toast disappears.
+ *
+ * Best-effort: this is a convenience record, and losing it must never fail a
+ * send that already worked. It still retries a conflict, because a concurrent
+ * write (the ingest route registering the owner id, say) would otherwise erase
+ * the only trace that the DM went out.
+ */
+export async function recordTestDigestOutcome(
+  at: number,
+  sent: boolean,
+  reason?: string,
+): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const row = await readAuxRow<NotifyConfig>(CONFIG_KEY).catch(() => null);
+    const next: NotifyConfig = {
+      ...(row?.doc ?? {}),
+      lastTestDigest: { at, sent, ...(reason ? { reason } : {}) },
+    };
+    const written = await writeAuxRow(CONFIG_KEY, next, row?.version ?? null).catch(() => null);
+    if (written?.status === "ok" || written?.status === "failed") return;
+  }
 }
 
 /** True when notifications are configured AND not muted. */

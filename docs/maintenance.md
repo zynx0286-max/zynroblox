@@ -110,6 +110,13 @@ Monday. Failures are translated in the panel: a missing `DISCORD_BOT_TOKEN`, a
 muted config, an unregistered owner id, or no DM with the bot yet each say what
 to fix, instead of surfacing Discord's status code.
 
+Below the card the panel keeps the trail: "Last test 4 minutes ago — delivered to
+your DMs", or the reason it didn't go out, stored in the notify config row rather
+than in the tab — so a reload doesn't forget that you already tried. The label
+ages while the page stays open, and the cooldown countdown is restored from the
+stored claim time on load, so the panel never offers a click the server will
+refuse.
+
 Sends are throttled to one per 30 seconds. The timestamp lives in the notify
 config row and is claimed with the same compare-and-swap the store uses, so two
 clicks racing on different Worker isolates cannot both win — the loser re-reads,

@@ -16,7 +16,7 @@ import { statusActivity, type StatusChange } from "@/lib/work-activity";
 import { buildDigest } from "@/lib/digest";
 import { buildDigestEmbed, type Embed } from "@/lib/notify-embeds";
 import { notifyOwnerDm } from "@/lib/discord-notify";
-import { claimTestDigestSlot } from "@/lib/notify-config";
+import { claimTestDigestSlot, getNotifyConfig, recordTestDigestOutcome } from "@/lib/notify-config";
 import { SITE_URL } from "@/data/works";
 
 export type DbWork = Work & { id: string; sortOrder: number; status: WorkStatus };
@@ -440,13 +440,25 @@ export type DigestPreview = {
   counts: Array<{ kind: ActivityKind; count: number }>;
   /** Records older than the window; they explain why a busy log can look quiet. */
   older: number;
+  /** The last test DM, so repeated testing leaves a visible trail. */
+  lastTest: { at: string; sent: boolean; reason?: string } | null;
+  /**
+   * When a test-send slot was last claimed, as ISO. Lets the panel restore the
+   * cooldown after a reload instead of offering a button the server will refuse.
+   */
+  lastTestAttemptAt: string | null;
 };
 
 export const previewDigest = createServerFn({ method: "GET" })
   .middleware([requireOwner])
   .handler(async (): Promise<DigestPreview> => {
-    const { entries, digest, embed } = await buildCurrentDigest();
+    const [{ entries, digest, embed }, config] = await Promise.all([
+      buildCurrentDigest(),
+      getNotifyConfig(),
+    ]);
     const from = Date.parse(digest.from);
+    const last = config.lastTestDigest;
+    const claimedAt = config.lastTestDigestAt;
     return {
       from: digest.from,
       to: digest.to,
@@ -454,6 +466,18 @@ export const previewDigest = createServerFn({ method: "GET" })
       embed,
       counts: ACTIVITY_KINDS.map((kind) => ({ kind, count: digest.counts[kind] ?? 0 })),
       older: entries.filter((entry) => Date.parse(entry.at) < from).length,
+      lastTest:
+        last && Number.isFinite(last.at)
+          ? {
+              at: new Date(last.at).toISOString(),
+              sent: last.sent === true,
+              ...(last.reason ? { reason: last.reason } : {}),
+            }
+          : null,
+      lastTestAttemptAt:
+        typeof claimedAt === "number" && Number.isFinite(claimedAt)
+          ? new Date(claimedAt).toISOString()
+          : null,
     };
   });
 
@@ -490,6 +514,8 @@ export const sendTestDigest = createServerFn({ method: "POST" })
       };
     }
     const result = await notifyOwnerDm(embed);
+    // Written before returning so the panel's refetch sees it immediately.
+    await recordTestDigestOutcome(Date.now(), result.sent, result.reason);
     return {
       sent: result.sent,
       reason: result.reason ?? "sent",

@@ -16,6 +16,7 @@ import {
 } from "@/lib/works.functions";
 import type { TestDigestResult } from "@/lib/works.functions";
 import { cooldownSeconds, TEST_DIGEST_COOLDOWN_MS } from "@/lib/notify-throttle";
+import { describeTestReason, lastTestLine } from "@/lib/notify-copy";
 
 /** Badge tone per activity kind, kept out of JSX so the chain stays readable. */
 function activityTone(kind: ActivityKind): string {
@@ -35,31 +36,17 @@ function activityTone(kind: ActivityKind): string {
   }
 }
 
-/**
- * Plain-English outcome for the digest test send. The transport reasons are
- * deliberately vague (they end up in logs), so the panel is where they get
- * translated into the thing to fix.
- */
+/** Plain-English outcome for a test send, right after the click. */
 function testDigestNotice(result: TestDigestResult): string {
   if (result.sent) {
     return result.willSend
       ? "Sent to your Discord DMs — the same card the Monday cron would send."
       : "Sent to your Discord DMs. This week is quiet, so the real cron would skip it.";
   }
-  switch (result.reason) {
-    case "not configured":
-      return "Not sent — no Discord bot token is configured. Set DISCORD_BOT_TOKEN first.";
-    case "muted or no owner registered":
-      return "Not sent — notifications are muted, or the bot hasn't registered your Discord id yet. DM the bot once.";
-    case "no DM channel with the bot yet":
-      return "Not sent — the bot has no DM with you yet. Message it once, then try again.";
-    case "discord error":
-      return "Not sent — Discord rejected the message. Check the bot token and that the bot can DM you.";
-    case "cooldown":
-      return `Not sent — wait ${result.retryAfterSec ?? 30}s between test DMs so Discord isn't spammed.`;
-    default:
-      return `Not sent — ${result.reason}.`;
+  if (result.reason === "cooldown") {
+    return `Not sent — wait ${result.retryAfterSec ?? 30}s between test DMs so Discord isn't spammed.`;
   }
+  return `Not sent — ${describeTestReason(result.reason)}.`;
 }
 
 /**
@@ -120,6 +107,26 @@ export function WorksMaintenance() {
     queryFn: () => digestPreview(),
   });
   const digest = digestQuery.data ?? null;
+  // Keep the "last test" label honest while the panel stays open. Thirty
+  // seconds is enough for a minute-granularity phrase; it costs one re-render
+  // per half minute, not per second.
+  const lastTestAt = digest?.lastTest ? Date.parse(digest.lastTest.at) : null;
+  useEffect(() => {
+    if (lastTestAt === null || !Number.isFinite(lastTestAt)) return;
+    const id = setInterval(() => setClock((tick) => tick + 1), 30_000);
+    return () => clearInterval(id);
+  }, [lastTestAt]);
+
+  // Restore the server's cooldown after a reload. Without this the button looks
+  // ready, the click is refused, and the panel explains a rule it could have
+  // shown from the start.
+  const lastTestAttemptAt = digest?.lastTestAttemptAt ?? null;
+  useEffect(() => {
+    if (!lastTestAttemptAt) return;
+    const claimed = Date.parse(lastTestAttemptAt);
+    if (!Number.isFinite(claimed)) return;
+    setCooldownUntil((current) => Math.max(current, claimed + TEST_DIGEST_COOLDOWN_MS));
+  }, [lastTestAttemptAt]);
 
   const onError = (err: unknown) => {
     captureError(err, { area: "admin" });
@@ -171,6 +178,9 @@ export function WorksMaintenance() {
       setCooldownUntil(
         Date.now() + (result.retryAfterSec ?? TEST_DIGEST_COOLDOWN_MS / 1000) * 1000,
       );
+      // The server stores the outcome before answering, so this refetch has the
+      // new "last test" line already.
+      void qc.invalidateQueries({ queryKey: ["admin-digest-preview"] });
     },
     onError,
   });
@@ -543,6 +553,18 @@ export function WorksMaintenance() {
                 — the digest only reports the last 7 days.
               </p>
             ) : null}
+
+            {digest.lastTest ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {lastTestLine({
+                  at: Date.parse(digest.lastTest.at),
+                  sent: digest.lastTest.sent,
+                  ...(digest.lastTest.reason ? { reason: digest.lastTest.reason } : {}),
+                })}
+              </p>
+            ) : (
+              <p className="mt-1 text-xs text-muted-foreground">No test DM sent yet.</p>
+            )}
           </>
         ) : null}
       </div>
