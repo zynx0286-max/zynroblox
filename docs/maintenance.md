@@ -110,6 +110,12 @@ Monday. Failures are translated in the panel: a missing `DISCORD_BOT_TOKEN`, a
 muted config, an unregistered owner id, or no DM with the bot yet each say what
 to fix, instead of surfacing Discord's status code.
 
+Sends are throttled to one per 30 seconds. The timestamp lives in the notify
+config row and is claimed with the same compare-and-swap the store uses, so two
+clicks racing on different Worker isolates cannot both win — the loser re-reads,
+sees the winner's timestamp and is refused. The button counts the same window
+down, so it re-enables exactly when another send would be allowed.
+
 It exists to answer "what happened to my portfolio while I wasn't looking", so
 the weekly digest has something real to summarise. It is best-effort: if the
 log can't be written, the operation that triggered it still succeeds — losing a

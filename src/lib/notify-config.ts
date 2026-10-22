@@ -12,12 +12,15 @@
 // it along with the DMs you already send it, and we store it here.
 
 import { readAuxRow, writeAuxRow } from "@/lib/store";
+import { cooldownRemainingMs, TEST_DIGEST_COOLDOWN_MS } from "./notify-throttle.ts";
 
 export type NotifyConfig = {
   /** Discord user id of the portfolio owner. */
   ownerDiscordId?: string;
   /** Set false to mute all proactive notifications. */
   enabled?: boolean;
+  /** When the admin last sent a test digest — throttles the panel's button. */
+  lastTestDigestAt?: number;
 };
 
 const CONFIG_KEY = "zyn-notify-v1";
@@ -65,6 +68,38 @@ export async function setNotificationsEnabled(enabled: boolean): Promise<void> {
     const written = await writeAuxRow(CONFIG_KEY, next, row?.version ?? null).catch(() => null);
     if (written?.status === "ok" || written?.status === "failed") return;
   }
+}
+
+/**
+ * Atomically claims the right to send a test digest. Returns the milliseconds to
+ * wait when it's too soon — 0 means go ahead.
+ *
+ * WHY A CAS AND NOT A MODULE VARIABLE: a Worker runs in many isolates, so an
+ * in-memory timestamp would only throttle whichever one answered. This row is
+ * shared, which makes the compare-and-swap a real gate: when two clicks race,
+ * the loser's write conflicts, re-reads, sees the winner's fresh timestamp and
+ * is throttled like any other early click.
+ *
+ * Fails open when the row can't be written: bookkeeping being unavailable is not
+ * a good reason to stop the owner testing their Discord setup.
+ */
+export async function claimTestDigestSlot(
+  now: number,
+  cooldownMs: number = TEST_DIGEST_COOLDOWN_MS,
+): Promise<number> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const row = await readAuxRow<NotifyConfig>(CONFIG_KEY).catch(() => null);
+    const last = typeof row?.doc.lastTestDigestAt === "number" ? row.doc.lastTestDigestAt : 0;
+    const remaining = cooldownRemainingMs(now, last, cooldownMs);
+    if (remaining > 0) return remaining;
+    const next: NotifyConfig = { ...(row?.doc ?? {}), lastTestDigestAt: now };
+    const written = await writeAuxRow(CONFIG_KEY, next, row?.version ?? null).catch(() => null);
+    if (written?.status === "ok") return 0;
+    if (written?.status === "failed") return 0;
+    // Conflict: another click claimed the slot first. Re-read and let the
+    // cooldown check above decide, rather than sending a second DM.
+  }
+  return 0;
 }
 
 /** True when notifications are configured AND not muted. */

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, Bot, GitMerge, Loader2, RefreshCw, Send, X } from "lucide-react";
 import { captureError } from "@/lib/sentry";
 import type { ActivityKind } from "@/lib/store";
@@ -15,6 +15,7 @@ import {
   sendTestDigest,
 } from "@/lib/works.functions";
 import type { TestDigestResult } from "@/lib/works.functions";
+import { cooldownSeconds, TEST_DIGEST_COOLDOWN_MS } from "@/lib/notify-throttle";
 
 /** Badge tone per activity kind, kept out of JSX so the chain stays readable. */
 function activityTone(kind: ActivityKind): string {
@@ -54,6 +55,8 @@ function testDigestNotice(result: TestDigestResult): string {
       return "Not sent — the bot has no DM with you yet. Message it once, then try again.";
     case "discord error":
       return "Not sent — Discord rejected the message. Check the bot token and that the bot can DM you.";
+    case "cooldown":
+      return `Not sent — wait ${result.retryAfterSec ?? 30}s between test DMs so Discord isn't spammed.`;
     default:
       return `Not sent — ${result.reason}.`;
   }
@@ -85,6 +88,20 @@ export function WorksMaintenance() {
     null,
   );
   const [testResult, setTestResult] = useState<TestDigestResult | null>(null);
+  const [cooldownUntil, setCooldownUntil] = useState(0);
+  // Re-render once a second while a cooldown runs so the countdown is honest.
+  const [, setClock] = useState(0);
+
+  useEffect(() => {
+    if (cooldownUntil <= Date.now()) return;
+    const id = setInterval(() => {
+      setClock((tick) => tick + 1);
+      if (Date.now() >= cooldownUntil) clearInterval(id);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [cooldownUntil]);
+
+  const cooldownLeft = cooldownSeconds(cooldownUntil - Date.now());
 
   const dupesQuery = useQuery({ queryKey: ["admin-work-dupes"], queryFn: () => findDupes() });
   const groups = dupesQuery.data ?? [];
@@ -148,6 +165,12 @@ export function WorksMaintenance() {
       setError(null);
       setNotice(null);
       setTestResult(result);
+      // The server claims a slot on every attempt, so mirror its cooldown here:
+      // the button should be dark exactly as long as another send would be
+      // refused, and no longer than the server said.
+      setCooldownUntil(
+        Date.now() + (result.retryAfterSec ?? TEST_DIGEST_COOLDOWN_MS / 1000) * 1000,
+      );
     },
     onError,
   });
@@ -428,7 +451,7 @@ export function WorksMaintenance() {
                 setTestResult(null);
                 testSendMutation.mutate();
               }}
-              disabled={testSendMutation.isPending}
+              disabled={testSendMutation.isPending || cooldownLeft > 0}
               className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 font-display text-xs disabled:opacity-50"
             >
               {testSendMutation.isPending ? (
@@ -436,7 +459,7 @@ export function WorksMaintenance() {
               ) : (
                 <Send className="size-3.5" />
               )}
-              Send test DM
+              {cooldownLeft > 0 ? `Send test DM (${cooldownLeft}s)` : "Send test DM"}
             </button>
           </div>
         </div>

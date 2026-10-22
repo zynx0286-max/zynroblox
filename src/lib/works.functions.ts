@@ -16,6 +16,7 @@ import { statusActivity, type StatusChange } from "@/lib/work-activity";
 import { buildDigest } from "@/lib/digest";
 import { buildDigestEmbed, type Embed } from "@/lib/notify-embeds";
 import { notifyOwnerDm } from "@/lib/discord-notify";
+import { claimTestDigestSlot } from "@/lib/notify-config";
 import { SITE_URL } from "@/data/works";
 
 export type DbWork = Work & { id: string; sortOrder: number; status: WorkStatus };
@@ -468,12 +469,26 @@ export type TestDigestResult = {
   reason: string;
   /** Whether this week's real digest would have been sent by the cron. */
   willSend: boolean;
+  /** Set when throttled: how long until another test send is allowed. */
+  retryAfterSec?: number;
 };
 
 export const sendTestDigest = createServerFn({ method: "POST" })
   .middleware([requireOwner])
   .handler(async (): Promise<TestDigestResult> => {
     const { digest, embed } = await buildCurrentDigest();
+    // A double click must not land two DMs in the channel. The claim is shared
+    // across isolates (see notify-config), so a button that re-enables too early
+    // on another instance still can't send twice.
+    const waitMs = await claimTestDigestSlot(Date.now());
+    if (waitMs > 0) {
+      return {
+        sent: false,
+        reason: "cooldown",
+        willSend: !digest.quiet,
+        retryAfterSec: Math.max(1, Math.ceil(waitMs / 1000)),
+      };
+    }
     const result = await notifyOwnerDm(embed);
     return {
       sent: result.sent,
