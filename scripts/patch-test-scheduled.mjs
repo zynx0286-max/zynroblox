@@ -55,8 +55,10 @@ const inject = ANCHOR.replace(
       } catch (err) {
         return new Response("scheduled error: " + (err?.stack ?? String(err)), { status: 500 });
       }
-    } /* __NITRO_TEST_SCHEDULED_FALLBACK__ */`
+    } /* __NITRO_TEST_SCHEDULED_FALLBACK__ */`,
 );
 src = src.replace(ANCHOR, inject);
 writeFileSync(FILE, src);
-console.log("patched .output/server/index.mjs — /__scheduled now runs runCronTasks under NITRO_TEST_SCHEDULED=1");
+console.log(
+  "patched .output/server/index.mjs — /__scheduled now runs runCronTasks under NITRO_TEST_SCHEDULED=1",
+);
