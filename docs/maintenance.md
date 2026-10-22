@@ -115,7 +115,9 @@ your DMs", or the reason it didn't go out, stored in the notify config row rathe
 than in the tab — so a reload doesn't forget that you already tried. The label
 ages while the page stays open, and the cooldown countdown is restored from the
 stored claim time on load, so the panel never offers a click the server will
-refuse.
+refuse. When the last attempt failed, a Retry button sits next to that line: it
+runs the same send through the same server-enforced cooldown, and counts that
+cooldown down in its own label rather than sitting silently disabled.
 
 Sends are throttled to one per 30 seconds. The timestamp lives in the notify
 config row and is claimed with the same compare-and-swap the store uses, so two

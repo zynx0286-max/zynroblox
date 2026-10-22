@@ -16,7 +16,7 @@ import {
 } from "@/lib/works.functions";
 import type { TestDigestResult } from "@/lib/works.functions";
 import { cooldownSeconds, TEST_DIGEST_COOLDOWN_MS } from "@/lib/notify-throttle";
-import { describeTestReason, lastTestLine } from "@/lib/notify-copy";
+import { describeTestReason, lastTestLine, retryTestLabel } from "@/lib/notify-copy";
 
 /** Badge tone per activity kind, kept out of JSX so the chain stays readable. */
 function activityTone(kind: ActivityKind): string {
@@ -184,6 +184,13 @@ export function WorksMaintenance() {
     },
     onError,
   });
+
+  // Clearing the previous notice first keeps a retry from looking like it did
+  // nothing while the request is in flight — the outcome replaces it.
+  const sendTestNow = () => {
+    setTestResult(null);
+    testSendMutation.mutate();
+  };
 
   const refreshMutation = useMutation({
     mutationFn: () => refresh(),
@@ -457,10 +464,7 @@ export function WorksMaintenance() {
                 : "Last 7 days · sent Mondays 08:43 UTC"}
             </span>
             <button
-              onClick={() => {
-                setTestResult(null);
-                testSendMutation.mutate();
-              }}
+              onClick={sendTestNow}
               disabled={testSendMutation.isPending || cooldownLeft > 0}
               className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 font-display text-xs disabled:opacity-50"
             >
@@ -554,17 +558,31 @@ export function WorksMaintenance() {
               </p>
             ) : null}
 
-            {digest.lastTest ? (
-              <p className="mt-1 text-xs text-muted-foreground">
-                {lastTestLine({
-                  at: Date.parse(digest.lastTest.at),
-                  sent: digest.lastTest.sent,
-                  ...(digest.lastTest.reason ? { reason: digest.lastTest.reason } : {}),
-                })}
-              </p>
-            ) : (
-              <p className="mt-1 text-xs text-muted-foreground">No test DM sent yet.</p>
-            )}
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              {digest.lastTest ? (
+                <span>
+                  {lastTestLine({
+                    at: Date.parse(digest.lastTest.at),
+                    sent: digest.lastTest.sent,
+                    ...(digest.lastTest.reason ? { reason: digest.lastTest.reason } : {}),
+                  })}
+                </span>
+              ) : (
+                <span>No test DM sent yet.</span>
+              )}
+              {/* Only a failure has something to retry. The same mutation and the
+                  same server-enforced cooldown as the button above, so this is a
+                  shortcut — not a way around the throttle. */}
+              {digest.lastTest && !digest.lastTest.sent ? (
+                <button
+                  onClick={sendTestNow}
+                  disabled={testSendMutation.isPending || cooldownLeft > 0}
+                  className="rounded-full border border-border px-2.5 py-0.5 font-display text-[0.7rem] disabled:opacity-50"
+                >
+                  {retryTestLabel(testSendMutation.isPending, cooldownLeft)}
+                </button>
+              ) : null}
+            </div>
           </>
         ) : null}
       </div>

@@ -27,6 +27,17 @@ export function describeTestReason(reason: string): string {
   }
 }
 
+/**
+ * Label for the retry action beside a failed test line. It counts down rather
+ * than sitting disabled with no explanation, and in-flight wins over the
+ * cooldown so the click is acknowledged immediately.
+ */
+export function retryTestLabel(pending: boolean, cooldownLeft: number): string {
+  if (pending) return "Retrying…";
+  if (cooldownLeft > 0) return `Retry in ${cooldownLeft}s`;
+  return "Retry test DM";
+}
+
 /** The stored outcome of the most recent test DM. */
 export type LastTestSummary = {
   /** Epoch milliseconds of the attempt. */

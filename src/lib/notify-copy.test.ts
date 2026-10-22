@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { describeTestReason, lastTestLine } from "./notify-copy.ts";
+import { describeTestReason, lastTestLine, retryTestLabel } from "./notify-copy.ts";
 
 const NOW = 1_760_000_000_000;
 const minutesAgo = (minutes: number) => NOW - minutes * 60_000;
@@ -29,6 +29,16 @@ test("a delivered test reads as delivered, with the relative time", () => {
     lastTestLine({ at: minutesAgo(4), sent: true }, NOW),
     "Last test 4 minutes ago — delivered to your DMs.",
   );
+});
+
+test("the retry label counts down instead of sitting silently disabled", () => {
+  assert.equal(retryTestLabel(false, 18), "Retry in 18s");
+  assert.equal(retryTestLabel(false, 0), "Retry test DM");
+  assert.equal(retryTestLabel(false, -3), "Retry test DM");
+});
+
+test("an in-flight retry is acknowledged even while the cooldown runs", () => {
+  assert.equal(retryTestLabel(true, 18), "Retrying…");
 });
 
 test("a just-sent test doesn't claim to be minutes old", () => {
