@@ -253,6 +253,13 @@ export function SoundField() {
       const rect = host.getBoundingClientRect();
       targetX = event.clientX - rect.left;
       targetY = event.clientY - rect.top;
+      // Under reduced motion the field holds still, but a direct pointer move
+      // may still shift its one frame — no autonomous animation, just feedback.
+      if (reduceMotion) {
+        mouseX = targetX;
+        mouseY = targetY;
+        draw(0);
+      }
     };
 
     const onPointerDown = (event: PointerEvent) => {
@@ -284,6 +291,7 @@ export function SoundField() {
     ro?.observe(host);
 
     resize();
+    if (reduceMotion) canvas.style.transition = "none";
     draw(0);
     if (reduceMotion) {
       canvas.style.opacity = "1";
