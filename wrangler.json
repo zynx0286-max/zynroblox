@@ -7,5 +7,12 @@
       "binding": "STORE",
       "id": "1a7ae68fb41c4d2d9063447463e356cb"
     }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "roblox-portfolio-db",
+      "database_id": "3ca7469c-033c-424d-95fe-ab71e9b1d0f9"
+    }
   ]
 }
