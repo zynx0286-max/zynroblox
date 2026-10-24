@@ -31,6 +31,7 @@ export function SiteFooter() {
       | "/services"
       | "/pricing"
       | "/reviews"
+      | "/profile"
       | "/privacy"
       | "/terms"
       | "/security",
@@ -104,6 +105,7 @@ export function SiteFooter() {
                 {pageLink("/services", "Services")}
                 {pageLink("/pricing", "Pricing")}
                 {pageLink("/reviews", "Reviews")}
+                {pageLink("/profile", "3D Profile")}
               </div>
             </nav>
 
