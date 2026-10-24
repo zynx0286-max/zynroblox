@@ -6,6 +6,7 @@ import { Marquee } from "@/components/Marquee";
 import { About } from "@/components/About";
 import { FeaturedGame } from "@/components/FeaturedGame";
 import { WorkPreview } from "@/components/WorkPreview";
+import { SoundField } from "@/components/SoundField";
 import { ReviewWall } from "@/components/ReviewWall";
 import { Faq } from "@/components/Faq";
 import { ContactCta } from "@/components/ContactCta";
@@ -60,6 +61,7 @@ function Index() {
           <FeaturedGame works={works} settings={settings.featured} />
         </Reveal>
         <WorkPreview works={works} settings={settings.workPreview} liveStats={liveStats} />
+        <SoundField />
         <Reveal as="section">
           <ReviewWall testimonials={settings.testimonials} reviews={reviews} preview />
         </Reveal>
