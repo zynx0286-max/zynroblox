@@ -104,7 +104,7 @@ export function ContactForm() {
         openGmail();
       }}
       noValidate
-      className="glass-card relative rounded-2xl p-5 text-left sm:p-8"
+      className="glass-card relative rounded-[26px] p-5 text-left sm:p-8"
     >
       <div className="relative">
         <h3 className="font-display text-lg font-semibold">Start a project</h3>

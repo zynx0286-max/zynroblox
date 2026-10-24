@@ -24,9 +24,9 @@ export function ScrollProgress() {
   }, []);
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] h-0.5 bg-transparent">
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-[60] h-[2px] bg-transparent">
       <div
-        className="h-full origin-left bg-[image:var(--gradient-accent)] shadow-[var(--shadow-glow)]"
+        className="h-full origin-left bg-[image:var(--gradient-accent)]"
         style={{ width: `${pct}%` }}
       />
     </div>

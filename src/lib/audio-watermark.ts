@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+import { resumeAudio } from "./audio-engine";
 
 // Inaudible playback watermark. Every preview played ON the site carries a
 // near-inaudible identification triple-ping (~15 kHz, very low gain) layered
@@ -24,12 +25,10 @@ const PERIOD_MS = 45_000;
  * policy is satisfied) and torn down on unmount.
  */
 export function useAudioWatermark() {
-  const ctxRef = useRef<AudioContext | null>(null);
   const timerRef = useRef<number | null>(null);
 
-  const burst = useCallback(() => {
-    const ctx = ctxRef.current;
-    if (!ctx || ctx.state === "closed") return;
+  const burst = useCallback((ctx: AudioContext) => {
+    if (ctx.state === "closed") return;
     const t0 = ctx.currentTime + 0.05;
     for (const offset of PING_OFFSETS) {
       const osc = ctx.createOscillator();
@@ -53,14 +52,13 @@ export function useAudioWatermark() {
   }, []);
 
   const handlePlay = useCallback(() => {
-    if (!ctxRef.current || ctxRef.current.state === "closed") {
-      ctxRef.current = new AudioContext();
-    }
-    const ctx = ctxRef.current;
-    if (ctx.state === "suspended") void ctx.resume();
-    burst(); // mark the very start of every listen
+    // One shared context for the whole site (see audio-engine.ts): several
+    // players on one page must not each spawn their own AudioContext.
+    const ctx = resumeAudio();
+    if (!ctx) return;
+    burst(ctx); // mark the very start of every listen
     if (timerRef.current === null) {
-      timerRef.current = window.setInterval(burst, PERIOD_MS);
+      timerRef.current = window.setInterval(() => burst(ctx), PERIOD_MS);
     }
   }, [burst]);
 
@@ -69,14 +67,7 @@ export function useAudioWatermark() {
     stopWatermark();
   }, [stopWatermark]);
 
-  useEffect(
-    () => () => {
-      stopWatermark();
-      if (ctxRef.current && ctxRef.current.state !== "closed") void ctxRef.current.close();
-      ctxRef.current = null;
-    },
-    [stopWatermark],
-  );
+  useEffect(() => () => stopWatermark(), [stopWatermark]);
 
   return { onPlay: handlePlay, onPause: handlePause };
 }

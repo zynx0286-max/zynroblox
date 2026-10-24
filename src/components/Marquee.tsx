@@ -9,21 +9,35 @@ export function Marquee({ items }: { items: MarqueeItem[] }) {
   // -50% (see `marquee` keyframes in styles.css), so items enter from the
   // right edge and exit on the left, looping seamlessly over the duplicated row.
   return (
-    <section dir="ltr" className="relative overflow-hidden py-8">
-      <div className="marquee-track flex w-max gap-8">
+    <section
+      dir="ltr"
+      aria-label="What I do"
+      className="relative overflow-hidden border-b border-border py-4"
+    >
+      <div className="marquee-track flex w-max items-center gap-7 hover:[animation-play-state:paused]">
         {row.map((item, i) => {
           const Icon = ICONS[item.icon] ?? ICONS.audio;
           return (
-            <div
+            <span
               key={`${item.label}-${i}`}
-              className="flex items-center gap-2 text-sm text-muted-foreground"
+              title={item.copy}
+              className="flex items-center gap-2.5 whitespace-nowrap font-mono text-[0.58rem] tracking-[0.16em] text-muted-foreground uppercase sm:text-[0.62rem]"
             >
-              <Icon className="size-4" />
-              <span>{item.label}</span>
-            </div>
+              <Icon className="size-3 text-primary" aria-hidden />
+              {item.label}
+              <span aria-hidden className="ml-5 size-1 rounded-full bg-primary/50" />
+            </span>
           );
         })}
       </div>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-background to-transparent"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background to-transparent"
+      />
     </section>
   );
 }

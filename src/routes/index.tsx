@@ -7,6 +7,7 @@ import { About } from "@/components/About";
 import { FeaturedGame } from "@/components/FeaturedGame";
 import { WorkPreview } from "@/components/WorkPreview";
 import { ReviewWall } from "@/components/ReviewWall";
+import { Faq } from "@/components/Faq";
 import { ContactCta } from "@/components/ContactCta";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Reveal } from "@/components/Reveal";
@@ -56,16 +57,15 @@ function Index() {
       <main>
         <Hero settings={settings.hero} workCount={works.length} liveStats={liveStats} />
         <Marquee items={settings.marquee} />
+        <About settings={settings.about} skills={settings.skills} />
         <Reveal as="section">
           <FeaturedGame works={works} settings={settings.featured} />
         </Reveal>
-        <Reveal as="section">
-          <About settings={settings.about} />
-        </Reveal>
-        <WorkPreview works={works} settings={settings.workPreview} />
+        <WorkPreview works={works} settings={settings.workPreview} liveStats={liveStats} />
         <Reveal as="section">
           <ReviewWall testimonials={settings.testimonials} reviews={reviews} preview />
         </Reveal>
+        <Faq settings={settings.faq} />
         <Reveal as="section">
           <ContactCta settings={settings.contact} />
         </Reveal>

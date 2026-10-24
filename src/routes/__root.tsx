@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { Suspense, lazy, type ReactNode } from "react";
+import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { SITE_URL } from "@/data/works";
@@ -15,12 +15,8 @@ import { getPublicSettings } from "@/lib/public-data";
 import { ContactSettingsProvider } from "@/components/ContactSettingsProvider";
 import { BackToTop } from "../components/BackToTop";
 import { CookieConsent } from "../components/CookieConsent";
-
-// Simple white dot cursor — a tiny component, no three.js, no canvas.
-// (The old GhostCursor shader trail was removed for low-end performance.)
-const DotCursorLazy = lazy(() =>
-  import("../components/DotCursor").then((m) => ({ default: m.DotCursor })),
-);
+import { DotCursor } from "../components/DotCursor";
+import { SoundLayer } from "../components/SoundLayer";
 
 function NotFoundComponent() {
   return (
@@ -130,7 +126,7 @@ export const Route = createRootRouteWithContext<{
       },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Manrope:wght@400;500;600&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap",
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
@@ -167,7 +163,7 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
-        <meta name="theme-color" content="#14151c" />
+        <meta name="theme-color" content="#050609" />
         {/* No-JS safety net: scroll-reveal content must never stay invisible. */}
         <noscript>
           <style>{".reveal{opacity:1!important;transform:none!important}"}</style>
@@ -188,10 +184,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ContactSettingsProvider contact={contact}>
-        {/* Lightweight dot cursor (renders nothing on touch / reduced-motion). */}
-        <Suspense fallback={null}>
-          <DotCursorLazy />
-        </Suspense>
+        <DotCursor />
+        <SoundLayer />
+        <div aria-hidden className="zyn-grain" />
         <BackToTop />
         <CookieConsent />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}

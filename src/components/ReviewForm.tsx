@@ -2,7 +2,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useRouter } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { Loader2, Send, Star } from "lucide-react";
+import { CheckCircle2, Loader2, Send, Star } from "lucide-react";
 import { captureError } from "@/lib/sentry";
 import { createReview } from "@/lib/reviews.functions";
 
@@ -65,17 +65,22 @@ export function ReviewForm() {
   });
 
   const field =
-    "mt-1.5 w-full rounded-xl border border-border bg-background/40 px-3.5 py-2.5 text-sm outline-none focus:border-primary/60";
-  const label = "font-display text-[0.68rem] tracking-wider text-muted-foreground uppercase";
+    "mt-1.5 w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/60 focus:ring-2 focus:ring-primary/15";
+  const labelClass = "font-mono text-[0.56rem] tracking-[0.12em] text-muted-foreground uppercase";
 
   // One review per device: the server enforces it by IP/email, this stops
   // the form early with a clear message instead of a round-trip rejection.
   if (deviceBlocked) {
     return (
-      <div className="glass-card rounded-[28px] p-6 text-center sm:p-8">
-        <p className="font-display text-xl font-bold text-foreground">One review per device</p>
+      <div className="editorial-card p-6 text-center sm:p-8">
+        <p className="font-mono text-[0.58rem] tracking-[0.16em] text-primary uppercase">
+          One per device
+        </p>
+        <p className="mt-3 font-display text-xl font-bold text-foreground">
+          This device already left a review
+        </p>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-          This device has already submitted a review. To change it, message @acczyn on Discord.
+          To change it, message @acczyn on Discord. Your feedback still appears below.
         </p>
       </div>
     );
@@ -83,11 +88,14 @@ export function ReviewForm() {
 
   if (done) {
     return (
-      <div className="glass-card rounded-[28px] p-6 text-center sm:p-8">
-        <p className="font-display text-xl font-bold text-foreground">Thanks for the feedback!</p>
+      <div className="editorial-card p-6 text-center sm:p-8">
+        <CheckCircle2 className="mx-auto size-8 text-primary" />
+        <p className="mt-4 font-display text-xl font-bold text-foreground">
+          Thanks for the feedback.
+        </p>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-          Your review is now live below for everyone to see. Need to change it later? Message
-          @acczyn on Discord.
+          Your review is live below for everyone to see. Need to change it later? Message @acczyn on
+          Discord.
         </p>
       </div>
     );
@@ -99,46 +107,59 @@ export function ReviewForm() {
         e.preventDefault();
         mutation.mutate();
       }}
-      className="glass-card rounded-[28px] p-6 sm:p-8"
+      className="editorial-card p-6 sm:p-8"
     >
-      <h2 className="font-display text-xl font-bold text-foreground">Leave a review</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Worked together? Share your experience — it helps other teams know what to expect.
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-4">
+        <p className="font-mono text-[0.58rem] tracking-[0.16em] text-muted-foreground uppercase">
+          <span className="text-primary">01</span> / Your review
+        </p>
+        <p className="font-mono text-[0.52rem] tracking-[0.1em] text-muted-foreground/60 uppercase">
+          Published after submission
+        </p>
+      </div>
+
+      <h2 className="mt-5 font-display text-2xl font-bold tracking-[-0.04em]">Leave a review.</h2>
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        Worked together? Share what it was like — it helps other teams know what to expect.
       </p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div>
-          <span className={label}>Name</span>
+        <label className="block">
+          <span className={labelClass}>Name</span>
           <input
             required
             minLength={2}
             maxLength={100}
+            autoComplete="name"
             className={field}
             placeholder="Your name"
             value={values.authorName}
             onChange={(e) => setValues({ ...values, authorName: e.target.value })}
           />
-        </div>
-        <div>
-          <span className={label}>Email</span>
+        </label>
+        <label className="block">
+          <span className={labelClass}>Email</span>
           <input
             required
             type="email"
+            autoComplete="email"
             className={field}
             placeholder="you@example.com"
             value={values.authorEmail}
             onChange={(e) => setValues({ ...values, authorEmail: e.target.value })}
           />
-        </div>
+        </label>
         <div>
-          <span className={label}>Rating</span>
+          <span className={labelClass}>Rating</span>
           <div className="mt-1.5 flex gap-1">
             {[1, 2, 3, 4, 5].map((n) => (
               <button
                 key={n}
                 type="button"
                 aria-label={`${n} stars`}
+                aria-pressed={n === values.rating}
                 onClick={() => setValues({ ...values, rating: n })}
+                className="rounded-sm transition-transform hover:scale-110"
               >
                 <Star
                   className={`size-6 transition-colors ${n <= values.rating ? "fill-primary text-primary" : "text-muted-foreground/40"}`}
@@ -147,8 +168,8 @@ export function ReviewForm() {
             ))}
           </div>
         </div>
-        <div>
-          <span className={label}>Project (optional)</span>
+        <label className="block">
+          <span className={labelClass}>Project (optional)</span>
           <input
             maxLength={120}
             className={field}
@@ -156,9 +177,9 @@ export function ReviewForm() {
             value={values.projectRef}
             onChange={(e) => setValues({ ...values, projectRef: e.target.value })}
           />
-        </div>
-        <div className="sm:col-span-2">
-          <span className={label}>Title</span>
+        </label>
+        <label className="block sm:col-span-2">
+          <span className={labelClass}>Title</span>
           <input
             required
             minLength={5}
@@ -168,9 +189,9 @@ export function ReviewForm() {
             value={values.title}
             onChange={(e) => setValues({ ...values, title: e.target.value })}
           />
-        </div>
-        <div className="sm:col-span-2">
-          <span className={label}>Review</span>
+        </label>
+        <label className="block sm:col-span-2">
+          <span className={labelClass}>Review</span>
           <textarea
             required
             rows={4}
@@ -181,9 +202,9 @@ export function ReviewForm() {
             value={values.content}
             onChange={(e) => setValues({ ...values, content: e.target.value })}
           />
-        </div>
-        <div className="sm:col-span-2">
-          <span className={label}>Screenshot links (optional, https:// — up to 8)</span>
+        </label>
+        <label className="block sm:col-span-2">
+          <span className={labelClass}>Screenshot links (optional, https:// — up to 8)</span>
           <input
             type="url"
             multiple
@@ -192,7 +213,7 @@ export function ReviewForm() {
             value={values.screenshots}
             onChange={(e) => setValues({ ...values, screenshots: e.target.value })}
           />
-        </div>
+        </label>
       </div>
 
       {error ? (
@@ -204,7 +225,7 @@ export function ReviewForm() {
       <button
         type="submit"
         disabled={mutation.isPending}
-        className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-display text-sm font-bold text-primary-foreground disabled:opacity-60"
+        className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3.5 font-display text-[0.66rem] font-bold tracking-[0.1em] text-primary-foreground uppercase shadow-[var(--shadow-glow)] disabled:opacity-60"
       >
         {mutation.isPending ? (
           <Loader2 className="size-4 animate-spin" />
