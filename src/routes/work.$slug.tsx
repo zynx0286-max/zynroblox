@@ -7,7 +7,6 @@ import { PageHero, type PageHeroMeta } from "@/components/PageHero";
 import { PageCta } from "@/components/PageCta";
 import { WorkMedia } from "@/components/WorkMedia";
 import { WorkRail } from "@/components/WorkRail";
-import { ScrollProgress } from "@/components/ScrollProgress";
 import { Lightbox, type LightboxItem } from "@/components/Lightbox";
 import { ProjectLiveStat } from "@/components/ProjectLiveStat";
 import { track } from "@/lib/analytics";
@@ -209,7 +208,6 @@ function WorkDetail() {
 
   return (
     <div className="min-h-screen bg-background">
-      <ScrollProgress />
       <SiteNav />
       <main>
         <PageHero

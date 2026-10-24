@@ -11,7 +11,6 @@ import { Faq } from "@/components/Faq";
 import { ContactCta } from "@/components/ContactCta";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Reveal } from "@/components/Reveal";
-import { ScrollProgress } from "@/components/ScrollProgress";
 import { getPublicSiteData } from "@/lib/public-data";
 import { getLiveGameStats } from "@/lib/live-stats.functions";
 
@@ -52,7 +51,6 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      <ScrollProgress />
       <SiteNav />
       <main>
         <Hero settings={settings.hero} workCount={works.length} liveStats={liveStats} />
