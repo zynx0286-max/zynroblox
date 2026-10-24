@@ -918,10 +918,25 @@ export default function ProfileScene({ onReady }: { onReady?: () => void }) {
       animationFrame = 0;
     };
 
+    const resetInput = () => {
+      keys.clear();
+      dragging = false;
+      dragPointer = null;
+      joystick.current = { x: 0, y: 0 };
+    };
+
     const onVisibility = () => {
       pageVisible = document.visibilityState === "visible";
-      if (!pageVisible) stop();
-      else start();
+      if (!pageVisible) {
+        resetInput();
+        stop();
+      } else {
+        start();
+      }
+    };
+
+    const onBlur = () => {
+      resetInput();
     };
 
     let intersectionObserver: IntersectionObserver | null = null;
@@ -950,6 +965,7 @@ export default function ProfileScene({ onReady }: { onReady?: () => void }) {
     window.addEventListener("keydown", onKeyDown, { passive: false });
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("resize", resize, { passive: true });
+    window.addEventListener("blur", onBlur);
     document.addEventListener("visibilitychange", onVisibility);
     canvas.addEventListener("pointerdown", onPointerDown);
     canvas.addEventListener("pointermove", onPointerMove);
@@ -990,6 +1006,7 @@ export default function ProfileScene({ onReady }: { onReady?: () => void }) {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("resize", resize);
+      window.removeEventListener("blur", onBlur);
       document.removeEventListener("visibilitychange", onVisibility);
       canvas.removeEventListener("pointerdown", onPointerDown);
       canvas.removeEventListener("pointermove", onPointerMove);
